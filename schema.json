@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/plan.schema.json",
+  "title": "Plan",
+  "description": "Schema for a Plan document used by the auto-executer system",
+  "type": "object",
+  "required": ["id", "title", "status", "created"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PLAN-\\d+$",
+      "description": "Unique plan identifier (e.g., PLAN-1)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Plan title"
+    },
+    "requirements": {
+      "type": "string",
+      "description": "Path to the requirements document"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "completed", "cancelled"],
+      "description": "Plan status"
+    },
+    "created": {
+      "type": "string",
+      "pattern": "^\d{4}-\d{2}-\d{2}$",
+      "description": "Creation date in YYYY-MM-DD format"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "description": "Last update date with optional note"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/decision"
+      },
+      "default": []
+    },
+    "stories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/story"
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "definitions": {
+    "decision": {
+      "type": "object",
+      "required": ["id", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DEC-\\d+$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        }
+      }
+    },
+    "story": {
+      "type": "object",
+      "required": ["id", "description", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^US-\d{3,4}$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tasks": {
+          "type": "string",
+          "description": "Comma-separated task IDs (e.g., 'T-01, T-02, T-03')"
+        },
+        "status": {
+          "type": "string",
+          "description": "Story status (e.g., 'Done', ' Done', 'in_progress', 'pending')"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^T-\d{2}$"
+        },
+        "stories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of story IDs this task belongs to"
+        },
+        "size": {
+          "type": "string",
+          "enum": ["Small", "Medium", "Large", "ExtraLarge"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "skipped", "cancelled"]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of task IDs this task depends on"
+        },
+        "whatToDo": {
+          "type": ["string", "null"],
+          "description": "Task description"
+        },
+        "definitionOfDone": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "completed": {
+                "type": "boolean"
+              }
+            }
+          },
+          "default": []
+        },
+        "decision": {
+          "type": ["string", "null"],
+          "description": "Decision ID linked to this task"
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Additional notes"
+        }
+      }
+    }
+  }
+}
