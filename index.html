@@ -81,6 +81,15 @@
     .decisions-table th { text-align: left; padding: 12px; background: #f8fafc; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
     .decisions-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     .decisions-table tr:hover { background: #f8fafc; }
+
+    .overview-sections { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .section-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #fff; }
+    .section-title { font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .section-body { font-size: 13px; color: #334155; line-height: 1.6; white-space: pre-wrap; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    details.summary-block > summary { cursor: pointer; font-size: 12px; color: #3b82f6; font-weight: 600; }
+    details.summary-block { margin-top: 10px; }
     
     .stories-list { display: flex; flex-direction: column; gap: 8px; }
     .story-item { padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
@@ -200,8 +209,9 @@
           <table class="decisions-table">
             <thead>
               <tr>
-                <th>Decision</th>
-                <th>Choice</th>
+                <th>ID / Title</th>
+                <th>Description / Choice</th>
+                <th>Rationale</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -279,6 +289,45 @@
         <div class="stat-card"><div class="stat-value">${tasksTotal}</div><div class="stat-label">Tasks</div></div>
         <div class="stat-card"><div class="stat-value">${tasksDone}</div><div class="stat-label">Tasks Done</div></div>
       `;
+
+      const phases = Array.isArray(p.phases) ? p.phases : [];
+      const phasesChips = phases.length
+        ? `<div class="chips">${phases.map(ph => {
+            const title = (ph?.title || '').trim();
+            const ids = Array.isArray(ph?.tasks) ? ph.tasks : [];
+            const done = ids.length ? (p.tasks || []).filter(t => ids.includes(t.id) && t.status === 'completed').length : 0;
+            return `<span class="chip">${escapeHtml(title)}${ids.length ? ` (${done}/${ids.length})` : ''}</span>`;
+          }).join('')}</div>`
+        : '';
+
+      document.getElementById('overviewContent').innerHTML = `
+        <div class="overview-sections">
+          ${p.objective ? `
+            <div class="section-card">
+              <div class="section-title">Objective</div>
+              <div class="section-body">${escapeHtml(p.objective)}</div>
+            </div>
+          ` : ''}
+          ${p.targetArchitecture ? `
+            <div class="section-card">
+              <div class="section-title">Target Architecture</div>
+              <div class="section-body">${escapeHtml(p.targetArchitecture)}</div>
+            </div>
+          ` : ''}
+          ${phasesChips ? `
+            <div class="section-card">
+              <div class="section-title">Phases</div>
+              ${phasesChips}
+            </div>
+          ` : ''}
+          ${p.notes ? `
+            <div class="section-card">
+              <div class="section-title">Notes</div>
+              <div class="section-body">${escapeHtml(p.notes)}</div>
+            </div>
+          ` : ''}
+        </div>
+      `;
       
       document.getElementById('storiesList').innerHTML = p.stories?.map(s => `
         <div class="story-item">
@@ -300,25 +349,45 @@
               <span class="task-status-badge status-${t.status === 'completed' ? 'completed' : 'pending'}">${t.status}</span>
             </div>
           </div>
-          ${t.whatToDo ? `<div class="task-what">${t.whatToDo}</div>` : ''}
+          ${t.title ? `<div class="task-what"><strong>${escapeHtml(t.title)}</strong></div>` : ''}
+          ${t.phase ? `<div class="task-notes">Phase: ${escapeHtml(t.phase)}</div>` : ''}
+          ${t.files?.length ? `<div class="task-notes">Files: ${t.files.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}</div>` : ''}
+          ${t.endpoints?.length ? `<div class="task-notes">Endpoints: ${t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(', ')}</div>` : ''}
+          ${t.whatToDo ? `<div class="task-what">${escapeHtml(t.whatToDo)}</div>` : ''}
           ${t.dependsOn?.length ? `<div class="task-depends-on">Depends on: ${t.dependsOn.join(', ')}</div>` : ''}
           ${t.definitionOfDone?.length ? `
             <div class="task-dod">
               <div class="task-dod-title">Definition of Done:</div>
-              ${t.definitionOfDone.map(d => `<div>• ${d.description} ${d.completed ? '✓' : '○'}</div>`).join('')}
+              ${t.definitionOfDone.map(d => `<div>• ${escapeHtml(d.description)} ${d.completed ? '✓' : '○'}</div>`).join('')}
             </div>
           ` : ''}
-          ${t.notes ? `<div class="task-notes">Notes: ${t.notes}</div>` : ''}
+          ${(t.implementationNotes || t.notes) ? `
+            <details class="summary-block">
+              <summary>Notes</summary>
+              ${t.implementationNotes ? `<div class="task-notes"><strong>Implementation Notes:</strong><br>${escapeHtml(t.implementationNotes)}</div>` : ''}
+              ${t.notes ? `<div class="task-notes"><strong>Notes:</strong><br>${escapeHtml(t.notes)}</div>` : ''}
+            </details>
+          ` : ''}
         </div>
       `).join('') || '<p style="color:#94a3b8">No tasks defined</p>';
       
       document.getElementById('decisionsList').innerHTML = p.decisions?.map(d => `
         <tr>
-          <td>${d.decision}</td>
-          <td>${d.choice}</td>
-          <td>${d.date}</td>
+          <td>${escapeHtml(d.id || d.decision || '')}</td>
+          <td>${escapeHtml(d.description || d.choice || '')}</td>
+          <td>${escapeHtml(d.rationale || d.motivation || '')}</td>
+          <td>${escapeHtml(d.date || '')}</td>
         </tr>
-      `).join('') || '<tr><td colspan="3" style="color:#94a3b8;text-align:center">No decisions recorded</td></tr>';
+      `).join('') || '<tr><td colspan="4" style="color:#94a3b8;text-align:center">No decisions recorded</td></tr>';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
     }
     
     function formatStatus(status) {

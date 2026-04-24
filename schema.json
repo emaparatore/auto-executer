@@ -20,6 +20,14 @@
       "type": "string",
       "description": "Path to the requirements document"
     },
+    "objective": {
+      "type": ["string", "null"],
+      "description": "High-level objective/goal section extracted from the markdown"
+    },
+    "targetArchitecture": {
+      "type": ["string", "null"],
+      "description": "Target architecture section extracted from the markdown (may include code blocks)"
+    },
     "status": {
       "type": "string",
       "enum": ["pending", "in_progress", "completed", "cancelled"],
@@ -27,12 +35,27 @@
     },
     "created": {
       "type": "string",
-      "pattern": "^\d{4}-\d{2}-\d{2}$",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
       "description": "Creation date in YYYY-MM-DD format"
     },
     "lastUpdated": {
       "type": "string",
       "description": "Last update date with optional note"
+    },
+    "lastUpdatedNote": {
+      "type": ["string", "null"],
+      "description": "Optional note extracted from Last Updated (text in parentheses)"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Plan-level notes section"
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/phase"
+      },
+      "default": []
     },
     "decisions": {
       "type": "array",
@@ -55,9 +78,34 @@
     }
   },
   "definitions": {
+    "phase": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "id": {
+          "type": ["string", "null"],
+          "description": "Phase identifier (e.g., 'A', '1')"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs that belong to this phase",
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
     "decision": {
       "type": "object",
-      "required": ["id", "description"],
+      "anyOf": [
+        { "required": ["id", "description"] },
+        { "required": ["decision", "choice"] },
+        { "required": ["description"] }
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -71,8 +119,21 @@
         },
         "date": {
           "type": "string"
+        },
+        "decision": {
+          "type": "string",
+          "description": "Legacy/alternative decision title field"
+        },
+        "choice": {
+          "type": "string",
+          "description": "Legacy/alternative choice field"
+        },
+        "motivation": {
+          "type": "string",
+          "description": "Optional motivation/rationale (e.g., from a decisions table)"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "story": {
       "type": "object",
@@ -80,7 +141,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^US-\d{3,4}$"
+          "pattern": "^US-\\d{3,4}$"
         },
         "description": {
           "type": "string"
@@ -93,7 +154,8 @@
           "type": "string",
           "description": "Story status (e.g., 'Done', ' Done', 'in_progress', 'pending')"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "task": {
       "type": "object",
@@ -101,7 +163,15 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^T-\d{2}$"
+          "pattern": "^T-\\d{1,3}[A-Za-z0-9]*$"
+        },
+        "title": {
+          "type": ["string", "null"],
+          "description": "Task title extracted from the markdown heading"
+        },
+        "phase": {
+          "type": ["string", "null"],
+          "description": "Phase title this task belongs to"
         },
         "stories": {
           "type": "array",
@@ -112,7 +182,16 @@
         },
         "size": {
           "type": "string",
-          "enum": ["Small", "Medium", "Large", "ExtraLarge"]
+          "enum": [
+            "Small",
+            "Medium",
+            "Large",
+            "ExtraLarge",
+            "small",
+            "medium",
+            "large",
+            "extralarge"
+          ]
         },
         "status": {
           "type": "string",
@@ -124,6 +203,18 @@
             "type": "string"
           },
           "description": "Array of task IDs this task depends on"
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files referenced by the task (from **File:** / **Files:** fields)",
+          "default": []
+        },
+        "endpoints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Endpoints list extracted from an 'Endpoint:' section",
+          "default": []
         },
         "whatToDo": {
           "type": ["string", "null"],
@@ -148,11 +239,16 @@
           "type": ["string", "null"],
           "description": "Decision ID linked to this task"
         },
+        "implementationNotes": {
+          "type": ["string", "null"],
+          "description": "Implementation Notes block extracted from markdown"
+        },
         "notes": {
           "type": ["string", "null"],
           "description": "Additional notes"
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

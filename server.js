@@ -42,7 +42,7 @@ app.get('/api/plans/:id', (req, res) => {
 });
 
 app.get('/api/search', (req, res) => {
-  const query = (req.q || '').toLowerCase();
+  const query = (req.query.q || '').toLowerCase();
   if (!query) return res.json([]);
   
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
@@ -63,8 +63,11 @@ app.get('/api/search', (req, res) => {
     }
     
     for (const task of data.tasks || []) {
-      if (task.id?.toLowerCase().includes(query) || task.whatToDo?.toLowerCase().includes(query)) {
-        matches.push({ type: 'task', id: task.id, text: `${task.id}: ${task.whatToDo?.substring(0, 80)}...`, plan: data.id });
+      const what = task.whatToDo || '';
+      const title = task.title || '';
+      if (task.id?.toLowerCase().includes(query) || what.toLowerCase().includes(query) || title.toLowerCase().includes(query)) {
+        const preview = (title || what).substring(0, 80);
+        matches.push({ type: 'task', id: task.id, text: `${task.id}: ${preview}${preview.length === 80 ? '...' : ''}`, plan: data.id });
       }
     }
     
