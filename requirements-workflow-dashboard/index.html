@@ -108,15 +108,24 @@
     .task-id { font-weight: 600; font-size: 14px; color: #8b5cf6; }
     .task-meta { display: flex; gap: 8px; align-items: center; }
     .task-size { font-size: 11px; padding: 2px 8px; background: #f1f5f9; border-radius: 4px; color: #64748b; }
-    .task-status-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
     .task-status-select {
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      padding: 4px 8px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 4px 10px;
       font-size: 12px;
-      background: white;
-      color: #334155;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
     }
+    .task-status-select:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+    .task-status-select.status-in_progress { border-color: #86efac; }
+    .task-status-select.status-completed { border-color: #bfdbfe; }
+    .task-status-select.status-pending { border-color: #cbd5e1; }
+    .task-status-select.status-skipped { border-color: #fde68a; }
+    .task-status-select.status-cancelled { border-color: #fecaca; }
     .task-status-select:disabled { opacity: 0.6; cursor: wait; }
     .task-what { font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 12px; }
     .task-dependencies { font-size: 12px; color: #64748b; margin-bottom: 8px; }
@@ -358,8 +367,7 @@
             <span class="task-id">${t.id}</span>
             <div class="task-meta">
               <span class="task-size">${t.size || '-'}</span>
-              <span class="task-status-badge status-${t.status}">${formatStatus(t.status)}</span>
-              <select class="task-status-select" onchange="updateTaskStatus('${t.id}', this.value, this)">
+              <select class="task-status-select status-${t.status}" onchange="handleTaskStatusChange('${t.id}', this)">
                 ${TASK_STATUSES.map(status => `<option value="${status}" ${status === t.status ? 'selected' : ''}>${formatStatus(status)}</option>`).join('')}
               </select>
             </div>
@@ -416,6 +424,19 @@
       return map[status] || status;
     }
 
+    function setStatusSelectClass(selectEl, status) {
+      TASK_STATUSES.forEach(taskStatus => {
+        selectEl.classList.remove(`status-${taskStatus}`);
+      });
+      selectEl.classList.add(`status-${status}`);
+    }
+
+    function handleTaskStatusChange(taskId, selectEl) {
+      const nextStatus = selectEl.value;
+      setStatusSelectClass(selectEl, nextStatus);
+      updateTaskStatus(taskId, nextStatus, selectEl);
+    }
+
     async function updateTaskStatus(taskId, status, selectEl) {
       if (!currentPlan) return;
 
@@ -448,6 +469,7 @@
       } catch (error) {
         if (previousStatus) {
           selectEl.value = previousStatus;
+          setStatusSelectClass(selectEl, previousStatus);
         }
         alert(error.message);
       } finally {
