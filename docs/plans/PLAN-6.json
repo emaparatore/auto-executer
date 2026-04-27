@@ -4,10 +4,10 @@
   "requirements": "docs/requirements/FEAT-AUTOEXEC.md",
   "objective": "Automate the implementation of tasks defined in a plan-*.json file by interfacing with OpenCode (via SDK) to execute tasks autonomously within a sandbox, running tests, and committing changes.",
   "targetArchitecture": null,
-  "status": "pending",
+  "status": "in_progress",
   "created": "2026-04-24",
-  "lastUpdated": null,
-  "lastUpdatedNote": null,
+  "lastUpdated": "2026-04-24",
+  "lastUpdatedNote": "T-01, T-02 completed. CLI infrastructure and task discovery logic implemented.",
   "notes": null,
   "phases": [
     {
@@ -68,13 +68,13 @@
       "id": "US-001",
       "description": "Load and Validate Plan - Script accepts plan JSON file and validates it",
       "tasks": "T-01",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-002",
       "description": "Find Next Executable Task - Automatically find next pending task with satisfied dependencies",
       "tasks": "T-02",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-003",
@@ -132,17 +132,17 @@
       "phase": "Core Infrastructure",
       "stories": ["US-001"],
       "size": "Medium",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [],
       "files": ["package.json", "src/index.ts", "src/cli.ts"],
       "endpoints": [],
       "whatToDo": "Initialize Node.js project structure, set up CLI argument parsing for plan file path, implement JSON validation against schema.json",
       "definitionOfDone": [
-        {"description": "Project initialized with TypeScript", "completed": false},
-        {"description": "CLI accepts plan-*.json path argument", "completed": false},
-        {"description": "Script validates JSON against schema.json", "completed": false},
-        {"description": "Script exits with clear error if JSON is invalid or missing", "completed": false},
-        {"description": "Script prints plan title and task count on success", "completed": false}
+        {"description": "Project initialized with TypeScript", "completed": true},
+        {"description": "CLI accepts plan-*.json path argument", "completed": true},
+        {"description": "Script validates JSON against schema.json", "completed": true},
+        {"description": "Script exits with clear error if JSON is invalid or missing", "completed": true},
+        {"description": "Script prints plan title and task count on success", "completed": true}
       ],
       "decision": null,
       "implementationNotes": null,
@@ -154,16 +154,16 @@
       "phase": "Core Infrastructure",
       "stories": ["US-002"],
       "size": "Small",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": ["T-01"],
       "files": ["src/taskDiscovery.ts"],
       "endpoints": [],
       "whatToDo": "Implement logic to find first task with status 'pending' that has all dependencies satisfied",
       "definitionOfDone": [
-        {"description": "Script identifies first task with status: pending", "completed": false},
-        {"description": "Script verifies all IDs in dependsOn have status: completed or skipped", "completed": false},
-        {"description": "Script skips tasks with status: skipped or cancelled", "completed": false},
-        {"description": "Script reports 'No pending tasks' when all are done or blocked", "completed": false}
+        {"description": "Script identifies first task with status: pending", "completed": true},
+        {"description": "Script verifies all IDs in dependsOn have status: completed or skipped", "completed": true},
+        {"description": "Script skips tasks with status: skipped or cancelled", "completed": true},
+        {"description": "Script reports 'No pending tasks' when all are done or blocked", "completed": true}
       ],
       "decision": null,
       "implementationNotes": null,
