@@ -289,34 +289,111 @@ details.summary-block { margin-top: 10px; }
 .task-meta { display: flex; gap: 8px; align-items: center; }
 .task-size { font-size: 12px; padding: 2px 8px; background: rgba(157, 152, 143, 0.2); border-radius: 4px; color: #e5e0d8; }
 
-.task-status-select {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.task-status-dropdown { position: relative; }
+
+.task-status-dropdown.status-in_progress,
+.task-status-dropdown.status-completed,
+.task-status-dropdown.status-pending,
+.task-status-dropdown.status-skipped,
+.task-status-dropdown.status-cancelled {
+  background: transparent;
+  color: inherit;
+}
+
+.task-status-trigger {
+  border: none;
   border-radius: 999px;
   padding: 4px 12px;
+  min-width: 128px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.1px;
   cursor: pointer;
   color: var(--ink);
   background: rgba(56, 60, 65, 0.65);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  color-scheme: dark;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease, color 0.22s ease, transform 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.task-status-select:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(214, 207, 194, 0.34); }
-.task-status-select.status-in_progress { border-color: rgba(255, 255, 255, 0.14); background: var(--status-progress-bg); color: var(--status-progress-fg); }
-.task-status-select.status-completed { border-color: rgba(255, 255, 255, 0.14); background: var(--status-completed-bg); color: var(--status-completed-fg); }
-.task-status-select.status-pending { border-color: rgba(255, 255, 255, 0.14); background: var(--status-pending-bg); color: var(--status-pending-fg); }
-.task-status-select.status-skipped { border-color: rgba(255, 255, 255, 0.14); background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
-.task-status-select.status-cancelled { border-color: rgba(255, 255, 255, 0.14); background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
-.task-status-select:disabled { opacity: 0.6; cursor: wait; }
+.task-status-trigger:hover { }
 
-.task-status-select option {
-  background: #23262a;
-  color: #f3eee4;
+.task-status-trigger:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(214, 207, 194, 0.28); }
+
+.task-status-trigger.status-in_progress { background: var(--status-progress-bg); color: var(--status-progress-fg); }
+.task-status-trigger.status-completed { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+.task-status-trigger.status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
+.task-status-trigger.status-skipped { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
+.task-status-trigger.status-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+
+.task-status-caret {
+  opacity: 0.9;
+  transition: transform 0.2s ease;
+}
+
+.task-status-dropdown.is-open .task-status-caret {
+  transform: rotate(180deg);
+}
+
+.task-status-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 172px;
+  background: rgba(35, 38, 42, 0.98);
+  border: 1px solid rgba(214, 207, 194, 0.24);
+  border-radius: 12px;
+  padding: 6px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.22s ease;
+  z-index: 5;
+}
+
+.task-status-dropdown.is-open .task-status-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.task-status-option {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.task-status-option + .task-status-option { margin-top: 4px; }
+
+.task-status-option:hover,
+.task-status-option.is-current {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.task-status-option.status-in_progress:hover,
+.task-status-option.status-in_progress.is-current { background: var(--status-progress-bg); color: var(--status-progress-fg); }
+.task-status-option.status-completed:hover,
+.task-status-option.status-completed.is-current { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+.task-status-option.status-pending:hover,
+.task-status-option.status-pending.is-current { background: var(--status-pending-bg); color: var(--status-pending-fg); }
+.task-status-option.status-skipped:hover,
+.task-status-option.status-skipped.is-current { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
+.task-status-option.status-cancelled:hover,
+.task-status-option.status-cancelled.is-current { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+
+.task-status-dropdown.is-updating {
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 .task-what { font-size: 17px; color: #f4efe7; line-height: 1.86; margin-bottom: 12px; max-width: 86ch; }

@@ -130,9 +130,22 @@ function renderDetail() {
         <span class="task-id">${escapeHtml(t.id)}</span>
         <div class="task-meta">
           <span class="task-size">${escapeHtml(t.size || '-')}</span>
-          <select class="task-status-select status-${escapeHtml(t.status)}" onchange="handleTaskStatusChangeByEncodedId('${encodeURIComponent(t.id)}', this)">
-            ${TASK_STATUSES.map(status => `<option value="${status}" ${status === t.status ? 'selected' : ''}>${formatStatus(status)}</option>`).join('')}
-          </select>
+          <div class="task-status-dropdown status-${escapeHtml(t.status)}">
+            <button type="button" class="task-status-trigger status-${escapeHtml(t.status)}" onclick="toggleTaskStatusDropdown(this)">
+              <span class="task-status-label">${formatStatus(t.status)}</span>
+              <span class="task-status-caret">▾</span>
+            </button>
+            <div class="task-status-menu">
+              ${TASK_STATUSES.map(status => `
+                <button
+                  type="button"
+                  class="task-status-option status-${status}${status === t.status ? ' is-current' : ''}"
+                  onclick="handleTaskStatusChangeByEncodedId('${encodeURIComponent(t.id)}', '${status}', this)">
+                  ${formatStatus(status)}
+                </button>
+              `).join('')}
+            </div>
+          </div>
         </div>
       </div>
       ${t.title ? `<div class="task-what"><strong>${escapeHtml(t.title)}</strong></div>` : ''}
@@ -187,11 +200,25 @@ function formatStatus(status) {
   return map[status] || status;
 }
 
-function setStatusSelectClass(selectEl, status) {
+function setStatusSelectClass(controlRoot, status) {
+  if (!controlRoot) return;
+
+  const trigger = controlRoot.querySelector('.task-status-trigger');
+  const label = controlRoot.querySelector('.task-status-label');
+  const options = controlRoot.querySelectorAll('.task-status-option');
+
   TASK_STATUSES.forEach(taskStatus => {
-    selectEl.classList.remove(`status-${taskStatus}`);
+    controlRoot.classList.remove(`status-${taskStatus}`);
+    trigger?.classList.remove(`status-${taskStatus}`);
   });
-  selectEl.classList.add(`status-${status}`);
+
+  controlRoot.classList.add(`status-${status}`);
+  trigger?.classList.add(`status-${status}`);
+  if (label) label.textContent = formatStatus(status);
+
+  options.forEach(option => {
+    option.classList.toggle('is-current', option.classList.contains(`status-${status}`));
+  });
 }
 
 function normalizeStoryStatus(status) {
@@ -201,25 +228,28 @@ function normalizeStoryStatus(status) {
   return 'in_progress';
 }
 
-function handleTaskStatusChange(taskId, selectEl) {
-  const nextStatus = selectEl.value;
-  setStatusSelectClass(selectEl, nextStatus);
-  updateTaskStatus(taskId, nextStatus, selectEl);
+function handleTaskStatusChange(taskId, nextStatus, optionEl) {
+  const dropdownRoot = optionEl.closest('.task-status-dropdown');
+  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
+
+  dropdownRoot.classList.remove('is-open');
+  setStatusSelectClass(dropdownRoot, nextStatus);
+  updateTaskStatus(taskId, nextStatus, dropdownRoot);
 }
 
-function handleTaskStatusChangeByEncodedId(encodedTaskId, selectEl) {
-  handleTaskStatusChange(decodeURIComponent(encodedTaskId), selectEl);
+function handleTaskStatusChangeByEncodedId(encodedTaskId, nextStatus, optionEl) {
+  handleTaskStatusChange(decodeURIComponent(encodedTaskId), nextStatus, optionEl);
 }
 
 function selectPlanByEncodedId(encodedPlanId) {
   return selectPlan(decodeURIComponent(encodedPlanId));
 }
 
-async function updateTaskStatus(taskId, status, selectEl) {
+async function updateTaskStatus(taskId, status, dropdownRoot) {
   if (!currentPlan) return;
 
   const previousStatus = currentPlan.tasks?.find(t => t.id === taskId)?.status;
-  selectEl.disabled = true;
+  dropdownRoot.classList.add('is-updating');
 
   try {
     const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/tasks/${encodeURIComponent(taskId)}/status`, {
@@ -248,14 +278,26 @@ async function updateTaskStatus(taskId, status, selectEl) {
 
     renderDetail();
   } catch (error) {
-    if (previousStatus) {
-      selectEl.value = previousStatus;
-      setStatusSelectClass(selectEl, previousStatus);
-    }
+    if (previousStatus) setStatusSelectClass(dropdownRoot, previousStatus);
     alert(error.message);
   } finally {
-    selectEl.disabled = false;
+    dropdownRoot.classList.remove('is-updating');
   }
+}
+
+function toggleTaskStatusDropdown(triggerEl) {
+  const dropdownRoot = triggerEl.closest('.task-status-dropdown');
+  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
+
+  const willOpen = !dropdownRoot.classList.contains('is-open');
+  closeAllTaskStatusDropdowns();
+  if (willOpen) dropdownRoot.classList.add('is-open');
+}
+
+function closeAllTaskStatusDropdowns() {
+  document.querySelectorAll('.task-status-dropdown.is-open').forEach(dropdown => {
+    dropdown.classList.remove('is-open');
+  });
 }
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -313,11 +355,16 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.search-box')) {
     searchResults.classList.remove('show');
   }
+
+  if (!e.target.closest('.task-status-dropdown')) {
+    closeAllTaskStatusDropdowns();
+  }
 });
 
 window.selectPlan = selectPlan;
 window.handleTaskStatusChange = handleTaskStatusChange;
 window.selectPlanByEncodedId = selectPlanByEncodedId;
 window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
+window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
 
 loadPlans();
