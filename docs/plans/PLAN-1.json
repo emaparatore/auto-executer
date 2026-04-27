@@ -539,7 +539,7 @@
         "US-008"
       ],
       "size": "Large",
-      "status": "in_progress",
+      "status": "completed",
       "dependsOn": [
         "T-03",
         "T-06"
@@ -1276,7 +1276,7 @@
         "US-015"
       ],
       "size": "Medium",
-      "status": "skipped",
+      "status": "completed",
       "dependsOn": [
         "T-14"
       ],

@@ -47,6 +47,8 @@
     .status-in_progress { background: #dcfce7; color: #15803d; }
     .status-completed { background: #dbeafe; color: #1d4ed8; }
     .status-pending { background: #f1f5f9; color: #64748b; }
+    .status-skipped { background: #fef3c7; color: #b45309; }
+    .status-cancelled { background: #fee2e2; color: #b91c1c; }
     .plan-item-title { font-size: 13px; color: #475569; line-height: 1.4; }
     .plan-item-meta { margin-top: 8px; display: flex; gap: 12px; font-size: 11px; color: #94a3b8; }
     
@@ -107,6 +109,15 @@
     .task-meta { display: flex; gap: 8px; align-items: center; }
     .task-size { font-size: 11px; padding: 2px 8px; background: #f1f5f9; border-radius: 4px; color: #64748b; }
     .task-status-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .task-status-select {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: white;
+      color: #334155;
+    }
+    .task-status-select:disabled { opacity: 0.6; cursor: wait; }
     .task-what { font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 12px; }
     .task-dependencies { font-size: 12px; color: #64748b; margin-bottom: 8px; }
     .task-depends-on { color: #8b5cf6; }
@@ -225,6 +236,7 @@
   <script>
     let plans = [];
     let currentPlan = null;
+    const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
     
     async function loadPlans() {
       const res = await fetch('/api/plans');
@@ -346,7 +358,10 @@
             <span class="task-id">${t.id}</span>
             <div class="task-meta">
               <span class="task-size">${t.size || '-'}</span>
-              <span class="task-status-badge status-${t.status === 'completed' ? 'completed' : 'pending'}">${t.status}</span>
+              <span class="task-status-badge status-${t.status}">${formatStatus(t.status)}</span>
+              <select class="task-status-select" onchange="updateTaskStatus('${t.id}', this.value, this)">
+                ${TASK_STATUSES.map(status => `<option value="${status}" ${status === t.status ? 'selected' : ''}>${formatStatus(status)}</option>`).join('')}
+              </select>
             </div>
           </div>
           ${t.title ? `<div class="task-what"><strong>${escapeHtml(t.title)}</strong></div>` : ''}
@@ -391,8 +406,53 @@
     }
     
     function formatStatus(status) {
-      const map = { 'in_progress': 'In Progress', 'completed': 'Completed', 'pending': 'Pending' };
+      const map = {
+        'in_progress': 'In Progress',
+        'completed': 'Completed',
+        'pending': 'Pending',
+        'skipped': 'Skipped',
+        'cancelled': 'Cancelled'
+      };
       return map[status] || status;
+    }
+
+    async function updateTaskStatus(taskId, status, selectEl) {
+      if (!currentPlan) return;
+
+      const previousStatus = currentPlan.tasks?.find(t => t.id === taskId)?.status;
+      selectEl.disabled = true;
+
+      try {
+        const res = await fetch(`/api/plans/${currentPlan.id}/tasks/${encodeURIComponent(taskId)}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Unable to update task status');
+        }
+
+        const updated = await res.json();
+        const task = currentPlan.tasks?.find(t => t.id === taskId);
+        if (task) task.status = updated.task.status;
+        currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
+
+        const planCard = plans.find(p => p.id === currentPlan.id);
+        if (planCard) {
+          planCard.lastUpdated = currentPlan.lastUpdated;
+        }
+
+        renderDetail();
+      } catch (error) {
+        if (previousStatus) {
+          selectEl.value = previousStatus;
+        }
+        alert(error.message);
+      } finally {
+        selectEl.disabled = false;
+      }
     }
     
     document.querySelectorAll('.tab').forEach(tab => {

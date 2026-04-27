@@ -9,8 +9,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3500;
 
-const PLANS_DIR = path.join(__dirname, 'docs', 'plans');
+const PLANS_DIR = path.join(__dirname, '..', 'docs', 'plans');
 
+app.use(express.json());
 app.use(express.static(__dirname));
 
 app.get('/api/plans', (req, res) => {
@@ -39,6 +40,32 @@ app.get('/api/plans/:id', (req, res) => {
   }
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   res.json(data);
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
+  const filePath = path.join(PLANS_DIR, `${req.params.id}.json`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { status } = req.body || {};
+  const allowedStatuses = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
+  if (typeof status !== 'string' || !allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${allowedStatuses.join(', ')}` });
+  }
+
+  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  task.status = status;
+  data.lastUpdated = new Date().toISOString().slice(0, 10);
+  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+
+  res.json({ ok: true, task, lastUpdated: data.lastUpdated });
 });
 
 app.get('/api/search', (req, res) => {
