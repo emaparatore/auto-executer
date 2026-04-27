@@ -63,10 +63,10 @@ function renderDetail() {
   document.getElementById('decisionsCount').textContent = p.decisions?.length || 0;
 
   document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card"><div class="stat-value">${p.stories?.length || 0}</div><div class="stat-label">Stories</div></div>
-    <div class="stat-card"><div class="stat-value">${storiesDone}</div><div class="stat-label">Stories Done</div></div>
-    <div class="stat-card"><div class="stat-value">${tasksTotal}</div><div class="stat-label">Tasks</div></div>
-    <div class="stat-card"><div class="stat-value">${tasksDone}</div><div class="stat-label">Tasks Done</div></div>
+    <div class="stat-card stat-stories"><div class="stat-value">${p.stories?.length || 0}</div><div class="stat-label">Stories</div></div>
+    <div class="stat-card stat-stories-done"><div class="stat-value">${storiesDone}</div><div class="stat-label">Stories Done</div></div>
+    <div class="stat-card stat-tasks"><div class="stat-value">${tasksTotal}</div><div class="stat-label">Tasks</div></div>
+    <div class="stat-card stat-tasks-done"><div class="stat-value">${tasksDone}</div><div class="stat-label">Tasks Done</div></div>
   `;
 
   const tasksById = new Map(tasks.map(task => [task.id, task]));
