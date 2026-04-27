@@ -148,12 +148,12 @@ function renderDetail() {
           </div>
         </div>
       </div>
-      ${t.title ? `<div class="task-what"><strong>${escapeHtml(t.title)}</strong></div>` : ''}
-      ${t.phase ? `<div class="task-notes">Phase: ${escapeHtml(t.phase)}</div>` : ''}
-      ${t.files?.length ? `<div class="task-notes">Files: ${t.files.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}</div>` : ''}
-      ${t.endpoints?.length ? `<div class="task-notes">Endpoints: ${t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(', ')}</div>` : ''}
+      ${t.title ? `<div class="task-title">${escapeHtml(t.title)}</div>` : ''}
+      ${t.phase ? `<div class="task-phase"><span class="task-context-label">Phase</span><span class="task-phase-value">${escapeHtml(t.phase)}</span></div>` : ''}
+      ${t.files?.length ? `<div class="task-context-row"><span class="task-context-label">Files</span><span class="task-context-values">${t.files.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}</span></div>` : ''}
+      ${t.endpoints?.length ? `<div class="task-context-row"><span class="task-context-label">Endpoints</span><span class="task-context-values">${t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(', ')}</span></div>` : ''}
       ${t.whatToDo ? `<div class="task-what">${escapeHtml(t.whatToDo)}</div>` : ''}
-      ${t.dependsOn?.length ? `<div class="task-depends-on">Depends on: ${t.dependsOn.map(item => escapeHtml(item)).join(', ')}</div>` : ''}
+      ${t.dependsOn?.length ? `<div class="task-depends-on"><span class="task-context-label">Depends on</span><span class="task-context-values">${t.dependsOn.map(item => `<code>${escapeHtml(item)}</code>`).join(', ')}</span></div>` : ''}
       ${t.definitionOfDone?.length ? `
         <div class="task-dod">
           <div class="task-dod-title">Definition of Done:</div>
