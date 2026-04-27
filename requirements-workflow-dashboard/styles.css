@@ -225,7 +225,7 @@ body::after {
 .detail-title { font-family: 'Lora', Georgia, serif; font-size: 42px; font-weight: 600; color: var(--ink); margin-top: 2px; line-height: 1.16; max-width: 28ch; }
 .detail-meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
 .detail-meta-item { font-size: 14px; }
-.detail-meta-label { color: var(--ink-dim); }
+.detail-meta-label { color: #c7c0b3; }
 .detail-meta-value { color: var(--ink); font-weight: 600; }
 
 .tabs {
@@ -236,7 +236,7 @@ body::after {
   overflow: hidden;
 }
 
-.tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: var(--ink-dim); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
+.tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: #c8c1b5; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
 .tab:hover { color: #d6d2ca; }
 .tab.active { color: #e5e2db; border-bottom-color: var(--brand); }
 .tab-count { display: inline-block; background: rgba(154, 151, 143, 0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 6px; }
@@ -398,8 +398,50 @@ details.summary-block { margin-top: 10px; }
 
 .task-what { font-size: 17px; color: #f4efe7; line-height: 1.86; margin-bottom: 12px; max-width: 86ch; }
 .task-depends-on { color: #d7d1c6; font-size: 13px; }
-.task-dod { font-size: 14px; background: rgba(56, 60, 65, 0.56); border: 1px solid rgba(201, 193, 178, 0.24); padding: 12px; border-radius: 8px; margin-top: 12px; color: #ece7dd; line-height: 1.74; }
-.task-dod-title { font-weight: 700; color: #d1ccc2; margin-bottom: 4px; }
+.task-dod {
+  font-size: 15px;
+  background: linear-gradient(160deg, rgba(59, 63, 69, 0.46), rgba(47, 51, 56, 0.5));
+  border: 1px solid rgba(201, 193, 178, 0.28);
+  padding: 14px 14px 12px;
+  border-radius: 8px;
+  margin-top: 14px;
+  color: #f1ece2;
+}
+
+.task-dod-title {
+  font-weight: 700;
+  color: #e0d9cb;
+  margin-bottom: 8px;
+}
+
+.task-dod-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #dfd8cc;
+  line-height: 1.62;
+}
+
+.task-dod-item + .task-dod-item {
+  margin-top: 4px;
+}
+
+.task-dod-bullet {
+  display: inline-flex;
+  width: 16px;
+  justify-content: center;
+  color: #bfb7a9;
+  font-weight: 700;
+  transform: translateY(1px);
+}
+
+.task-dod-item.is-completed {
+  color: #f0eee7;
+}
+
+.task-dod-item.is-completed .task-dod-bullet {
+  color: #9edbb2;
+}
 .task-notes { font-size: 15px; color: #dad4c8; margin-top: 8px; font-style: italic; line-height: 1.74; }
 
 .summary-block {

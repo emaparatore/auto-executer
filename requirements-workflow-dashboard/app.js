@@ -157,7 +157,12 @@ function renderDetail() {
       ${t.definitionOfDone?.length ? `
         <div class="task-dod">
           <div class="task-dod-title">Definition of Done:</div>
-          ${t.definitionOfDone.map(d => `<div>• ${escapeHtml(d.description)} ${d.completed ? '✓' : '○'}</div>`).join('')}
+          ${t.definitionOfDone.map(d => `
+            <div class="task-dod-item${d.completed ? ' is-completed' : ''}">
+              <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
+              <span>${escapeHtml(d.description)}</span>
+            </div>
+          `).join('')}
         </div>
       ` : ''}
       ${(t.implementationNotes || t.notes) ? `
