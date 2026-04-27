@@ -27,6 +27,9 @@
   --status-skipped-fg: #fff2df;
   --status-cancelled-bg: rgba(174, 109, 109, 0.5);
   --status-cancelled-fg: #fff0f0;
+  --badge-height: 24px;
+  --badge-radius: 999px;
+  --badge-border: rgba(255, 255, 255, 0.12);
   --radius: 14px;
   --radius-sm: 10px;
   --shadow-deep: 0 22px 50px rgba(5, 7, 5, 0.45);
@@ -190,7 +193,24 @@ body::after {
 .plan-item.active { background: rgba(142, 140, 135, 0.22); border-left: 3px solid var(--brand); }
 .plan-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
 .plan-item-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #cecac1; }
-.plan-item-status { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; letter-spacing: 0.25px; border: 1px solid rgba(255, 255, 255, 0.12); }
+.plan-item-status,
+.story-status,
+.task-size,
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--badge-height);
+  padding: 0 10px;
+  border-radius: var(--badge-radius);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  border: 1px solid var(--badge-border);
+}
+
+.plan-item-status { min-width: 92px; }
 .status-in_progress { background: var(--status-progress-bg); color: var(--status-progress-fg); }
 .status-completed { background: var(--status-completed-bg); color: var(--status-completed-fg); }
 .status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
@@ -239,7 +259,12 @@ body::after {
 .tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: #c8c1b5; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
 .tab:hover { color: #d6d2ca; }
 .tab.active { color: #e5e2db; border-bottom-color: var(--brand); }
-.tab-count { display: inline-block; background: rgba(154, 151, 143, 0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 6px; }
+.tab-count {
+  margin-left: 6px;
+  min-width: 34px;
+  background: rgba(154, 151, 143, 0.24);
+  color: #e4dfd6;
+}
 
 .tab-content { padding: 24px; display: none; }
 .tab-content.show { display: block; }
@@ -271,7 +296,6 @@ details.summary-block { margin-top: 10px; }
 .story-item:hover { border-color: rgba(154, 151, 143, 0.5); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25); transform: translateY(-1px); }
 .story-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .story-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #cbc6bb; }
-.story-status { font-size: 11px; padding: 4px 9px; border-radius: 20px; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.12); }
 .story-description { font-size: 17px; color: #f2ede4; line-height: 1.78; }
 .story-tasks { margin-top: 8px; font-size: 14px; color: var(--ink-soft); }
 
@@ -287,7 +311,7 @@ details.summary-block { margin-top: 10px; }
 .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 10px; }
 .task-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #d0cbc1; }
 .task-meta { display: flex; gap: 8px; align-items: center; }
-.task-size { font-size: 12px; padding: 2px 8px; background: rgba(157, 152, 143, 0.2); border-radius: 4px; color: #e5e0d8; }
+.task-size { min-width: 58px; background: rgba(157, 152, 143, 0.22); color: #ece6da; }
 
 .task-status-dropdown { position: relative; }
 
@@ -301,13 +325,14 @@ details.summary-block { margin-top: 10px; }
 }
 
 .task-status-trigger {
-  border: none;
-  border-radius: 999px;
-  padding: 4px 12px;
+  border: 1px solid var(--badge-border);
+  border-radius: var(--badge-radius);
+  min-height: var(--badge-height);
+  padding: 0 12px;
   min-width: 128px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
   cursor: pointer;
   color: var(--ink);
   background: rgba(56, 60, 65, 0.65);
