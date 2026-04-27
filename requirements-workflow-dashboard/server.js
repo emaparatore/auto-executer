@@ -41,6 +41,44 @@ function touchPlan(data) {
   data.lastUpdated = new Date().toISOString().slice(0, 10);
 }
 
+function parseStoryTaskIds(tasksValue) {
+  if (Array.isArray(tasksValue)) {
+    return tasksValue.map(value => String(value).trim()).filter(Boolean);
+  }
+  if (typeof tasksValue !== 'string') return [];
+  return tasksValue.split(',').map(value => value.trim()).filter(Boolean);
+}
+
+function normalizeStoryStatus(status) {
+  const value = String(status || '').trim().toLowerCase();
+  if (value === 'completed' || value === 'done') return 'completed';
+  return 'in_progress';
+}
+
+function computeStoryStatusFromTasks(story, tasksById) {
+  const taskIds = parseStoryTaskIds(story?.tasks);
+  if (!taskIds.length) return 'in_progress';
+  const allCompleted = taskIds.every(taskId => tasksById.get(taskId)?.status === 'completed');
+  return allCompleted ? 'completed' : 'in_progress';
+}
+
+function recomputeStoriesFromTasks(data) {
+  if (!Array.isArray(data?.stories)) return false;
+
+  const tasksById = new Map((data.tasks || []).map(task => [task.id, task]));
+  let hasChanges = false;
+
+  for (const story of data.stories) {
+    const nextStatus = computeStoryStatusFromTasks(story, tasksById);
+    if (normalizeStoryStatus(story.status) !== nextStatus) {
+      story.status = nextStatus;
+      hasChanges = true;
+    }
+  }
+
+  return hasChanges;
+}
+
 app.get('/api/plans', (req, res) => {
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
   const plans = files.map(file => {
@@ -87,10 +125,17 @@ app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   }
 
   task.status = status;
+  const storiesChanged = recomputeStoriesFromTasks(data);
   touchPlan(data);
   writePlan(filePath, data);
 
-  res.json({ ok: true, task, lastUpdated: data.lastUpdated });
+  res.json({
+    ok: true,
+    task,
+    stories: data.stories || [],
+    storiesChanged,
+    lastUpdated: data.lastUpdated
+  });
 });
 
 app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {

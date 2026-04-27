@@ -201,70 +201,6 @@ function normalizeStoryStatus(status) {
   return 'in_progress';
 }
 
-function parseStoryTaskIds(tasksValue) {
-  if (Array.isArray(tasksValue)) {
-    return tasksValue.map(v => String(v).trim()).filter(Boolean);
-  }
-  if (typeof tasksValue !== 'string') return [];
-  return tasksValue.split(',').map(v => v.trim()).filter(Boolean);
-}
-
-function computeStoryStatusFromTasks(story, tasksById) {
-  const taskIds = parseStoryTaskIds(story?.tasks);
-  if (!taskIds.length) return 'in_progress';
-
-  const allCompleted = taskIds.every(taskId => tasksById.get(taskId)?.status === 'completed');
-  return allCompleted ? 'completed' : 'in_progress';
-}
-
-async function updateStoryStatus(storyId, status) {
-  if (!currentPlan) return null;
-
-  const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/stories/${encodeURIComponent(storyId)}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Unable to update story status');
-  }
-
-  return res.json();
-}
-
-async function syncStoriesStatuses() {
-  if (!currentPlan || !Array.isArray(currentPlan.stories)) return;
-
-  const tasksById = new Map((currentPlan.tasks || []).map(task => [task.id, task]));
-  const storiesToUpdate = currentPlan.stories
-    .map(story => {
-      const nextStatus = computeStoryStatusFromTasks(story, tasksById);
-      const currentStatus = normalizeStoryStatus(story.status);
-      return currentStatus !== nextStatus ? { story, nextStatus } : null;
-    })
-    .filter(Boolean);
-
-  if (!storiesToUpdate.length) return;
-
-  const updates = await Promise.all(storiesToUpdate.map(({ story, nextStatus }) => updateStoryStatus(story.id, nextStatus)));
-  const updatesById = new Map(updates.filter(Boolean).map(u => [u.story?.id, u]));
-
-  for (const story of currentPlan.stories) {
-    const updated = updatesById.get(story.id);
-    if (updated?.story?.status) {
-      story.status = updated.story.status;
-      currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
-    }
-  }
-
-  const planCard = plans.find(p => p.id === currentPlan.id);
-  if (planCard) {
-    planCard.lastUpdated = currentPlan.lastUpdated;
-  }
-}
-
 function handleTaskStatusChange(taskId, selectEl) {
   const nextStatus = selectEl.value;
   setStatusSelectClass(selectEl, nextStatus);
@@ -300,6 +236,9 @@ async function updateTaskStatus(taskId, status, selectEl) {
     const updated = await res.json();
     const task = currentPlan.tasks?.find(t => t.id === taskId);
     if (task) task.status = updated.task.status;
+    if (Array.isArray(updated.stories)) {
+      currentPlan.stories = updated.stories;
+    }
     currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
 
     const planCard = plans.find(p => p.id === currentPlan.id);
@@ -320,16 +259,7 @@ async function updateTaskStatus(taskId, status, selectEl) {
 }
 
 document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', async () => {
-    if (tab.dataset.tab === 'stories') {
-      try {
-        await syncStoriesStatuses();
-        renderDetail();
-      } catch (error) {
-        alert(error.message);
-      }
-    }
-
+  tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
     tab.classList.add('active');
