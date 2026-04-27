@@ -10,9 +10,36 @@ const app = express();
 const PORT = 3500;
 
 const PLANS_DIR = path.join(__dirname, '..', 'docs', 'plans');
+const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
+const STORY_STATUSES = ['in_progress', 'completed'];
 
 app.use(express.json());
 app.use(express.static(__dirname));
+
+function getPlanFilePath(planId) {
+  return path.join(PLANS_DIR, `${planId}.json`);
+}
+
+function readPlanById(planId) {
+  const filePath = getPlanFilePath(planId);
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  return { filePath, data };
+}
+
+function writePlan(filePath, data) {
+  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+}
+
+function validateStatus(status, allowedStatuses) {
+  return typeof status === 'string' && allowedStatuses.includes(status);
+}
+
+function touchPlan(data) {
+  data.lastUpdated = new Date().toISOString().slice(0, 10);
+}
 
 app.get('/api/plans', (req, res) => {
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
@@ -34,27 +61,25 @@ app.get('/api/plans', (req, res) => {
 });
 
 app.get('/api/plans/:id', (req, res) => {
-  const filePath = path.join(PLANS_DIR, `${req.params.id}.json`);
-  if (!fs.existsSync(filePath)) {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
     return res.status(404).json({ error: 'Plan not found' });
   }
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  res.json(data);
+  res.json(plan.data);
 });
 
 app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
-  const filePath = path.join(PLANS_DIR, `${req.params.id}.json`);
-  if (!fs.existsSync(filePath)) {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
     return res.status(404).json({ error: 'Plan not found' });
   }
 
   const { status } = req.body || {};
-  const allowedStatuses = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
-  if (typeof status !== 'string' || !allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: `Invalid status. Allowed: ${allowedStatuses.join(', ')}` });
+  if (!validateStatus(status, TASK_STATUSES)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${TASK_STATUSES.join(', ')}` });
   }
 
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  const { filePath, data } = plan;
   const task = (data.tasks || []).find(t => t.id === req.params.taskId);
 
   if (!task) {
@@ -62,25 +87,24 @@ app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   }
 
   task.status = status;
-  data.lastUpdated = new Date().toISOString().slice(0, 10);
-  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+  touchPlan(data);
+  writePlan(filePath, data);
 
   res.json({ ok: true, task, lastUpdated: data.lastUpdated });
 });
 
 app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
-  const filePath = path.join(PLANS_DIR, `${req.params.id}.json`);
-  if (!fs.existsSync(filePath)) {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
     return res.status(404).json({ error: 'Plan not found' });
   }
 
   const { status } = req.body || {};
-  const allowedStatuses = ['in_progress', 'completed'];
-  if (typeof status !== 'string' || !allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: `Invalid status. Allowed: ${allowedStatuses.join(', ')}` });
+  if (!validateStatus(status, STORY_STATUSES)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${STORY_STATUSES.join(', ')}` });
   }
 
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  const { filePath, data } = plan;
   const story = (data.stories || []).find(s => s.id === req.params.storyId);
 
   if (!story) {
@@ -88,8 +112,8 @@ app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
   }
 
   story.status = status;
-  data.lastUpdated = new Date().toISOString().slice(0, 10);
-  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+  touchPlan(data);
+  writePlan(filePath, data);
 
   res.json({ ok: true, story, lastUpdated: data.lastUpdated });
 });

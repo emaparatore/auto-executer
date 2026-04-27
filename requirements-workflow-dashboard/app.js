@@ -1,0 +1,393 @@
+let plans = [];
+let currentPlan = null;
+let searchDebounceTimer = null;
+
+const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
+
+async function loadPlans() {
+  const res = await fetch('/api/plans');
+  plans = await res.json();
+
+  document.getElementById('plansCount').textContent = `(${plans.length})`;
+  renderPlansList();
+}
+
+function renderPlansList() {
+  const container = document.getElementById('plansList');
+  container.innerHTML = plans.map(plan => `
+    <div class="plan-item" data-id="${escapeHtml(plan.id)}" onclick="selectPlanByEncodedId('${encodeURIComponent(plan.id)}')">
+      <div class="plan-item-header">
+        <span class="plan-item-id">${escapeHtml(plan.id)}</span>
+        <span class="plan-item-status status-${escapeHtml(plan.status)}">${formatStatus(plan.status)}</span>
+      </div>
+      <div class="plan-item-title">${escapeHtml(plan.title)}</div>
+      <div class="plan-item-meta">
+        <span>${plan.storiesCount} stories</span>
+        <span>${plan.tasksCount} tasks</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function selectPlan(id) {
+  document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
+
+  const res = await fetch(`/api/plans/${encodeURIComponent(id)}`);
+  currentPlan = await res.json();
+  renderDetail();
+}
+
+function renderDetail() {
+  const p = currentPlan;
+  const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('detailView').classList.add('show');
+
+  document.getElementById('detailId').textContent = p.id;
+  document.getElementById('detailTitle').textContent = p.title;
+  document.getElementById('detailStatus').textContent = formatStatus(p.status);
+  document.getElementById('detailStatus').className = `plan-item-status status-${p.status}`;
+  document.getElementById('detailCreated').textContent = p.created || 'N/A';
+  document.getElementById('detailLastUpdated').textContent = p.lastUpdated || 'N/A';
+  document.getElementById('detailRequirements').textContent = p.requirements || 'None';
+
+  const storiesDone = p.stories?.filter(s => normalizeStoryStatus(s.status) === 'completed').length || 0;
+  const tasksDone = tasks.filter(t => t.status === 'completed').length;
+  const tasksTotal = tasks.length;
+
+  document.getElementById('overviewCount').textContent = `${storiesDone}/${p.stories?.length || 0}`;
+  document.getElementById('storiesCount').textContent = p.stories?.length || 0;
+  document.getElementById('tasksCount').textContent = `${tasksDone}/${tasksTotal}`;
+  document.getElementById('decisionsCount').textContent = p.decisions?.length || 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${p.stories?.length || 0}</div><div class="stat-label">Stories</div></div>
+    <div class="stat-card"><div class="stat-value">${storiesDone}</div><div class="stat-label">Stories Done</div></div>
+    <div class="stat-card"><div class="stat-value">${tasksTotal}</div><div class="stat-label">Tasks</div></div>
+    <div class="stat-card"><div class="stat-value">${tasksDone}</div><div class="stat-label">Tasks Done</div></div>
+  `;
+
+  const tasksById = new Map(tasks.map(task => [task.id, task]));
+  const phases = Array.isArray(p.phases) ? p.phases : [];
+  const phasesChips = phases.length
+    ? `<div class="chips">${phases.map(ph => {
+        const title = (ph?.title || '').trim();
+        const ids = Array.isArray(ph?.tasks) ? ph.tasks : [];
+        const done = ids.length ? ids.filter(id => tasksById.get(id)?.status === 'completed').length : 0;
+        return `<span class="chip">${escapeHtml(title)}${ids.length ? ` (${done}/${ids.length})` : ''}</span>`;
+      }).join('')}</div>`
+    : '';
+
+  document.getElementById('overviewContent').innerHTML = `
+    <div class="overview-sections">
+      ${p.objective ? `
+        <div class="section-card">
+          <div class="section-title">Objective</div>
+          <div class="section-body">${escapeHtml(p.objective)}</div>
+        </div>
+      ` : ''}
+      ${p.targetArchitecture ? `
+        <div class="section-card">
+          <div class="section-title">Target Architecture</div>
+          <div class="section-body">${escapeHtml(p.targetArchitecture)}</div>
+        </div>
+      ` : ''}
+      ${phasesChips ? `
+        <div class="section-card">
+          <div class="section-title">Phases</div>
+          ${phasesChips}
+        </div>
+      ` : ''}
+      ${p.notes ? `
+        <div class="section-card">
+          <div class="section-title">Notes</div>
+          <div class="section-body">${escapeHtml(p.notes)}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  document.getElementById('storiesList').innerHTML = p.stories?.map(s => {
+    const storyStatus = normalizeStoryStatus(s.status);
+    const taskList = Array.isArray(s.tasks) ? s.tasks.join(', ') : String(s.tasks || '');
+    return `
+    <div class="story-item">
+      <div class="story-header">
+        <span class="story-id">${escapeHtml(s.id)}</span>
+        <span class="story-status status-${storyStatus}">${formatStatus(storyStatus)}</span>
+      </div>
+      <div class="story-description">${escapeHtml(s.description || '')}</div>
+      <div class="story-tasks">Tasks: ${escapeHtml(taskList)}</div>
+    </div>
+  `;
+  }).join('') || '<p style="color:#94a3b8">No stories defined</p>';
+
+  document.getElementById('tasksList').innerHTML = tasks.map(t => `
+    <div class="task-item">
+      <div class="task-header">
+        <span class="task-id">${escapeHtml(t.id)}</span>
+        <div class="task-meta">
+          <span class="task-size">${escapeHtml(t.size || '-')}</span>
+          <select class="task-status-select status-${escapeHtml(t.status)}" onchange="handleTaskStatusChangeByEncodedId('${encodeURIComponent(t.id)}', this)">
+            ${TASK_STATUSES.map(status => `<option value="${status}" ${status === t.status ? 'selected' : ''}>${formatStatus(status)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      ${t.title ? `<div class="task-what"><strong>${escapeHtml(t.title)}</strong></div>` : ''}
+      ${t.phase ? `<div class="task-notes">Phase: ${escapeHtml(t.phase)}</div>` : ''}
+      ${t.files?.length ? `<div class="task-notes">Files: ${t.files.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}</div>` : ''}
+      ${t.endpoints?.length ? `<div class="task-notes">Endpoints: ${t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(', ')}</div>` : ''}
+      ${t.whatToDo ? `<div class="task-what">${escapeHtml(t.whatToDo)}</div>` : ''}
+      ${t.dependsOn?.length ? `<div class="task-depends-on">Depends on: ${t.dependsOn.map(item => escapeHtml(item)).join(', ')}</div>` : ''}
+      ${t.definitionOfDone?.length ? `
+        <div class="task-dod">
+          <div class="task-dod-title">Definition of Done:</div>
+          ${t.definitionOfDone.map(d => `<div>• ${escapeHtml(d.description)} ${d.completed ? '✓' : '○'}</div>`).join('')}
+        </div>
+      ` : ''}
+      ${(t.implementationNotes || t.notes) ? `
+        <details class="summary-block">
+          <summary>Notes</summary>
+          ${t.implementationNotes ? `<div class="task-notes"><strong>Implementation Notes:</strong><br>${escapeHtml(t.implementationNotes)}</div>` : ''}
+          ${t.notes ? `<div class="task-notes"><strong>Notes:</strong><br>${escapeHtml(t.notes)}</div>` : ''}
+        </details>
+      ` : ''}
+    </div>
+  `).join('') || '<p style="color:#94a3b8">No tasks defined</p>';
+
+  document.getElementById('decisionsList').innerHTML = p.decisions?.map(d => `
+    <tr>
+      <td>${escapeHtml(d.id || d.decision || '')}</td>
+      <td>${escapeHtml(d.description || d.choice || '')}</td>
+      <td>${escapeHtml(d.rationale || d.motivation || '')}</td>
+      <td>${escapeHtml(d.date || '')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="color:#94a3b8;text-align:center">No decisions recorded</td></tr>';
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function formatStatus(status) {
+  const map = {
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    pending: 'Pending',
+    skipped: 'Skipped',
+    cancelled: 'Cancelled'
+  };
+  return map[status] || status;
+}
+
+function setStatusSelectClass(selectEl, status) {
+  TASK_STATUSES.forEach(taskStatus => {
+    selectEl.classList.remove(`status-${taskStatus}`);
+  });
+  selectEl.classList.add(`status-${status}`);
+}
+
+function normalizeStoryStatus(status) {
+  const value = String(status || '').trim().toLowerCase();
+  if (value === 'completed' || value === 'done') return 'completed';
+  if (value === 'in_progress' || value === 'in progress') return 'in_progress';
+  return 'in_progress';
+}
+
+function parseStoryTaskIds(tasksValue) {
+  if (Array.isArray(tasksValue)) {
+    return tasksValue.map(v => String(v).trim()).filter(Boolean);
+  }
+  if (typeof tasksValue !== 'string') return [];
+  return tasksValue.split(',').map(v => v.trim()).filter(Boolean);
+}
+
+function computeStoryStatusFromTasks(story, tasksById) {
+  const taskIds = parseStoryTaskIds(story?.tasks);
+  if (!taskIds.length) return 'in_progress';
+
+  const allCompleted = taskIds.every(taskId => tasksById.get(taskId)?.status === 'completed');
+  return allCompleted ? 'completed' : 'in_progress';
+}
+
+async function updateStoryStatus(storyId, status) {
+  if (!currentPlan) return null;
+
+  const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/stories/${encodeURIComponent(storyId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Unable to update story status');
+  }
+
+  return res.json();
+}
+
+async function syncStoriesStatuses() {
+  if (!currentPlan || !Array.isArray(currentPlan.stories)) return;
+
+  const tasksById = new Map((currentPlan.tasks || []).map(task => [task.id, task]));
+  const storiesToUpdate = currentPlan.stories
+    .map(story => {
+      const nextStatus = computeStoryStatusFromTasks(story, tasksById);
+      const currentStatus = normalizeStoryStatus(story.status);
+      return currentStatus !== nextStatus ? { story, nextStatus } : null;
+    })
+    .filter(Boolean);
+
+  if (!storiesToUpdate.length) return;
+
+  const updates = await Promise.all(storiesToUpdate.map(({ story, nextStatus }) => updateStoryStatus(story.id, nextStatus)));
+  const updatesById = new Map(updates.filter(Boolean).map(u => [u.story?.id, u]));
+
+  for (const story of currentPlan.stories) {
+    const updated = updatesById.get(story.id);
+    if (updated?.story?.status) {
+      story.status = updated.story.status;
+      currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
+    }
+  }
+
+  const planCard = plans.find(p => p.id === currentPlan.id);
+  if (planCard) {
+    planCard.lastUpdated = currentPlan.lastUpdated;
+  }
+}
+
+function handleTaskStatusChange(taskId, selectEl) {
+  const nextStatus = selectEl.value;
+  setStatusSelectClass(selectEl, nextStatus);
+  updateTaskStatus(taskId, nextStatus, selectEl);
+}
+
+function handleTaskStatusChangeByEncodedId(encodedTaskId, selectEl) {
+  handleTaskStatusChange(decodeURIComponent(encodedTaskId), selectEl);
+}
+
+function selectPlanByEncodedId(encodedPlanId) {
+  return selectPlan(decodeURIComponent(encodedPlanId));
+}
+
+async function updateTaskStatus(taskId, status, selectEl) {
+  if (!currentPlan) return;
+
+  const previousStatus = currentPlan.tasks?.find(t => t.id === taskId)?.status;
+  selectEl.disabled = true;
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/tasks/${encodeURIComponent(taskId)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update task status');
+    }
+
+    const updated = await res.json();
+    const task = currentPlan.tasks?.find(t => t.id === taskId);
+    if (task) task.status = updated.task.status;
+    currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
+
+    const planCard = plans.find(p => p.id === currentPlan.id);
+    if (planCard) {
+      planCard.lastUpdated = currentPlan.lastUpdated;
+    }
+
+    renderDetail();
+  } catch (error) {
+    if (previousStatus) {
+      selectEl.value = previousStatus;
+      setStatusSelectClass(selectEl, previousStatus);
+    }
+    alert(error.message);
+  } finally {
+    selectEl.disabled = false;
+  }
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', async () => {
+    if (tab.dataset.tab === 'stories') {
+      try {
+        await syncStoriesStatuses();
+        renderDetail();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
+    tab.classList.add('active');
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('show');
+  });
+});
+
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', e => {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    runSearch(e.target.value).catch(error => {
+      searchResults.innerHTML = `<div style="padding:16px;color:#b91c1c">${escapeHtml(error.message)}</div>`;
+      searchResults.classList.add('show');
+    });
+  }, 200);
+});
+
+async function runSearch(query) {
+  if (query.length < 2) {
+    searchResults.classList.remove('show');
+    return;
+  }
+
+  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  const results = await res.json();
+
+  if (results.length === 0) {
+    searchResults.innerHTML = '<div style="padding:16px;color:#94a3b8">No results found</div>';
+    searchResults.classList.add('show');
+    return;
+  }
+
+  searchResults.innerHTML = results.map(r => `
+    <div class="search-result-group">
+      <div class="search-result-group-title">${escapeHtml(r.plan)}</div>
+      ${r.matches.map(m => `
+        <div class="search-result-item" onclick="selectPlanByEncodedId('${encodeURIComponent(r.plan)}')">
+          <span class="search-result-type type-${escapeHtml(m.type)}">${escapeHtml(m.type)}</span>
+          ${escapeHtml(m.text)}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  searchResults.classList.add('show');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-box')) {
+    searchResults.classList.remove('show');
+  }
+});
+
+window.selectPlan = selectPlan;
+window.handleTaskStatusChange = handleTaskStatusChange;
+window.selectPlanByEncodedId = selectPlanByEncodedId;
+window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
+
+loadPlans();
