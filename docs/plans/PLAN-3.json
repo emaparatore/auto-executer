@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": "2026-04-01",
-  "lastUpdated": null,
+  "lastUpdated": "2026-04-27",
   "decisions": [],
   "stories": [],
   "tasks": [
@@ -16,10 +16,22 @@
       "dependsOn": [],
       "whatToDo": "Aggiungere mem_limit ai servizi esistenti in docker-compose.deploy.yml: postgres=1536m, api=768m, seq=512m, web=384m, nginx=64m. Aggiungere restart: unless-stopped a tutti i servizi.",
       "definitionOfDone": [
-        { "description": "Tutti e 5 i servizi in docker-compose.deploy.yml hanno mem_limit configurato", "completed": true },
-        { "description": "Tutti e 5 i servizi hanno restart: unless-stopped", "completed": true },
-        { "description": "Il file compose è sintatticamente valido", "completed": true },
-        { "description": "Nessun altro campo è stato modificato", "completed": true }
+        {
+          "description": "Tutti e 5 i servizi in docker-compose.deploy.yml hanno mem_limit configurato",
+          "completed": true
+        },
+        {
+          "description": "Tutti e 5 i servizi hanno restart: unless-stopped",
+          "completed": true
+        },
+        {
+          "description": "Il file compose è sintatticamente valido",
+          "completed": true
+        },
+        {
+          "description": "Nessun altro campo è stato modificato",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "mem_limit posizionato come proprietà top-level di ogni servizio. Somma totale limiti: 3264MB"
@@ -32,12 +44,30 @@
       "dependsOn": [],
       "whatToDo": "Creare docker/docker-compose.portainer.yml separato con Portainer CE: immagine portainer/portainer-ce:latest, volume /var/run/docker.sock read-only, volume named portainer_data, porta 127.0.0.1:9443:9443, mem_limit: 128m, restart: always. Aggiungere variabile PORTAINER_PORT al .env.prod.example.",
       "definitionOfDone": [
-        { "description": "docker/docker-compose.portainer.yml creato con servizio Portainer CE", "completed": true },
-        { "description": "Docker socket montato read-only", "completed": true },
-        { "description": "Volume named portainer_data per persistenza", "completed": true },
-        { "description": "Porta 9443 esposta solo su localhost", "completed": true },
-        { "description": "mem_limit: 128m e restart: always configurati", "completed": true },
-        { "description": ".env.prod.example aggiornato con PORTAINER_PORT=9443", "completed": true }
+        {
+          "description": "docker/docker-compose.portainer.yml creato con servizio Portainer CE",
+          "completed": true
+        },
+        {
+          "description": "Docker socket montato read-only",
+          "completed": true
+        },
+        {
+          "description": "Volume named portainer_data per persistenza",
+          "completed": true
+        },
+        {
+          "description": "Porta 9443 esposta solo su localhost",
+          "completed": true
+        },
+        {
+          "description": "mem_limit: 128m e restart: always configurati",
+          "completed": true
+        },
+        {
+          "description": ".env.prod.example aggiornato con PORTAINER_PORT=9443",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Portainer è istanza unica a livello server, vede tutti i container"
@@ -50,11 +80,26 @@
       "dependsOn": [],
       "whatToDo": "Integrare prometheus-net nell'API .NET: aggiungere pacchetto NuGet prometheus-net.AspNetCore, configurare UseHttpMetrics() e MapMetrics() in Program.cs, verificare metriche su /metrics",
       "definitionOfDone": [
-        { "description": "Pacchetto prometheus-net.AspNetCore aggiunto a Seed.Api.csproj", "completed": true },
-        { "description": "UseHttpMetrics() configurato in Program.cs", "completed": true },
-        { "description": "MapMetrics() configurato in Program.cs per esporre /metrics", "completed": true },
-        { "description": "Il progetto compila senza errori", "completed": true },
-        { "description": "Tutti i test passano", "completed": true }
+        {
+          "description": "Pacchetto prometheus-net.AspNetCore aggiunto a Seed.Api.csproj",
+          "completed": true
+        },
+        {
+          "description": "UseHttpMetrics() configurato in Program.cs",
+          "completed": true
+        },
+        {
+          "description": "MapMetrics() configurato in Program.cs per esporre /metrics",
+          "completed": true
+        },
+        {
+          "description": "Il progetto compila senza errori",
+          "completed": true
+        },
+        {
+          "description": "Tutti i test passano",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Versione 8.2.1 installata. UseHttpMetrics posizionato dopo UseAuthorization e MapControllers"
@@ -67,11 +112,26 @@
       "dependsOn": [],
       "whatToDo": "Aggiungere Prometheus e Grafana al compose: servizio prometheus (prom/prometheus:latest, porta 9090, mem_limit 384m, retention 7d), servizio grafana (grafana/grafana:latest, porta 3001, mem_limit 192m), creare docker/monitoring/prometheus.yml con scrape targets",
       "definitionOfDone": [
-        { "description": "docker/monitoring/prometheus.yml creato con scrape config", "completed": true },
-        { "description": "Servizio prometheus aggiunto a docker-compose.deploy.yml", "completed": true },
-        { "description": "Servizio grafana aggiunto a docker-compose.deploy.yml", "completed": true },
-        { "description": "Volumi prometheus_data e grafana_data dichiarati", "completed": true },
-        { "description": ".env.prod.example aggiornato con variabili monitoring", "completed": true }
+        {
+          "description": "docker/monitoring/prometheus.yml creato con scrape config",
+          "completed": true
+        },
+        {
+          "description": "Servizio prometheus aggiunto a docker-compose.deploy.yml",
+          "completed": true
+        },
+        {
+          "description": "Servizio grafana aggiunto a docker-compose.deploy.yml",
+          "completed": true
+        },
+        {
+          "description": "Volumi prometheus_data e grafana_data dichiarati",
+          "completed": true
+        },
+        {
+          "description": ".env.prod.example aggiornato con variabili monitoring",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "depends_on per garantire ordine di avvio"
@@ -84,10 +144,22 @@
       "dependsOn": [],
       "whatToDo": "Aggiungere cAdvisor e Node Exporter: servizio cadvisor (gcr.io/cadvisor/cadvisor:latest, volumi read-only, mem_limit 128m), servizio node-exporter (prom/node-exporter:latest, volumi read-only, mem_limit 64m), aggiornare prometheus.yml per scrape",
       "definitionOfDone": [
-        { "description": "Servizio cadvisor presente in docker-compose.deploy.yml", "completed": true },
-        { "description": "Servizio node-exporter presente in docker-compose.deploy.yml", "completed": true },
-        { "description": "prometheus.yml aggiornato con scrape target", "completed": true },
-        { "description": "Nessuna porta pubblica esposta per i due servizi", "completed": true }
+        {
+          "description": "Servizio cadvisor presente in docker-compose.deploy.yml",
+          "completed": true
+        },
+        {
+          "description": "Servizio node-exporter presente in docker-compose.deploy.yml",
+          "completed": true
+        },
+        {
+          "description": "prometheus.yml aggiornato con scrape target",
+          "completed": true
+        },
+        {
+          "description": "Nessuna porta pubblica esposta per i due servizi",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Entrambi accessibili via rete interna app-network"
@@ -100,13 +172,34 @@
       "dependsOn": [],
       "whatToDo": "Configurare Dashboard Grafana + Alerting: creare provisioning datasource Prometheus, creare provisioning dashboards, creare dashboard JSON (cAdvisor, Node Exporter, ASP.NET Core), configurare alerting",
       "definitionOfDone": [
-        { "description": "Provisioning datasource creato", "completed": true },
-        { "description": "Provisioning dashboards creato", "completed": true },
-        { "description": "Dashboard cAdvisor creata", "completed": true },
-        { "description": "Dashboard Node Exporter creata", "completed": true },
-        { "description": "Dashboard ASP.NET Core creata", "completed": true },
-        { "description": "Servizio grafana aggiornato con volumi provisioning", "completed": true },
-        { "description": ".env.prod.example aggiornato con variabili SMTP", "completed": true }
+        {
+          "description": "Provisioning datasource creato",
+          "completed": true
+        },
+        {
+          "description": "Provisioning dashboards creato",
+          "completed": true
+        },
+        {
+          "description": "Dashboard cAdvisor creata",
+          "completed": true
+        },
+        {
+          "description": "Dashboard Node Exporter creata",
+          "completed": true
+        },
+        {
+          "description": "Dashboard ASP.NET Core creata",
+          "completed": true
+        },
+        {
+          "description": "Servizio grafana aggiornato con volumi provisioning",
+          "completed": true
+        },
+        {
+          "description": ".env.prod.example aggiornato con variabili SMTP",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Alerting configurato via environment variables"
@@ -119,12 +212,30 @@
       "dependsOn": [],
       "whatToDo": "Aggiungere monitoring al docker-compose.yml di sviluppo con profile 'monitoring': servizi prometheus, grafana, cadvisor, node-exporter con stesse config del deploy ma con suffix -dev",
       "definitionOfDone": [
-        { "description": "4 servizi aggiunti a docker/docker-compose.yml", "completed": true },
-        { "description": "Tutti e 4 hanno profiles: [monitoring]", "completed": true },
-        { "description": "Prometheus riutilizza ./monitoring/prometheus.yml", "completed": true },
-        { "description": "Grafana riutilizza provisioning e dashboards", "completed": true },
-        { "description": "cAdvisor e node-exporter hanno stessi volumi e flag del deploy", "completed": true },
-        { "description": "Nessun servizio esistente modificato", "completed": true }
+        {
+          "description": "4 servizi aggiunti a docker/docker-compose.yml",
+          "completed": true
+        },
+        {
+          "description": "Tutti e 4 hanno profiles: [monitoring]",
+          "completed": true
+        },
+        {
+          "description": "Prometheus riutilizza ./monitoring/prometheus.yml",
+          "completed": true
+        },
+        {
+          "description": "Grafana riutilizza provisioning e dashboards",
+          "completed": true
+        },
+        {
+          "description": "cAdvisor e node-exporter hanno stessi volumi e flag del deploy",
+          "completed": true
+        },
+        {
+          "description": "Nessun servizio esistente modificato",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "container_name con suffisso -dev per tutti e 4 i servizi"
@@ -137,11 +248,26 @@
       "dependsOn": [],
       "whatToDo": "Documentazione: creare docs/monitoring.md con architettura, accesso servizi, metriche custom, dashboard, alerting. Aggiornare docs/vps-setup-guide.md con sezione Monitoring Stack. Aggiornare CLAUDE.md. Aggiornare README.md.",
       "definitionOfDone": [
-        { "description": "docs/monitoring.md creato", "completed": true },
-        { "description": "docs/vps-setup-guide.md aggiornato", "completed": true },
-        { "description": "CLAUDE.md aggiornato", "completed": true },
-        { "description": "README.md aggiornato", "completed": true },
-        { "description": ".env.prod.example verificato completo", "completed": true }
+        {
+          "description": "docs/monitoring.md creato",
+          "completed": true
+        },
+        {
+          "description": "docs/vps-setup-guide.md aggiornato",
+          "completed": true
+        },
+        {
+          "description": "CLAUDE.md aggiornato",
+          "completed": true
+        },
+        {
+          "description": "README.md aggiornato",
+          "completed": true
+        },
+        {
+          "description": ".env.prod.example verificato completo",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Documentazione scritta in italiano coerente con lo stile degli altri doc"

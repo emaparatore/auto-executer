@@ -122,7 +122,7 @@ function renderDetail() {
       <div class="story-tasks">Tasks: ${escapeHtml(taskList)}</div>
     </div>
   `;
-  }).join('') || '<p style="color:#94a3b8">No stories defined</p>';
+  }).join('') || '<p class="empty-state">No stories defined</p>';
 
   document.getElementById('tasksList').innerHTML = tasks.map(t => `
     <div class="task-item">
@@ -155,7 +155,7 @@ function renderDetail() {
         </details>
       ` : ''}
     </div>
-  `).join('') || '<p style="color:#94a3b8">No tasks defined</p>';
+  `).join('') || '<p class="empty-state">No tasks defined</p>';
 
   document.getElementById('decisionsList').innerHTML = p.decisions?.map(d => `
     <tr>
@@ -164,7 +164,7 @@ function renderDetail() {
       <td>${escapeHtml(d.rationale || d.motivation || '')}</td>
       <td>${escapeHtml(d.date || '')}</td>
     </tr>
-  `).join('') || '<tr><td colspan="4" style="color:#94a3b8;text-align:center">No decisions recorded</td></tr>';
+  `).join('') || '<tr><td colspan="4" class="empty-state" style="text-align:center">No decisions recorded</td></tr>';
 }
 
 function escapeHtml(str) {
@@ -274,7 +274,7 @@ searchInput.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
   searchDebounceTimer = setTimeout(() => {
     runSearch(e.target.value).catch(error => {
-      searchResults.innerHTML = `<div style="padding:16px;color:#b91c1c">${escapeHtml(error.message)}</div>`;
+      searchResults.innerHTML = `<div class="error-state" style="padding:16px">${escapeHtml(error.message)}</div>`;
       searchResults.classList.add('show');
     });
   }, 200);
@@ -290,7 +290,7 @@ async function runSearch(query) {
   const results = await res.json();
 
   if (results.length === 0) {
-    searchResults.innerHTML = '<div style="padding:16px;color:#94a3b8">No results found</div>';
+    searchResults.innerHTML = '<div class="empty-state" style="padding:16px">No results found</div>';
     searchResults.classList.add('show');
     return;
   }
