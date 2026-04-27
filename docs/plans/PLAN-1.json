@@ -76,7 +76,7 @@
       "id": "US-001",
       "description": "Seeding admin iniziale",
       "tasks": "T-01, T-02, T-03, T-04",
-      "status": "completed"
+      "status": "in_progress"
     },
     {
       "id": "US-002",
@@ -185,7 +185,7 @@
         "US-017"
       ],
       "size": "Small",
-      "status": "completed",
+      "status": "in_progress",
       "dependsOn": [],
       "files": [],
       "endpoints": [],
