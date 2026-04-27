@@ -295,7 +295,7 @@
       document.getElementById('detailLastUpdated').textContent = p.lastUpdated || 'N/A';
       document.getElementById('detailRequirements').textContent = p.requirements || 'None';
       
-      const storiesDone = p.stories?.filter(s => s.status?.toLowerCase().includes('done')).length || 0;
+      const storiesDone = p.stories?.filter(s => normalizeStoryStatus(s.status) === 'completed').length || 0;
       const tasksDone = p.tasks?.filter(t => t.status === 'completed').length || 0;
       const tasksTotal = p.tasks?.length || 0;
       
@@ -350,16 +350,19 @@
         </div>
       `;
       
-      document.getElementById('storiesList').innerHTML = p.stories?.map(s => `
+      document.getElementById('storiesList').innerHTML = p.stories?.map(s => {
+        const storyStatus = normalizeStoryStatus(s.status);
+        return `
         <div class="story-item">
           <div class="story-header">
             <span class="story-id">${s.id}</span>
-            <span class="story-status status-${s.status?.toLowerCase().includes('done') ? 'completed' : 'pending'}">${s.status}</span>
+            <span class="story-status status-${storyStatus}">${formatStatus(storyStatus)}</span>
           </div>
           <div class="story-description">${s.description}</div>
           <div class="story-tasks">Tasks: ${s.tasks}</div>
         </div>
-      `).join('') || '<p style="color:#94a3b8">No stories defined</p>';
+      `;
+      }).join('') || '<p style="color:#94a3b8">No stories defined</p>';
       
       document.getElementById('tasksList').innerHTML = p.tasks?.map(t => `
         <div class="task-item">
@@ -431,6 +434,83 @@
       selectEl.classList.add(`status-${status}`);
     }
 
+    function normalizeStoryStatus(status) {
+      const value = String(status || '').trim().toLowerCase();
+      if (value === 'completed' || value === 'done') return 'completed';
+      if (value === 'in_progress' || value === 'in progress') return 'in_progress';
+      return 'in_progress';
+    }
+
+    function parseStoryTaskIds(tasksValue) {
+      if (Array.isArray(tasksValue)) {
+        return tasksValue.map(v => String(v).trim()).filter(Boolean);
+      }
+      if (typeof tasksValue !== 'string') return [];
+      return tasksValue
+        .split(',')
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function computeStoryStatusFromTasks(story, tasks) {
+      const taskIds = parseStoryTaskIds(story?.tasks);
+      if (!taskIds.length) return 'in_progress';
+
+      const allCompleted = taskIds.every(taskId => {
+        const task = (tasks || []).find(t => t.id === taskId);
+        return task && task.status === 'completed';
+      });
+
+      return allCompleted ? 'completed' : 'in_progress';
+    }
+
+    async function updateStoryStatus(storyId, status) {
+      if (!currentPlan) return null;
+
+      const res = await fetch(`/api/plans/${currentPlan.id}/stories/${encodeURIComponent(storyId)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Unable to update story status');
+      }
+
+      return res.json();
+    }
+
+    async function syncStoriesStatuses() {
+      if (!currentPlan || !Array.isArray(currentPlan.stories)) return;
+
+      const storiesToUpdate = currentPlan.stories
+        .map(story => {
+          const nextStatus = computeStoryStatusFromTasks(story, currentPlan.tasks || []);
+          const currentStatus = normalizeStoryStatus(story.status);
+          return currentStatus !== nextStatus ? { story, nextStatus } : null;
+        })
+        .filter(Boolean);
+
+      if (!storiesToUpdate.length) return;
+
+      const updates = await Promise.all(storiesToUpdate.map(({ story, nextStatus }) => updateStoryStatus(story.id, nextStatus)));
+      const updatesById = new Map(updates.filter(Boolean).map(u => [u.story?.id, u]));
+
+      for (const story of currentPlan.stories) {
+        const updated = updatesById.get(story.id);
+        if (updated?.story?.status) {
+          story.status = updated.story.status;
+          currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
+        }
+      }
+
+      const planCard = plans.find(p => p.id === currentPlan.id);
+      if (planCard) {
+        planCard.lastUpdated = currentPlan.lastUpdated;
+      }
+    }
+
     function handleTaskStatusChange(taskId, selectEl) {
       const nextStatus = selectEl.value;
       setStatusSelectClass(selectEl, nextStatus);
@@ -478,7 +558,16 @@
     }
     
     document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', async () => {
+        if (tab.dataset.tab === 'stories') {
+          try {
+            await syncStoriesStatuses();
+            renderDetail();
+          } catch (error) {
+            alert(error.message);
+          }
+        }
+
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
         tab.classList.add('active');

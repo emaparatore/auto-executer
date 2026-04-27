@@ -68,6 +68,32 @@ app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   res.json({ ok: true, task, lastUpdated: data.lastUpdated });
 });
 
+app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
+  const filePath = path.join(PLANS_DIR, `${req.params.id}.json`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { status } = req.body || {};
+  const allowedStatuses = ['in_progress', 'completed'];
+  if (typeof status !== 'string' || !allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${allowedStatuses.join(', ')}` });
+  }
+
+  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  const story = (data.stories || []).find(s => s.id === req.params.storyId);
+
+  if (!story) {
+    return res.status(404).json({ error: 'Story not found' });
+  }
+
+  story.status = status;
+  data.lastUpdated = new Date().toISOString().slice(0, 10);
+  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+
+  res.json({ ok: true, story, lastUpdated: data.lastUpdated });
+});
+
 app.get('/api/search', (req, res) => {
   const query = (req.query.q || '').toLowerCase();
   if (!query) return res.json([]);
