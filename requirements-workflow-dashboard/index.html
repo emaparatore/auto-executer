@@ -37,8 +37,25 @@
       <div class="plans-list">
         <div class="plans-list-header">
           <div class="section-switch" aria-label="Main section switcher">
-            <button class="section-switch-tab" data-section="requirements" type="button"><span>Requirements</span> <span class="switch-count" id="requirementsSwitchCount"></span></button>
-            <button class="section-switch-tab active" data-section="plans" type="button"><span>Plans</span> <span class="switch-count" id="plansSwitchCount"></span></button>
+            <button class="section-switch-tab" data-section="requirements" type="button">
+              <svg class="switch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="4" rx="1"></rect>
+                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"></path>
+                <path d="M9 12h6"></path>
+                <path d="M9 16h6"></path>
+              </svg>
+              <span>Requirements</span>
+              <span class="switch-count" id="requirementsSwitchCount"></span>
+            </button>
+            <button class="section-switch-tab active" data-section="plans" type="button">
+              <svg class="switch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                <line x1="9" y1="3" x2="9" y2="18"></line>
+                <line x1="15" y1="6" x2="15" y2="21"></line>
+              </svg>
+              <span>Plans</span>
+              <span class="switch-count" id="plansSwitchCount"></span>
+            </button>
           </div>
         </div>
         <div id="plansList"></div>
@@ -47,7 +64,13 @@
     
     <div class="content">
         <div class="welcome" id="welcome">
-          <div class="welcome-icon">📋</div>
+          <div class="welcome-icon" id="welcomeIcon" aria-hidden="true">
+            <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+              <line x1="9" y1="3" x2="9" y2="18"></line>
+              <line x1="15" y1="6" x2="15" y2="21"></line>
+            </svg>
+          </div>
           <div class="welcome-title" id="welcomeTitle">Select a plan</div>
           <div class="welcome-text" id="welcomeText">Choose a plan from the sidebar to view its details, stories, and tasks.</div>
         </div>

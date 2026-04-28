@@ -32,6 +32,36 @@ const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
+const WELCOME_PLAN_ICON = `
+  <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+    <line x1="9" y1="3" x2="9" y2="18"></line>
+    <line x1="15" y1="6" x2="15" y2="21"></line>
+  </svg>
+`;
+
+const WELCOME_REQUIREMENT_ICON = `
+  <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="9" y="2" width="6" height="4" rx="1"></rect>
+    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"></path>
+    <path d="M9 12h6"></path>
+    <path d="M9 16h6"></path>
+  </svg>
+`;
+
+function updateSidebarHeight() {
+  const sidebar = document.querySelector('.sidebar');
+  const plansList = document.querySelector('.plans-list');
+  if (!sidebar || !plansList) return;
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const sidebarTop = sidebar.getBoundingClientRect().top;
+  const bottomSpacing = 40;
+  const availableHeight = Math.max(240, Math.floor(viewportHeight - sidebarTop - bottomSpacing));
+
+  document.documentElement.style.setProperty('--sidebar-list-height', `${availableHeight}px`);
+}
+
 function isTaskFieldEditing(taskId, field) {
   return editingTaskField?.taskId === taskId && editingTaskField?.field === field;
 }
@@ -793,6 +823,7 @@ function showDetail() {
 
 function setSection(section) {
   currentSection = section;
+  const welcomeIcon = document.getElementById('welcomeIcon');
   document.querySelectorAll('.section-switch-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.section === section);
   });
@@ -819,12 +850,18 @@ function setSection(section) {
   document.getElementById('welcome').style.display = 'flex';
 
   if (section === 'plans') {
+    welcomeIcon.innerHTML = WELCOME_PLAN_ICON;
+    welcomeIcon.classList.remove('is-requirement');
+    welcomeIcon.classList.add('is-plan');
     document.getElementById('welcomeTitle').textContent = 'Select a plan';
     document.getElementById('welcomeText').textContent = 'Choose a plan from the sidebar to view its details, stories, and tasks.';
     document.getElementById('searchInput').placeholder = 'Search plans, stories, tasks...';
     configurePlanTabs();
     renderPlansList();
   } else {
+    welcomeIcon.innerHTML = WELCOME_REQUIREMENT_ICON;
+    welcomeIcon.classList.remove('is-plan');
+    welcomeIcon.classList.add('is-requirement');
     document.getElementById('welcomeTitle').textContent = 'Select a requirement';
     document.getElementById('welcomeText').textContent = 'Choose a requirement from the sidebar to view its details.';
     document.getElementById('searchInput').placeholder = 'Search requirements, RF, RNF, stories...';
@@ -2078,6 +2115,8 @@ function hideBootLoader() {
 
 Promise.all([loadPlans(), loadRequirements()])
   .then(() => {
+    updateSidebarHeight();
+    window.addEventListener('resize', updateSidebarHeight);
     setSection('plans');
   })
   .catch(error => {
