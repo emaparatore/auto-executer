@@ -339,7 +339,11 @@ function renderPlanDetail() {
     return `
     <div class="task-item">
       <div class="task-header">
-        <span class="task-id">${escapeHtml(t.id)}</span>
+        <div class="task-meta-inline">
+          <span class="task-meta-chip"><code>${escapeHtml(t.id)}</code></span>
+          ${phaseValue ? `<span class="task-meta-chip"><code>${escapeHtml(phaseValue)}</code></span>` : ''}
+          ${dependsOnValue.length ? `<span class="task-meta-chip">${dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ')}</span>` : ''}
+        </div>
         <div class="task-meta">
           <span class="task-size">${escapeHtml(t.size || '-')}</span>
           <div class="task-status-dropdown status-${escapeHtml(t.status)}">
