@@ -73,9 +73,10 @@ async function selectPlan(id) {
 function renderPlanDetail() {
   const p = currentPlan;
   const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'overview';
 
   showDetail();
-  configurePlanTabs();
+  configurePlanTabs(activeTab);
 
   document.getElementById('detailId').textContent = p.id;
   document.getElementById('detailTitle').textContent = p.title;
@@ -315,7 +316,7 @@ function renderRequirementItems(items, emptyText) {
   `).join('');
 }
 
-function configurePlanTabs() {
+function configurePlanTabs(activeTab = 'overview') {
   toggleTab('overview', true);
   toggleTab('stories', true);
   toggleTab('tasks', true);
@@ -325,7 +326,9 @@ function configurePlanTabs() {
   toggleTab('non-functional', false);
   toggleTab('user-stories', false);
   toggleTab('open-questions', false);
-  activateTab('overview');
+  const requestedTab = activeTab || 'overview';
+  const requestedTabEl = document.querySelector(`.tab[data-tab="${requestedTab}"]`);
+  activateTab(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
 }
 
 function configureRequirementTabs(hasArchitecturalDecisions) {
