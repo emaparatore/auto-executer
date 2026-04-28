@@ -886,6 +886,97 @@ details.summary-block { margin-top: 10px; }
 .task-dod-item.is-completed .task-dod-bullet {
   color: #9edbb2;
 }
+
+.open-question-item {
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.open-question-item:hover {
+  border-color: rgba(220, 212, 197, 0.4);
+}
+
+.open-question-item:focus-visible {
+  outline: none;
+  border-color: rgba(157, 211, 176, 0.64);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.2);
+}
+
+.open-question-item.is-editing {
+  border-color: rgba(157, 211, 176, 0.62);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.2);
+}
+
+.open-question-item.is-busy {
+  opacity: 0.78;
+}
+
+.open-question-form {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.open-question-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbc3b5;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.open-question-answer,
+.open-question-status {
+  border: 1px solid rgba(214, 207, 194, 0.28);
+  background: rgba(45, 49, 54, 0.88);
+  color: #f2ede3;
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 9px 11px;
+}
+
+.open-question-answer {
+  resize: vertical;
+  min-height: 98px;
+  line-height: 1.6;
+}
+
+.open-question-answer:focus,
+.open-question-status:focus {
+  outline: none;
+  border-color: rgba(157, 211, 176, 0.64);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.2);
+}
+
+.open-question-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+}
+
+.open-question-btn {
+  border: 1px solid rgba(157, 211, 176, 0.5);
+  background: rgba(65, 107, 81, 0.85);
+  color: #eef9f2;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.open-question-btn.is-secondary {
+  border-color: rgba(214, 207, 194, 0.3);
+  background: rgba(55, 58, 64, 0.85);
+  color: #e4ded2;
+}
+
+.open-question-btn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
 .task-notes { font-size: 15px; color: #dad4c8; margin-top: 10px; line-height: 1.74; }
 
 .summary-block {

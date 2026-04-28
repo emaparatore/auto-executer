@@ -8,6 +8,10 @@ let editingAcceptanceStoryId = null;
 let isAcceptanceUpdating = false;
 let toastTimer = null;
 let acceptanceFocusTarget = null;
+let editingOpenQuestionId = null;
+let isOpenQuestionUpdating = false;
+
+const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
@@ -213,6 +217,7 @@ async function selectRequirement(id) {
   currentRequirement = await res.json();
   editingAcceptanceStoryId = null;
   acceptanceFocusTarget = null;
+  editingOpenQuestionId = null;
   renderRequirementDetail();
 }
 
@@ -321,13 +326,41 @@ function renderRequirementDetail() {
 
   document.getElementById('openQuestionsList').innerHTML = openQuestions.length
     ? openQuestions.map(q => `
-      <div class="task-item">
+      <div
+        class="task-item open-question-item${editingOpenQuestionId === q.id ? ' is-editing' : ''}${isOpenQuestionUpdating ? ' is-busy' : ''}"
+        role="button"
+        tabindex="0"
+        aria-label="Apri modalita modifica open question"
+        aria-expanded="${editingOpenQuestionId === q.id ? 'true' : 'false'}"
+        onclick="enableOpenQuestionEditByEncodedId('${encodeURIComponent(q.id || '')}')"
+        onkeydown="handleOpenQuestionCardKeydown(event, '${encodeURIComponent(q.id || '')}')">
         <div class="task-header">
           <span class="task-id">${escapeHtml(q.id || '-')}</span>
           <span class="plan-item-status status-${q.status === 'resolved' ? 'completed' : 'pending'}">${q.status === 'resolved' ? 'Resolved' : 'Open'}</span>
         </div>
         <div class="task-title">${escapeHtml(q.question || '')}</div>
-        <div class="task-what">${escapeHtml(q.answer || '')}</div>
+        ${editingOpenQuestionId === q.id ? `
+          <div class="open-question-form" onclick="event.stopPropagation()">
+            <label class="open-question-label" for="open-question-answer-${escapeHtml(q.id || '')}">Answer</label>
+            <textarea
+              id="open-question-answer-${escapeHtml(q.id || '')}"
+              class="open-question-answer"
+              rows="4"
+              ${isOpenQuestionUpdating ? 'disabled' : ''}
+            >${escapeHtml(q.answer || '')}</textarea>
+            <label class="open-question-label" for="open-question-status-${escapeHtml(q.id || '')}">Status</label>
+            <select
+              id="open-question-status-${escapeHtml(q.id || '')}"
+              class="open-question-status"
+              ${isOpenQuestionUpdating ? 'disabled' : ''}>
+              ${OPEN_QUESTION_STATUSES.map(status => `<option value="${status}"${status === q.status ? ' selected' : ''}>${status === 'resolved' ? 'Resolved' : 'Open'}</option>`).join('')}
+            </select>
+            <div class="open-question-actions">
+              <button type="button" class="open-question-btn" onclick="saveOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" ${isOpenQuestionUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelOpenQuestionEditFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          </div>
+        ` : `<div class="task-what">${escapeHtml(q.answer || '')}</div>`}
       </div>
     `).join('')
     : '<p class="empty-state">No open questions</p>';
@@ -638,6 +671,106 @@ function handleAcceptanceItemKeydown(event) {
   items[nextIndex]?.focus();
 }
 
+function enableOpenQuestionEdit(questionId) {
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!questionId) return;
+  if (editingOpenQuestionId === questionId) return;
+  editingOpenQuestionId = questionId;
+  renderRequirementDetail();
+}
+
+function enableOpenQuestionEditByEncodedId(encodedQuestionId) {
+  enableOpenQuestionEdit(decodeURIComponent(encodedQuestionId));
+}
+
+function cancelOpenQuestionEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!editingOpenQuestionId) return;
+  editingOpenQuestionId = null;
+  renderRequirementDetail();
+}
+
+function cancelOpenQuestionEditFromEvent(event) {
+  event.stopPropagation();
+  cancelOpenQuestionEdit();
+}
+
+function handleOpenQuestionCardKeydown(event, encodedQuestionId) {
+  if (event.target !== event.currentTarget) return;
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  enableOpenQuestionEditByEncodedId(encodedQuestionId);
+}
+
+async function saveOpenQuestion(requirementId, questionId) {
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  const question = (currentRequirement.openQuestions || []).find(item => item.id === questionId);
+  if (!question) return;
+
+  const answerEl = document.getElementById(`open-question-answer-${questionId}`);
+  const statusEl = document.getElementById(`open-question-status-${questionId}`);
+  if (!answerEl || !statusEl) return;
+
+  const answer = String(answerEl.value || '').trim();
+  const status = String(statusEl.value || '').trim();
+
+  if (!OPEN_QUESTION_STATUSES.includes(status)) {
+    showToast('Status open question non valido', 'error');
+    return;
+  }
+
+  const previousAnswer = question.answer || '';
+  const previousStatus = question.status || 'open';
+
+  question.answer = answer;
+  question.status = status;
+  isOpenQuestionUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/open-questions/${encodeURIComponent(questionId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answer, status })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update open question');
+    }
+
+    const [updatedRequirementRes] = await Promise.all([
+      fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }),
+      loadRequirements()
+    ]);
+
+    if (!updatedRequirementRes.ok) {
+      throw new Error('Unable to refresh requirement after open question update');
+    }
+
+    currentRequirement = await updatedRequirementRes.json();
+    editingOpenQuestionId = null;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Open question salvata');
+  } catch (error) {
+    question.answer = previousAnswer;
+    question.status = previousStatus;
+    renderRequirementDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isOpenQuestionUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function saveOpenQuestionByEncodedIds(event, encodedRequirementId, encodedQuestionId) {
+  event.stopPropagation();
+  const requirementId = decodeURIComponent(encodedRequirementId);
+  const questionId = decodeURIComponent(encodedQuestionId);
+  saveOpenQuestion(requirementId, questionId);
+}
+
 function ensureToastEl() {
   let toastEl = document.getElementById('toastMessage');
   if (!toastEl) {
@@ -799,6 +932,10 @@ window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncode
 window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
 window.handleAcceptanceRegionKeydown = handleAcceptanceRegionKeydown;
 window.handleAcceptanceItemKeydown = handleAcceptanceItemKeydown;
+window.enableOpenQuestionEditByEncodedId = enableOpenQuestionEditByEncodedId;
+window.cancelOpenQuestionEditFromEvent = cancelOpenQuestionEditFromEvent;
+window.handleOpenQuestionCardKeydown = handleOpenQuestionCardKeydown;
+window.saveOpenQuestionByEncodedIds = saveOpenQuestionByEncodedIds;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');

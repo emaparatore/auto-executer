@@ -13,6 +13,7 @@ const PLANS_DIR = path.join(__dirname, '..', 'docs', 'plans');
 const REQUIREMENTS_DIR = path.join(__dirname, '..', 'docs', 'requirements');
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 const STORY_STATUSES = ['in_progress', 'completed'];
+const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -229,6 +230,39 @@ app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res)
     storyId: story.id,
     criterionIndex,
     checked
+  });
+});
+
+app.patch('/api/requirements/:id/open-questions/:questionId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ error: 'Requirement not found' });
+  }
+
+  const { answer, status } = req.body || {};
+  if (typeof answer !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "answer" must be a string.' });
+  }
+
+  if (!validateStatus(status, OPEN_QUESTION_STATUSES)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${OPEN_QUESTION_STATUSES.join(', ')}` });
+  }
+
+  const { filePath, data } = requirement;
+  const question = (data.openQuestions || []).find(item => item.id === req.params.questionId);
+  if (!question) {
+    return res.status(404).json({ error: 'Open question not found' });
+  }
+
+  question.answer = answer.trim();
+  question.status = status;
+  writeRequirement(filePath, data);
+
+  res.json({
+    ok: true,
+    questionId: question.id,
+    answer: question.answer,
+    status: question.status
   });
 });
 

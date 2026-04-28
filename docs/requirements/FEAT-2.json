@@ -10,16 +10,56 @@
   },
   "overview": "L'applicazione deve conformarsi al GDPR (Reg. UE 2016/679): privacy policy e termini accessibili, consenso esplicito in registrazione, export dati personali (Art. 15), diritto all'oblio (Art. 17) e data retention automatica.",
   "currentState": [
-    { "area": "Audit logging", "status": "Esistente", "notes": "Sistema completo con IP, user agent, azioni" },
-    { "area": "Dati raccolti", "status": "OK", "notes": "Solo email, nome, cognome" },
-    { "area": "Condivisione dati terzi", "status": "OK", "notes": "Nessuna integrazione esterna" },
-    { "area": "HTTPS", "status": "OK", "notes": "UseHttpsRedirection + HSTS" },
-    { "area": "Password hashing", "status": "OK", "notes": "ASP.NET Identity" },
-    { "area": "Cancellazione account", "status": "Parziale", "notes": "Solo soft delete" },
-    { "area": "Privacy Policy / ToS", "status": "Mancante", "notes": "Nessuna pagina o route" },
-    { "area": "Consenso registrazione", "status": "Mancante", "notes": "Nessun tracciamento" },
-    { "area": "Export dati utente", "status": "Mancante", "notes": "Solo GET /auth/me" },
-    { "area": "Data retention", "status": "Mancante", "notes": "Nessuna pulizia automatica" }
+    {
+      "area": "Audit logging",
+      "status": "Esistente",
+      "notes": "Sistema completo con IP, user agent, azioni"
+    },
+    {
+      "area": "Dati raccolti",
+      "status": "OK",
+      "notes": "Solo email, nome, cognome"
+    },
+    {
+      "area": "Condivisione dati terzi",
+      "status": "OK",
+      "notes": "Nessuna integrazione esterna"
+    },
+    {
+      "area": "HTTPS",
+      "status": "OK",
+      "notes": "UseHttpsRedirection + HSTS"
+    },
+    {
+      "area": "Password hashing",
+      "status": "OK",
+      "notes": "ASP.NET Identity"
+    },
+    {
+      "area": "Cancellazione account",
+      "status": "Parziale",
+      "notes": "Solo soft delete"
+    },
+    {
+      "area": "Privacy Policy / ToS",
+      "status": "Mancante",
+      "notes": "Nessuna pagina o route"
+    },
+    {
+      "area": "Consenso registrazione",
+      "status": "Mancante",
+      "notes": "Nessun tracciamento"
+    },
+    {
+      "area": "Export dati utente",
+      "status": "Mancante",
+      "notes": "Solo GET /auth/me"
+    },
+    {
+      "area": "Data retention",
+      "status": "Mancante",
+      "notes": "Nessuna pulizia automatica"
+    }
   ],
   "functionalRequirements": [
     {
@@ -78,10 +118,22 @@
       "iWant": "accedere alla pagina della Privacy Policy",
       "soThat": "possa leggere come vengono trattati i miei dati prima di registrarmi",
       "acceptanceCriteria": [
-        { "text": "Esiste una route /privacy-policy accessibile senza autenticazione", "checked": true },
-        { "text": "La pagina mostra il contenuto dell'informativa privacy", "checked": true },
-        { "text": "Il footer contiene un link alla Privacy Policy", "checked": true },
-        { "text": "Il form di registrazione contiene un link alla Privacy Policy", "checked": true }
+        {
+          "text": "Esiste una route /privacy-policy accessibile senza autenticazione",
+          "checked": true
+        },
+        {
+          "text": "La pagina mostra il contenuto dell'informativa privacy",
+          "checked": true
+        },
+        {
+          "text": "Il footer contiene un link alla Privacy Policy",
+          "checked": true
+        },
+        {
+          "text": "Il form di registrazione contiene un link alla Privacy Policy",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -92,10 +144,22 @@
       "iWant": "accedere alla pagina dei Terms of Service",
       "soThat": "possa leggere le condizioni d'uso prima di registrarmi",
       "acceptanceCriteria": [
-        { "text": "Esiste una route /terms-of-service accessibile senza autenticazione", "checked": true },
-        { "text": "La pagina mostra il contenuto dei termini di servizio", "checked": true },
-        { "text": "Il footer contiene un link ai Terms of Service", "checked": true },
-        { "text": "Il form di registrazione contiene un link ai Terms of Service", "checked": true }
+        {
+          "text": "Esiste una route /terms-of-service accessibile senza autenticazione",
+          "checked": true
+        },
+        {
+          "text": "La pagina mostra il contenuto dei termini di servizio",
+          "checked": true
+        },
+        {
+          "text": "Il footer contiene un link ai Terms of Service",
+          "checked": true
+        },
+        {
+          "text": "Il form di registrazione contiene un link ai Terms of Service",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -106,12 +170,30 @@
       "iWant": "dare consenso esplicito alla Privacy Policy e ai Terms of Service in registrazione",
       "soThat": "il consenso sia tracciato e dimostrabile",
       "acceptanceCriteria": [
-        { "text": "Checkbox obbligatoria con link ai documenti", "checked": true },
-        { "text": "Il backend salva PrivacyPolicyAcceptedAt e TermsAcceptedAt", "checked": true },
-        { "text": "Il backend salva ConsentVersion", "checked": true },
-        { "text": "RegisterCommand include i campi consenso", "checked": true },
-        { "text": "Validazione backend rifiuta registrazione senza consenso", "checked": true },
-        { "text": "Audit log registra consenso", "checked": true }
+        {
+          "text": "Checkbox obbligatoria con link ai documenti",
+          "checked": true
+        },
+        {
+          "text": "Il backend salva PrivacyPolicyAcceptedAt e TermsAcceptedAt",
+          "checked": true
+        },
+        {
+          "text": "Il backend salva ConsentVersion",
+          "checked": true
+        },
+        {
+          "text": "RegisterCommand include i campi consenso",
+          "checked": true
+        },
+        {
+          "text": "Validazione backend rifiuta registrazione senza consenso",
+          "checked": true
+        },
+        {
+          "text": "Audit log registra consenso",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -122,12 +204,30 @@
       "iWant": "scaricare tutti i miei dati personali in JSON",
       "soThat": "esercitare diritto di accesso e portabilità",
       "acceptanceCriteria": [
-        { "text": "Esiste endpoint GET /api/v1/auth/export-my-data autenticato", "checked": true },
-        { "text": "JSON include profilo, consensi e ruoli", "checked": true },
-        { "text": "JSON include storico audit log utente", "checked": true },
-        { "text": "Espone solo i dati dell'utente autenticato", "checked": true },
-        { "text": "Audit log registra richiesta export", "checked": true },
-        { "text": "Frontend profilo contiene pulsante export", "checked": true }
+        {
+          "text": "Esiste endpoint GET /api/v1/auth/export-my-data autenticato",
+          "checked": true
+        },
+        {
+          "text": "JSON include profilo, consensi e ruoli",
+          "checked": true
+        },
+        {
+          "text": "JSON include storico audit log utente",
+          "checked": true
+        },
+        {
+          "text": "Espone solo i dati dell'utente autenticato",
+          "checked": true
+        },
+        {
+          "text": "Audit log registra richiesta export",
+          "checked": true
+        },
+        {
+          "text": "Frontend profilo contiene pulsante export",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -138,13 +238,34 @@
       "iWant": "cancellare definitivamente account e dati personali",
       "soThat": "esercitare diritto all'oblio",
       "acceptanceCriteria": [
-        { "text": "DELETE /api/v1/auth/account esegue hard delete", "checked": true },
-        { "text": "Elimina profilo, refresh token e consensi", "checked": true },
-        { "text": "Audit log anonimizzato (UserId null, details ripuliti)", "checked": true },
-        { "text": "Conferma password obbligatoria", "checked": true },
-        { "text": "Token utente invalidati", "checked": true },
-        { "text": "Audit log registra evento cancellazione", "checked": true },
-        { "text": "Operazione idempotente", "checked": true }
+        {
+          "text": "DELETE /api/v1/auth/account esegue hard delete",
+          "checked": true
+        },
+        {
+          "text": "Elimina profilo, refresh token e consensi",
+          "checked": true
+        },
+        {
+          "text": "Audit log anonimizzato (UserId null, details ripuliti)",
+          "checked": true
+        },
+        {
+          "text": "Conferma password obbligatoria",
+          "checked": true
+        },
+        {
+          "text": "Token utente invalidati",
+          "checked": true
+        },
+        {
+          "text": "Audit log registra evento cancellazione",
+          "checked": true
+        },
+        {
+          "text": "Operazione idempotente",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -155,11 +276,26 @@
       "iWant": "eliminazione definitiva dopo periodo configurabile",
       "soThat": "non conservare dati oltre il necessario",
       "acceptanceCriteria": [
-        { "text": "Background service di purge periodico", "checked": true },
-        { "text": "Retention configurabile (default 30 giorni)", "checked": true },
-        { "text": "Intervallo job configurabile (default 24 ore)", "checked": true },
-        { "text": "Purge riusa hard delete + anonimizzazione", "checked": true },
-        { "text": "Job logga numero utenti purgati", "checked": true }
+        {
+          "text": "Background service di purge periodico",
+          "checked": true
+        },
+        {
+          "text": "Retention configurabile (default 30 giorni)",
+          "checked": true
+        },
+        {
+          "text": "Intervallo job configurabile (default 24 ore)",
+          "checked": true
+        },
+        {
+          "text": "Purge riusa hard delete + anonimizzazione",
+          "checked": true
+        },
+        {
+          "text": "Job logga numero utenti purgati",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -170,10 +306,22 @@
       "iWant": "eliminare periodicamente token scaduti/revocati",
       "soThat": "ridurre dati inutili",
       "acceptanceCriteria": [
-        { "text": "Background service cleanup token", "checked": true },
-        { "text": "Esecuzione periodica configurabile", "checked": true },
-        { "text": "Elimina token expires/revoked oltre soglia configurata", "checked": true },
-        { "text": "Job logga numero token eliminati", "checked": true }
+        {
+          "text": "Background service cleanup token",
+          "checked": true
+        },
+        {
+          "text": "Esecuzione periodica configurabile",
+          "checked": true
+        },
+        {
+          "text": "Elimina token expires/revoked oltre soglia configurata",
+          "checked": true
+        },
+        {
+          "text": "Job logga numero token eliminati",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -184,10 +332,22 @@
       "iWant": "eliminare entry audit log oltre retention",
       "soThat": "contenere crescita DB e rispettare policy",
       "acceptanceCriteria": [
-        { "text": "Background service cleanup audit log", "checked": true },
-        { "text": "Retention configurabile (default 365 giorni)", "checked": true },
-        { "text": "Esecuzione periodica configurabile (default 24 ore)", "checked": true },
-        { "text": "Job logga numero entry eliminate", "checked": true }
+        {
+          "text": "Background service cleanup audit log",
+          "checked": true
+        },
+        {
+          "text": "Retention configurabile (default 365 giorni)",
+          "checked": true
+        },
+        {
+          "text": "Esecuzione periodica configurabile (default 24 ore)",
+          "checked": true
+        },
+        {
+          "text": "Job logga numero entry eliminate",
+          "checked": true
+        }
       ],
       "notes": null
     }
@@ -210,13 +370,13 @@
     {
       "id": "OQ-1",
       "question": "Hard delete vs anonimizzazione del record utente",
-      "answer": "Non definito nel documento; richiesta conferma.",
-      "status": "open"
+      "answer": "Decisione: hard delete del record utente (profilo, consensi, refresh token). L'anonimizzazione si applica solo agli audit log storici mantenuti per compliance e sicurezza.",
+      "status": "resolved"
     },
     {
       "id": "OQ-2",
       "question": "Grace period soft-delete default 30 giorni adeguato?",
-      "answer": "Non definito nel documento; richiesta conferma.",
+      "answer": "non definito nel documento; richiesta conferma",
       "status": "open"
     },
     {
