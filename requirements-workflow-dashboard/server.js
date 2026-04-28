@@ -300,6 +300,45 @@ app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   });
 });
 
+app.patch('/api/plans/:id/tasks/:taskId/dod/:index', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { completed } = req.body || {};
+  if (typeof completed !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid payload. "completed" must be a boolean.' });
+  }
+
+  const criterionIndex = Number.parseInt(req.params.index, 10);
+  if (!Number.isInteger(criterionIndex) || criterionIndex < 0) {
+    return res.status(400).json({ error: 'Invalid Definition of Done index' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  if (!Array.isArray(task.definitionOfDone) || !task.definitionOfDone[criterionIndex]) {
+    return res.status(404).json({ error: 'Definition of Done item not found' });
+  }
+
+  task.definitionOfDone[criterionIndex].completed = completed;
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    taskId: task.id,
+    criterionIndex,
+    completed,
+    lastUpdated: data.lastUpdated
+  });
+});
+
 app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) {

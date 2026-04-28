@@ -8,6 +8,9 @@ let editingAcceptanceStoryId = null;
 let isAcceptanceUpdating = false;
 let toastTimer = null;
 let acceptanceFocusTarget = null;
+let editingTaskDodId = null;
+let isTaskDodUpdating = false;
+let taskDodFocusTarget = null;
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
 
@@ -75,6 +78,8 @@ async function selectPlan(id) {
 
   const res = await fetch(`/api/plans/${encodeURIComponent(id)}`, { cache: 'no-store' });
   currentPlan = await res.json();
+  editingTaskDodId = null;
+  taskDodFocusTarget = null;
   renderPlanDetail();
 }
 
@@ -178,14 +183,34 @@ function renderPlanDetail() {
       ${t.whatToDo ? `<div class="task-what">${escapeHtml(t.whatToDo)}</div>` : ''}
       ${t.dependsOn?.length ? `<div class="task-depends-on"><span class="task-context-label">Depends on</span><span class="task-context-values">${t.dependsOn.map(item => `<code>${escapeHtml(item)}</code>`).join(', ')}</span></div>` : ''}
       ${t.definitionOfDone?.length ? `
-        <div class="task-dod">
-          <div class="task-dod-title">Definition of Done:</div>
-          ${t.definitionOfDone.map(d => `
-            <div class="task-dod-item${d.completed ? ' is-completed' : ''}">
-              <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
-              <span>${escapeHtml(d.description)}</span>
-            </div>
-          `).join('')}
+        <div
+          class="task-dod${editingTaskDodId === t.id ? ' is-editing' : ''}${isTaskDodUpdating ? ' is-busy' : ''}"
+          data-task-id="${encodeURIComponent(t.id)}"
+          role="button"
+          tabindex="0"
+          aria-label="Apri modalita modifica definition of done"
+          aria-expanded="${editingTaskDodId === t.id ? 'true' : 'false'}"
+          onclick="enableTaskDodEditByEncodedId('${encodeURIComponent(t.id)}')"
+          onkeydown="handleTaskDodRegionKeydown(event, '${encodeURIComponent(t.id)}')">
+          <div class="task-dod-title">
+            <span>Definition of Done:</span>
+            <span class="task-dod-hint">${editingTaskDodId === t.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span>
+            ${editingTaskDodId === t.id ? `<button type="button" class="task-dod-exit" onclick="disableTaskDodEditFromEvent(event)">Fine modifica</button>` : ''}
+          </div>
+          ${t.definitionOfDone.map((d, index) => editingTaskDodId === t.id
+            ? `
+              <button type="button" class="task-dod-item task-dod-toggle${d.completed ? ' is-completed' : ''}" onclick="toggleTaskDodItemByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', ${index}, ${d.completed ? 'false' : 'true'})" onkeydown="handleAcceptanceItemKeydown(event)" ${isTaskDodUpdating ? 'disabled' : ''}>
+                <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
+                <span>${escapeHtml(d.description || '')}</span>
+              </button>
+            `
+            : `
+              <div class="task-dod-item${d.completed ? ' is-completed' : ''}">
+                <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
+                <span>${escapeHtml(d.description || '')}</span>
+              </div>
+            `
+          ).join('')}
         </div>
       ` : ''}
       ${(t.implementationNotes || t.notes) ? `
@@ -206,6 +231,8 @@ function renderPlanDetail() {
       <td>${escapeHtml(d.date || '')}</td>
     </tr>
   `).join('') || '<tr><td colspan="4" class="empty-state" style="text-align:center">No decisions recorded</td></tr>';
+
+  restoreTaskDodFocusIfNeeded();
 }
 
 async function selectRequirement(id) {
@@ -438,6 +465,8 @@ function setSection(section) {
 
   currentPlan = null;
   currentRequirement = null;
+  editingTaskDodId = null;
+  taskDodFocusTarget = null;
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
 
@@ -558,6 +587,92 @@ function closeAllTaskStatusDropdowns() {
   document.querySelectorAll('.task-status-dropdown.is-open').forEach(dropdown => {
     dropdown.classList.remove('is-open');
   });
+}
+
+function enableTaskDodEdit(taskId) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
+  if (editingTaskDodId === taskId) return;
+  editingTaskDodId = taskId;
+  renderPlanDetail();
+}
+
+function disableTaskDodEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
+  if (!editingTaskDodId) return;
+  editingTaskDodId = null;
+  taskDodFocusTarget = null;
+  renderPlanDetail();
+}
+
+function disableTaskDodEditFromEvent(event) {
+  event.stopPropagation();
+  disableTaskDodEdit();
+}
+
+function enableTaskDodEditByEncodedId(encodedTaskId) {
+  enableTaskDodEdit(decodeURIComponent(encodedTaskId));
+}
+
+function handleTaskDodRegionKeydown(event, encodedTaskId) {
+  if (event.target !== event.currentTarget) return;
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  enableTaskDodEditByEncodedId(encodedTaskId);
+}
+
+async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
+
+  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
+  const criterion = task?.definitionOfDone?.[criterionIndex];
+  if (!task || !criterion) return;
+
+  const previousCompleted = Boolean(criterion.completed);
+  taskDodFocusTarget = { taskId, criterionIndex };
+  criterion.completed = completed;
+  isTaskDodUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/dod/${criterionIndex}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update Definition of Done item');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after Definition of Done update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Definition of Done aggiornata');
+  } catch (error) {
+    criterion.completed = previousCompleted;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isTaskDodUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function toggleTaskDodItemByEncodedIds(event, encodedPlanId, encodedTaskId, criterionIndex, completed) {
+  event.stopPropagation();
+  const planId = decodeURIComponent(encodedPlanId);
+  const taskId = decodeURIComponent(encodedTaskId);
+  toggleTaskDodItem(planId, taskId, Number(criterionIndex), completed);
 }
 
 function enableAcceptanceEdit(storyId) {
@@ -819,6 +934,28 @@ function restoreAcceptanceFocusIfNeeded() {
   });
 }
 
+function restoreTaskDodFocusIfNeeded() {
+  if (!taskDodFocusTarget || !editingTaskDodId) return;
+  if (editingTaskDodId !== taskDodFocusTarget.taskId) return;
+
+  const { taskId, criterionIndex } = taskDodFocusTarget;
+  requestAnimationFrame(() => {
+    const editingRegion = document.querySelector('.task-dod.is-editing');
+    if (!editingRegion) return;
+
+    const items = Array.from(editingRegion.querySelectorAll('.task-dod-toggle:not([disabled])'));
+    if (!items.length) return;
+
+    const safeIndex = Math.max(0, Math.min(Number(criterionIndex) || 0, items.length - 1));
+    const targetItem = items[safeIndex];
+    if (!targetItem) return;
+
+    const targetTaskId = decodeURIComponent(editingRegion.getAttribute('data-task-id') || '');
+    if (targetTaskId !== taskId) return;
+    targetItem.focus();
+  });
+}
+
 async function runSearch(query) {
   const searchResults = document.getElementById('searchResults');
   if (query.length < 2) {
@@ -927,6 +1064,10 @@ window.selectRequirementByEncodedId = selectRequirementByEncodedId;
 window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
 window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
 window.openSearchResult = openSearchResult;
+window.enableTaskDodEditByEncodedId = enableTaskDodEditByEncodedId;
+window.disableTaskDodEditFromEvent = disableTaskDodEditFromEvent;
+window.handleTaskDodRegionKeydown = handleTaskDodRegionKeydown;
+window.toggleTaskDodItemByEncodedIds = toggleTaskDodItemByEncodedIds;
 window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
 window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
