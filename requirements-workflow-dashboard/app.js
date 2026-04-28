@@ -339,11 +339,7 @@ function renderPlanDetail() {
     return `
     <div class="task-item">
       <div class="task-header">
-        <div class="task-meta-inline">
-          <span class="task-meta-chip"><code>${escapeHtml(t.id)}</code></span>
-          ${phaseValue ? `<span class="task-meta-chip"><code>${escapeHtml(phaseValue)}</code></span>` : ''}
-          ${dependsOnValue.length ? `<span class="task-meta-chip">${dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ')}</span>` : ''}
-        </div>
+        <span class="task-id">${escapeHtml(t.id)}</span>
         <div class="task-meta">
           <span class="task-size">${escapeHtml(t.size || '-')}</span>
           <div class="task-status-dropdown status-${escapeHtml(t.status)}">
@@ -364,6 +360,7 @@ function renderPlanDetail() {
           </div>
         </div>
       </div>
+      
       ${isTaskFieldEditing(t.id, 'title')
         ? `
           <div class="task-notes-form" onclick="event.stopPropagation()">
@@ -396,72 +393,78 @@ function renderPlanDetail() {
           <div class="task-notes-title-row"><strong>What to do</strong><button type="button" class="icon-action-btn${whatToDoValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'whatToDo')" aria-label="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}" title="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}">${whatToDoValue ? '✎' : '+'}</button></div>
           ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : ''}
         `}
-      ${isTaskFieldEditing(t.id, 'phase')
-        ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-phase-${escapeHtml(t.id)}">Phase</label>
-            <input id="task-phase-${escapeHtml(t.id)}" type="hidden" value="${escapeHtml(phaseValue)}">
-            <div class="task-status-dropdown task-phase-dropdown${isTaskFieldUpdating ? ' is-updating' : ''}">
-              <button type="button" class="task-status-trigger task-phase-trigger" onclick="toggleTaskPhaseDropdown(this)" ${isTaskFieldUpdating ? 'disabled' : ''}>
-                <span class="task-status-label">${escapeHtml(phaseValue || 'Select phase')}</span>
-                <span class="task-status-caret">▾</span>
-              </button>
-              <div class="task-status-menu">
-                ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
-                  const title = String(phase?.title || '').trim();
-                  if (!title) return '';
-                  return `
-                    <button
-                      type="button"
-                      class="task-status-option${title === phaseValue ? ' is-current' : ''}"
-                      onclick="handleTaskPhaseSelectByEncodedId('${encodeURIComponent(t.id)}', '${encodeURIComponent(title)}', this)">
-                      ${escapeHtml(title)}
+
+      <div class="task-meta-section">
+        <div class="task-meta-title">Task context</div>
+        <div class="task-meta-row">
+          <span class="task-meta-label">Phase</span>
+          <div class="task-meta-value">
+            ${isTaskFieldEditing(t.id, 'phase')
+              ? `
+                <div class="task-meta-editor">
+                  <input id="task-phase-${escapeHtml(t.id)}" type="hidden" value="${escapeHtml(phaseValue)}">
+                  <div class="task-status-dropdown task-phase-dropdown${isTaskFieldUpdating ? ' is-updating' : ''}">
+                    <button type="button" class="task-status-trigger task-phase-trigger" onclick="toggleTaskPhaseDropdown(this)" ${isTaskFieldUpdating ? 'disabled' : ''}>
+                      <span class="task-status-label">${escapeHtml(phaseValue || 'Select phase')}</span>
+                      <span class="task-status-caret">▾</span>
                     </button>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'phase')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-            </div>
+                    <div class="task-status-menu">
+                      ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
+                        const title = String(phase?.title || '').trim();
+                        if (!title) return '';
+                        return `<button type="button" class="task-status-option${title === phaseValue ? ' is-current' : ''}" onclick="handleTaskPhaseSelectByEncodedId('${encodeURIComponent(t.id)}', '${encodeURIComponent(title)}', this)">${escapeHtml(title)}</button>`;
+                      }).join('')}
+                    </div>
+                  </div>
+                  <div class="task-notes-actions">
+                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'phase')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
+                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+                  </div>
+                </div>
+              `
+              : `${phaseValue ? `<code>${escapeHtml(phaseValue)}</code>` : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')">${phaseValue ? '✎' : '+'}</button>`}
           </div>
-        `
-        : `
-          <div class="task-notes-title-row"><strong>Phase</strong><button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')" aria-label="${phaseValue ? 'Modifica phase task' : 'Aggiungi phase task'}" title="${phaseValue ? 'Modifica phase task' : 'Aggiungi phase task'}">${phaseValue ? '✎' : '+'}</button></div>
-          ${phaseValue ? `<div class="task-phase"><span class="task-context-values"><code>${escapeHtml(phaseValue)}</code></span></div>` : ''}
-        `}
-      ${isTaskFieldEditing(t.id, 'files')
-        ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-files-${escapeHtml(t.id)}">Files (uno per riga)</label>
-            <textarea id="task-files-${escapeHtml(t.id)}" class="task-notes-input" rows="5" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(filesValue.join('\n'))}</textarea>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'files')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-            </div>
+        </div>
+        <div class="task-meta-row">
+          <span class="task-meta-label">Depends on</span>
+          <div class="task-meta-value">
+            ${isTaskFieldEditing(t.id, 'dependsOn')
+              ? `
+                <div class="task-meta-editor">
+                  <div id="task-depends-on-editor-${escapeHtml(t.id)}" class="task-depends-on-options">${dependsOptions || '<div class="task-notes">Nessun task disponibile</div>'}</div>
+                  <div class="task-notes-actions">
+                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'dependsOn')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
+                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+                  </div>
+                </div>
+              `
+              : `${dependsOnValue.length ? dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${dependsOnValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'dependsOn')">${dependsOnValue.length ? '✎' : '+'}</button>`}
           </div>
-        `
-        : `
-          <div class="task-notes-title-row"><strong>Files</strong><button type="button" class="icon-action-btn${filesValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'files')" aria-label="${filesValue.length ? 'Modifica files task' : 'Aggiungi files task'}" title="${filesValue.length ? 'Modifica files task' : 'Aggiungi files task'}">${filesValue.length ? '✎' : '+'}</button></div>
-          ${filesValue.length ? `<div class="task-context-row"><span class="task-context-values">${filesValue.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}</span></div>` : ''}
-        `}
-      ${t.endpoints?.length ? `<div class="task-context-row"><span class="task-context-label">Endpoints</span><span class="task-context-values">${t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(', ')}</span></div>` : ''}
-      ${isTaskFieldEditing(t.id, 'dependsOn')
-        ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label">Depends on</label>
-            <div id="task-depends-on-editor-${escapeHtml(t.id)}" class="task-depends-on-options">${dependsOptions || '<div class="task-notes">Nessun task disponibile</div>'}</div>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'dependsOn')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-            </div>
+        </div>
+        <div class="task-meta-row">
+          <span class="task-meta-label">Files</span>
+          <div class="task-meta-value">
+            ${isTaskFieldEditing(t.id, 'files')
+              ? `
+                <div class="task-meta-editor">
+                  <textarea id="task-files-${escapeHtml(t.id)}" class="task-notes-input" rows="4" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(filesValue.join('\n'))}</textarea>
+                  <div class="task-notes-actions">
+                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'files')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
+                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+                  </div>
+                </div>
+              `
+              : `${filesValue.length ? filesValue.map(f => `<code>${escapeHtml(f)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${filesValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'files')">${filesValue.length ? '✎' : '+'}</button>`}
           </div>
-        `
-        : `
-          <div class="task-notes-title-row"><strong>Depends on</strong><button type="button" class="icon-action-btn${dependsOnValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'dependsOn')" aria-label="${dependsOnValue.length ? 'Modifica depends on task' : 'Aggiungi depends on task'}" title="${dependsOnValue.length ? 'Modifica depends on task' : 'Aggiungi depends on task'}">${dependsOnValue.length ? '✎' : '+'}</button></div>
-          ${dependsOnValue.length ? `<div class="task-depends-on"><span class="task-context-values">${dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(', ')}</span></div>` : ''}
-        `}
+        </div>
+        <div class="task-meta-row">
+          <span class="task-meta-label">Endpoints</span>
+          <div class="task-meta-value">${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}</div>
+        </div>
+      </div>
+
+
+
       ${t.definitionOfDone?.length ? `
         <div
           class="task-dod${editingTaskDodId === t.id ? ' is-editing' : ''}${isTaskDodUpdating ? ' is-busy' : ''}"
