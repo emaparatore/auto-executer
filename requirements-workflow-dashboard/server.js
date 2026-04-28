@@ -410,6 +410,36 @@ app.patch('/api/plans/:id/tasks/:taskId/notes', (req, res) => {
   });
 });
 
+app.patch('/api/plans/:id/tasks/:taskId/implementation-notes', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { implementationNotes } = req.body || {};
+  if (typeof implementationNotes !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "implementationNotes" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  task.implementationNotes = implementationNotes.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    planId: data.id,
+    taskId: task.id,
+    implementationNotes: task.implementationNotes,
+    lastUpdated: data.lastUpdated
+  });
+});
+
 app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) {

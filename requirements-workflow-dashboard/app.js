@@ -15,6 +15,8 @@ let isPlanNotesEditing = false;
 let isPlanNotesUpdating = false;
 let editingTaskNotesId = null;
 let isTaskNotesUpdating = false;
+let editingTaskImplementationNotesId = null;
+let isTaskImplementationNotesUpdating = false;
 let openTaskNotesIds = new Set();
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
@@ -89,6 +91,8 @@ async function selectPlan(id) {
   isPlanNotesUpdating = false;
   editingTaskNotesId = null;
   isTaskNotesUpdating = false;
+  editingTaskImplementationNotesId = null;
+  isTaskImplementationNotesUpdating = false;
   openTaskNotesIds = new Set();
   renderPlanDetail();
 }
@@ -156,7 +160,13 @@ function renderPlanDetail() {
       </div>
     `
     : `
-      ${currentNotes ? `<div class="section-card"><div class="section-title">Notes</div><div class="section-body">${escapeHtml(currentNotes)}</div><div class="plan-notes-actions"><button type="button" class="open-question-btn is-secondary" onclick="enablePlanNotesEditFromEvent(event)">Modifica</button></div></div>` : `<div class="section-card"><div class="section-title">Notes</div><div class="section-body">Nessuna nota</div><div class="plan-notes-actions"><button type="button" class="open-question-btn is-secondary" onclick="enablePlanNotesEditFromEvent(event)">Aggiungi note</button></div></div>`}
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Notes</div>
+          <button type="button" class="icon-action-btn" onclick="enablePlanNotesEditFromEvent(event)" aria-label="Modifica note piano" title="Modifica note piano">✎</button>
+        </div>
+        <div class="section-body">${currentNotes ? escapeHtml(currentNotes) : 'Nessuna nota'}</div>
+      </div>
     `;
 
   document.getElementById('overviewContent').innerHTML = `
@@ -244,32 +254,51 @@ function renderPlanDetail() {
           ).join('')}
         </div>
       ` : ''}
-      ${(t.implementationNotes || t.notes || editingTaskNotesId === t.id) ? `
-        <details class="summary-block" ${openTaskNotesIds.has(t.id) || editingTaskNotesId === t.id ? 'open' : ''} ontoggle="handleTaskNotesDetailsToggleByEncodedId(event, '${encodeURIComponent(t.id)}')">
-          <summary>Notes</summary>
-          ${t.implementationNotes ? `<div class="task-notes"><strong>Implementation Notes:</strong><br>${escapeHtml(t.implementationNotes)}</div>` : ''}
-          ${editingTaskNotesId === t.id ? `
-            <div class="task-notes-form" onclick="event.stopPropagation()">
-              <label class="open-question-label" for="task-notes-${escapeHtml(t.id)}">Task Notes</label>
-              <textarea
-                id="task-notes-${escapeHtml(t.id)}"
-                class="task-notes-input"
-                rows="5"
-                ${isTaskNotesUpdating ? 'disabled' : ''}
-              >${escapeHtml(t.notes || '')}</textarea>
-              <div class="task-notes-actions">
-                <button type="button" class="open-question-btn" onclick="saveTaskNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskNotesUpdating ? 'disabled' : ''}>Salva</button>
-                <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskNotesEditFromEvent(event)" ${isTaskNotesUpdating ? 'disabled' : ''}>Annulla</button>
-              </div>
-            </div>
-          ` : `
-            ${t.notes ? `<div class="task-notes"><strong>Notes:</strong><br>${escapeHtml(t.notes)}</div>` : '<div class="task-notes">Nessuna nota</div>'}
+      <details class="summary-block" ${openTaskNotesIds.has(t.id) || editingTaskNotesId === t.id || editingTaskImplementationNotesId === t.id ? 'open' : ''} ontoggle="handleTaskNotesDetailsToggleByEncodedId(event, '${encodeURIComponent(t.id)}')">
+        <summary>Notes</summary>
+        ${editingTaskImplementationNotesId === t.id ? `
+          <div class="task-notes-form" onclick="event.stopPropagation()">
+            <label class="open-question-label" for="task-implementation-notes-${escapeHtml(t.id)}">Implementation Notes</label>
+            <textarea
+              id="task-implementation-notes-${escapeHtml(t.id)}"
+              class="task-notes-input"
+              rows="5"
+              ${isTaskImplementationNotesUpdating ? 'disabled' : ''}
+            >${escapeHtml(t.implementationNotes || '')}</textarea>
             <div class="task-notes-actions">
-              <button type="button" class="open-question-btn is-secondary" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')">${t.notes ? 'Modifica note' : 'Aggiungi note'}</button>
+              <button type="button" class="open-question-btn" onclick="saveTaskImplementationNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskImplementationNotesUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskImplementationNotesEditFromEvent(event)" ${isTaskImplementationNotesUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
-          `}
-        </details>
-      ` : ''}
+          </div>
+        ` : `
+          <div class="task-notes-title-row">
+            <strong>Implementation Notes</strong>
+            <button type="button" class="icon-action-btn" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="Modifica implementation notes" title="Modifica implementation notes">✎</button>
+          </div>
+          ${t.implementationNotes ? `<div class="task-notes">${escapeHtml(t.implementationNotes)}</div>` : '<div class="task-notes">Nessuna implementation note</div>'}
+        `}
+        ${editingTaskNotesId === t.id ? `
+          <div class="task-notes-form" onclick="event.stopPropagation()">
+            <label class="open-question-label" for="task-notes-${escapeHtml(t.id)}">Task Notes</label>
+            <textarea
+              id="task-notes-${escapeHtml(t.id)}"
+              class="task-notes-input"
+              rows="5"
+              ${isTaskNotesUpdating ? 'disabled' : ''}
+            >${escapeHtml(t.notes || '')}</textarea>
+            <div class="task-notes-actions">
+              <button type="button" class="open-question-btn" onclick="saveTaskNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskNotesUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskNotesEditFromEvent(event)" ${isTaskNotesUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          </div>
+        ` : `
+          <div class="task-notes-title-row">
+            <strong>Task Notes</strong>
+            <button type="button" class="icon-action-btn" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="Modifica task notes" title="Modifica task notes">✎</button>
+          </div>
+          ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : '<div class="task-notes">Nessuna nota</div>'}
+        `}
+      </details>
     </div>
   `).join('') || '<p class="empty-state">No tasks defined</p>';
 
@@ -521,6 +550,8 @@ function setSection(section) {
   isPlanNotesUpdating = false;
   editingTaskNotesId = null;
   isTaskNotesUpdating = false;
+  editingTaskImplementationNotesId = null;
+  isTaskImplementationNotesUpdating = false;
   openTaskNotesIds = new Set();
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
@@ -749,6 +780,19 @@ function enableTaskNotesEdit(taskId) {
   renderPlanDetail();
 }
 
+function enableTaskImplementationNotesEdit(taskId) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
+  if (!taskId || editingTaskImplementationNotesId === taskId) return;
+  editingTaskImplementationNotesId = taskId;
+  openTaskNotesIds.add(taskId);
+  renderPlanDetail();
+}
+
+function enableTaskImplementationNotesEditByEncodedId(event, encodedTaskId) {
+  event.stopPropagation();
+  enableTaskImplementationNotesEdit(decodeURIComponent(encodedTaskId));
+}
+
 function enableTaskNotesEditByEncodedId(event, encodedTaskId) {
   event.stopPropagation();
   enableTaskNotesEdit(decodeURIComponent(encodedTaskId));
@@ -764,6 +808,18 @@ function cancelTaskNotesEdit() {
 function cancelTaskNotesEditFromEvent(event) {
   event.stopPropagation();
   cancelTaskNotesEdit();
+}
+
+function cancelTaskImplementationNotesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
+  if (!editingTaskImplementationNotesId) return;
+  editingTaskImplementationNotesId = null;
+  renderPlanDetail();
+}
+
+function cancelTaskImplementationNotesEditFromEvent(event) {
+  event.stopPropagation();
+  cancelTaskImplementationNotesEdit();
 }
 
 async function saveTaskNotes(planId, taskId) {
@@ -823,6 +879,65 @@ function saveTaskNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
   const planId = decodeURIComponent(encodedPlanId);
   const taskId = decodeURIComponent(encodedTaskId);
   saveTaskNotes(planId, taskId);
+}
+
+async function saveTaskImplementationNotes(planId, taskId) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
+  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
+  if (!task) return;
+
+  const implementationNotesEl = document.getElementById(`task-implementation-notes-${taskId}`);
+  if (!implementationNotesEl) return;
+
+  const implementationNotes = String(implementationNotesEl.value || '');
+  const previousImplementationNotes = task.implementationNotes || '';
+
+  task.implementationNotes = implementationNotes;
+  isTaskImplementationNotesUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/implementation-notes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ implementationNotes })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update task implementation notes');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after task implementation notes update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    openTaskNotesIds.add(taskId);
+    editingTaskImplementationNotesId = null;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Implementation notes task salvate');
+  } catch (error) {
+    task.implementationNotes = previousImplementationNotes;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isTaskImplementationNotesUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function saveTaskImplementationNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
+  event.stopPropagation();
+  const planId = decodeURIComponent(encodedPlanId);
+  const taskId = decodeURIComponent(encodedTaskId);
+  saveTaskImplementationNotes(planId, taskId);
 }
 
 function handleTaskNotesDetailsToggle(taskId, detailsEl) {
@@ -1304,6 +1419,9 @@ window.savePlanNotesFromEvent = savePlanNotesFromEvent;
 window.enableTaskNotesEditByEncodedId = enableTaskNotesEditByEncodedId;
 window.cancelTaskNotesEditFromEvent = cancelTaskNotesEditFromEvent;
 window.saveTaskNotesByEncodedIds = saveTaskNotesByEncodedIds;
+window.enableTaskImplementationNotesEditByEncodedId = enableTaskImplementationNotesEditByEncodedId;
+window.cancelTaskImplementationNotesEditFromEvent = cancelTaskImplementationNotesEditFromEvent;
+window.saveTaskImplementationNotesByEncodedIds = saveTaskImplementationNotesByEncodedIds;
 window.handleTaskNotesDetailsToggleByEncodedId = handleTaskNotesDetailsToggleByEncodedId;
 window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
