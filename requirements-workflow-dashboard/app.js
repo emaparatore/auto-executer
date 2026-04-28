@@ -237,9 +237,9 @@ function renderRequirementDetail() {
   document.getElementById('openQuestionsCount').textContent = openQuestions.length;
 
   document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card stat-stories"><div class="stat-value">${rf.length}</div><div class="stat-label">Functional</div></div>
-    <div class="stat-card stat-stories-done"><div class="stat-value">${decisions.length}</div><div class="stat-label">Decisions</div></div>
-    <div class="stat-card stat-tasks"><div class="stat-value">${rnf.length}</div><div class="stat-label">Non-Functional</div></div>
+    <div class="stat-card stat-stories"><div class="stat-value">${rf.length}</div><div class="stat-label">Functional Requirements</div></div>
+    <div class="stat-card stat-tasks"><div class="stat-value">${rnf.length}</div><div class="stat-label">Non-Functional Requirements</div></div>
+    <div class="stat-card stat-stories-done"><div class="stat-value">${decisions.length}</div><div class="stat-label">Architectural Decisions</div></div>
     <div class="stat-card stat-tasks-done"><div class="stat-value">${stories.length}</div><div class="stat-label">User Stories</div></div>
   `;
 

@@ -287,10 +287,22 @@ body::after {
   border-bottom: 1px solid var(--stroke);
   padding: 0 24px;
   background: rgba(39, 42, 46, 0.72);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 151, 143, 0.45) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
-.tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: #c8c1b5; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
+.tabs::-webkit-scrollbar { height: 6px; }
+.tabs::-webkit-scrollbar-track { background: transparent; }
+.tabs::-webkit-scrollbar-thumb {
+  background: rgba(154, 151, 143, 0.45);
+  border-radius: 999px;
+}
+.tabs::-webkit-scrollbar-thumb:hover { background: rgba(154, 151, 143, 0.65); }
+
+.tab { padding: 14px 16px; font-size: 14px; font-weight: 600; color: #c8c1b5; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; flex: 0 0 auto; }
 .tab:hover { color: #d6d2ca; }
 .tab.active { color: #e5e2db; border-bottom-color: var(--brand); }
 .tab.hidden { display: none; }
@@ -676,20 +688,7 @@ details.summary-block { margin-top: 10px; }
   .section-switch { align-self: flex-start; }
   .search-box { max-width: 100%; }
   .detail-title { font-size: 32px; }
-  .tabs {
-    padding: 0 16px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(154, 151, 143, 0.45) transparent;
-  }
-  .tabs::-webkit-scrollbar { height: 6px; }
-  .tabs::-webkit-scrollbar-track { background: transparent; }
-  .tabs::-webkit-scrollbar-thumb {
-    background: rgba(154, 151, 143, 0.45);
-    border-radius: 999px;
-  }
-  .tabs::-webkit-scrollbar-thumb:hover { background: rgba(154, 151, 143, 0.65); }
+  .tabs { padding: 0 16px; }
   .tab-content { padding: 16px; }
   .task-item { padding: 16px; }
   .section-card { padding: 14px 16px; }
