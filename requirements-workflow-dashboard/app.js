@@ -217,9 +217,10 @@ function renderRequirementDetail() {
   const decisions = data.architecturalDecisions || [];
   const stories = data.userStories || [];
   const openQuestions = data.openQuestions || [];
+  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'overview';
 
   showDetail();
-  configureRequirementTabs(decisions.length > 0);
+  configureRequirementTabs(decisions.length > 0, activeTab);
 
   document.getElementById('detailId').textContent = doc.id || 'N/A';
   document.getElementById('detailTitle').textContent = doc.title || 'Requirement';
@@ -331,7 +332,7 @@ function configurePlanTabs(activeTab = 'overview') {
   activateTab(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
 }
 
-function configureRequirementTabs(hasArchitecturalDecisions) {
+function configureRequirementTabs(hasArchitecturalDecisions, activeTab = 'overview') {
   toggleTab('overview', true);
   toggleTab('stories', false);
   toggleTab('tasks', false);
@@ -341,7 +342,9 @@ function configureRequirementTabs(hasArchitecturalDecisions) {
   toggleTab('non-functional', true);
   toggleTab('user-stories', true);
   toggleTab('open-questions', true);
-  activateTab('overview');
+  const requestedTab = activeTab || 'overview';
+  const requestedTabEl = document.querySelector(`.tab[data-tab="${requestedTab}"]`);
+  activateTab(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
 }
 
 function toggleTab(name, visible) {

@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "completed",
   "created": null,
-  "lastUpdated": null,
+  "lastUpdated": "2026-04-28",
   "decisions": [
     {
       "decision": "Isolamento ambienti",
@@ -57,11 +57,26 @@
       "dependsOn": [],
       "whatToDo": "Parametrizzare docker-compose.deploy.yml: rimuovere container_name hardcoded (5 servizi), cambiare name in name: ${COMPOSE_PROJECT_NAME:-seed-production}, parametrizzare porte nginx (${NGINX_HTTP_PORT:-80}:80, ${NGINX_HTTPS_PORT:-443}:443), parametrizzare porta Seq (127.0.0.1:${SEQ_PORT:-8081}:80), aggiungere variabile Client__BaseUrl che usa ${CLIENT_BASE_URL}",
       "definitionOfDone": [
-        { "description": "Rimuovere tutti i container_name hardcoded (5 servizi)", "completed": true },
-        { "description": "Cambiare name: seed-app-deploy in name: ${COMPOSE_PROJECT_NAME:-seed-production}", "completed": true },
-        { "description": "Parametrizzare le porte nginx", "completed": true },
-        { "description": "Parametrizzare la porta Seq", "completed": true },
-        { "description": "Aggiungere variabile Client__BaseUrl", "completed": true }
+        {
+          "description": "Rimuovere tutti i container_name hardcoded (5 servizi)",
+          "completed": true
+        },
+        {
+          "description": "Cambiare name: seed-app-deploy in name: ${COMPOSE_PROJECT_NAME:-seed-production}",
+          "completed": true
+        },
+        {
+          "description": "Parametrizzare le porte nginx",
+          "completed": true
+        },
+        {
+          "description": "Parametrizzare la porta Seq",
+          "completed": true
+        },
+        {
+          "description": "Aggiungere variabile Client__BaseUrl",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "I service names interni (postgres, api, web, nginx, seq) restano invariati"
@@ -74,7 +89,10 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare .env.prod.example aggiungendo COMPOSE_PROJECT_NAME, NGINX_HTTP_PORT, NGINX_HTTPS_PORT, SEQ_PORT, CLIENT_BASE_URL con commenti esplicativi",
       "definitionOfDone": [
-        { "description": "Aggiungere variabili di configurazione stack", "completed": true }
+        {
+          "description": "Aggiungere variabili di configurazione stack",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": null
@@ -87,11 +105,26 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare deploy.yml per dual-environment: aggiungere output deploy_dir, aggiornare step Sync deploy files, aggiornare step Deploy via SSH, aggiornare path BACKUP_DIR, copiare file nginx",
       "definitionOfDone": [
-        { "description": "Aggiungere output deploy_dir nel job determine-environment", "completed": true },
-        { "description": "Aggiornare step Sync deploy files to VPS", "completed": true },
-        { "description": "Aggiornare step Deploy via SSH", "completed": true },
-        { "description": "Aggiornare path BACKUP_DIR in base all'ambiente", "completed": true },
-        { "description": "Copiare file nginx dal CI", "completed": true }
+        {
+          "description": "Aggiungere output deploy_dir nel job determine-environment",
+          "completed": true
+        },
+        {
+          "description": "Aggiornare step Sync deploy files to VPS",
+          "completed": true
+        },
+        {
+          "description": "Aggiornare step Deploy via SSH",
+          "completed": true
+        },
+        {
+          "description": "Aggiornare path BACKUP_DIR in base all'ambiente",
+          "completed": true
+        },
+        {
+          "description": "Copiare file nginx dal CI",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": null
@@ -104,8 +137,14 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare scripts (migrate.sh, seed.sh) per environment-aware paths: cambiare BACKUP_DIR default, supportare i nuovi path",
       "definitionOfDone": [
-        { "description": "Cambiare BACKUP_DIR default", "completed": true },
-        { "description": "Aggiornare restore.sh per nuovi path backup", "completed": true }
+        {
+          "description": "Cambiare BACKUP_DIR default",
+          "completed": true
+        },
+        {
+          "description": "Aggiornare restore.sh per nuovi path backup",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Il COMPOSE_FILE è già parametrizzato via env var"
@@ -118,16 +157,46 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare docs/vps-setup-guide.md: riscrivere Sezione 5 (Directory di Deploy), Sezione 6 (Variabili d'Ambiente), Sezione 7 (Cloudflare + DNS), aggiungere sezione Cloudflare Access, Sezione 8 (SSL), Sezione 9 (Primo Deploy), Sezione 4 (Firewall), Sezione 13 (Troubleshooting), Cheat sheet, aggiungere guida migrazione",
       "definitionOfDone": [
-        { "description": "Sezione 5 Directory di Deploy riscritta", "completed": true },
-        { "description": "Sezione 6 Variabili d'Ambiente aggiornata", "completed": true },
-        { "description": "Sezione 7 Cloudflare + DNS aggiornata", "completed": true },
-        { "description": "Nuova sezione Cloudflare Access", "completed": true },
-        { "description": "Sezione 8 SSL aggiornata", "completed": true },
-        { "description": "Sezione 9 Primo Deploy aggiornata", "completed": true },
-        { "description": "Sezione 4 Firewall aggiornata", "completed": true },
-        { "description": "Sezione 13 Troubleshooting aggiornata", "completed": true },
-        { "description": "Cheat sheet aggiornato", "completed": true },
-        { "description": "Nuova sezione Guida migrazione", "completed": true }
+        {
+          "description": "Sezione 5 Directory di Deploy riscritta",
+          "completed": true
+        },
+        {
+          "description": "Sezione 6 Variabili d'Ambiente aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Sezione 7 Cloudflare + DNS aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Nuova sezione Cloudflare Access",
+          "completed": true
+        },
+        {
+          "description": "Sezione 8 SSL aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Sezione 9 Primo Deploy aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Sezione 4 Firewall aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Sezione 13 Troubleshooting aggiornata",
+          "completed": true
+        },
+        {
+          "description": "Cheat sheet aggiornato",
+          "completed": true
+        },
+        {
+          "description": "Nuova sezione Guida migrazione",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": null
@@ -140,9 +209,18 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare docs/ci-cd.md: aggiornare sezione Deploy con nuovi path, aggiornare GitHub Settings, aggiornare riferimenti a /opt/seed-app/",
       "definitionOfDone": [
-        { "description": "Sezione Deploy aggiornata", "completed": true },
-        { "description": "GitHub Settings aggiornati", "completed": true },
-        { "description": "Riferimenti path aggiornati", "completed": true }
+        {
+          "description": "Sezione Deploy aggiornata",
+          "completed": true
+        },
+        {
+          "description": "GitHub Settings aggiornati",
+          "completed": true
+        },
+        {
+          "description": "Riferimenti path aggiornati",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": null
@@ -155,7 +233,10 @@
       "dependsOn": [],
       "whatToDo": "Aggiornare CLAUDE.md: aggiornare entry di docs/vps-setup-guide.md nella lista docs se la descrizione cambia",
       "definitionOfDone": [
-        { "description": "CLAUDE.md aggiornato", "completed": true }
+        {
+          "description": "CLAUDE.md aggiornato",
+          "completed": true
+        }
       ],
       "decision": null,
       "notes": "Nessuna modifica necessaria"
@@ -164,11 +245,14 @@
       "id": "T-8",
       "stories": [],
       "size": "large",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [],
       "whatToDo": "Migrazione VPS manuale: fermare stack corrente, spostare .env e backup, aggiornare .env production, creare volume SSL, aprire porta 8443, rimuovere vecchio repo clonato, triggerare Docker Publish, verificare, configurare staging",
       "definitionOfDone": [
-        { "description": "Operazione manuala documentata nella guida", "completed": false }
+        {
+          "description": "Operazione manuala documentata nella guida",
+          "completed": false
+        }
       ],
       "decision": null,
       "notes": "Task manuale - richiede ~1 minuto di downtime per fermare il vecchio stack"
