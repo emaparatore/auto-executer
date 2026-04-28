@@ -608,6 +608,18 @@ window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
 window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
 window.openSearchResult = openSearchResult;
 
-Promise.all([loadPlans(), loadRequirements()]).then(() => {
-  setSection('plans');
-});
+function hideBootLoader() {
+  document.body.classList.remove('loading');
+}
+
+Promise.all([loadPlans(), loadRequirements()])
+  .then(() => {
+    setSection('plans');
+  })
+  .catch(error => {
+    const loaderText = document.querySelector('.boot-loader-text');
+    if (loaderText) loaderText.textContent = `Errore caricamento: ${error.message}`;
+  })
+  .finally(() => {
+    hideBootLoader();
+  });

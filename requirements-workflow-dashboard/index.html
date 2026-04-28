@@ -4,10 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Requirements Workflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body class="loading">
+  <div class="boot-loader" id="bootLoader" role="status" aria-live="polite" aria-label="Caricamento dashboard">
+    <div class="boot-loader-card">
+      <div class="boot-loader-spinner" aria-hidden="true"></div>
+      <div class="boot-loader-text">Caricamento workspace...</div>
+    </div>
+  </div>
   <header class="header">
     <div class="header-content">
       <div class="logo">

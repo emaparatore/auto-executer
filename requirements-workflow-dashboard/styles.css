@@ -1,5 +1,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --bg: #171718;
   --bg-soft: #1f2022;
@@ -48,6 +52,10 @@ body {
   position: relative;
 }
 
+body.loading {
+  overflow: hidden;
+}
+
 body::before {
   content: '';
   position: fixed;
@@ -68,6 +76,82 @@ body::after {
   pointer-events: none;
   background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(5, 8, 6, 0.45) 100%);
   z-index: 0;
+}
+
+.boot-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 17, 19, 0.86);
+  backdrop-filter: blur(4px);
+  z-index: 400;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.62s ease, visibility 0.62s ease;
+}
+
+body.loading .boot-loader {
+  opacity: 1;
+  visibility: visible;
+}
+
+.boot-loader-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(214, 207, 194, 0.24);
+  background: rgba(30, 32, 35, 0.94);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(0);
+  transition: transform 0.62s ease, opacity 0.62s ease;
+}
+
+body.loading .boot-loader-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body:not(.loading) .boot-loader-card {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.boot-loader-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(214, 207, 194, 0.24);
+  border-top-color: #d8d2c6;
+  animation: bootLoaderSpin 0.8s linear infinite;
+}
+
+.boot-loader-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e6e0d5;
+}
+
+@keyframes bootLoaderSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header,
+.main {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.72s ease, transform 0.72s ease;
+}
+
+body.loading .header,
+body.loading .main {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 .header {
@@ -220,6 +304,7 @@ body::after {
   border: 1px solid var(--stroke);
   overflow: hidden;
   box-shadow: var(--shadow-soft);
+  min-height: 320px;
 }
 
 .plans-list-header {
