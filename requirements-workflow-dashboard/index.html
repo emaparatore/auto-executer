@@ -14,6 +14,10 @@
         <div class="logo-icon">P</div>
         Plans Explorer
       </div>
+      <div class="section-switch" aria-label="Main section switcher">
+        <button class="section-switch-tab active" data-section="plans" type="button">Plans</button>
+        <button class="section-switch-tab" data-section="requirements" type="button">Requirements</button>
+      </div>
       <div class="search-box">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -28,18 +32,18 @@
     <aside class="sidebar">
       <div class="plans-list">
         <div class="plans-list-header">
-          Plans <span class="plans-count" id="plansCount"></span>
+          <span id="listHeaderTitle">Plans</span> <span class="plans-count" id="plansCount"></span>
         </div>
         <div id="plansList"></div>
       </div>
     </aside>
     
     <div class="content">
-      <div class="welcome" id="welcome">
-        <div class="welcome-icon">📋</div>
-        <div class="welcome-title">Select a plan</div>
-        <div class="welcome-text">Choose a plan from the sidebar to view its details, stories, and tasks.</div>
-      </div>
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">📋</div>
+          <div class="welcome-title" id="welcomeTitle">Select a plan</div>
+          <div class="welcome-text" id="welcomeText">Choose a plan from the sidebar to view its details, stories, and tasks.</div>
+        </div>
       
       <div class="detail-view" id="detailView">
         <div class="detail-header">
@@ -60,7 +64,7 @@
               <span class="detail-meta-value" id="detailLastUpdated"></span>
             </div>
             <div class="detail-meta-item">
-              <span class="detail-meta-label">Requirements: </span>
+              <span class="detail-meta-label" id="detailRequirementsLabel">Requirements: </span>
               <span class="detail-meta-value" id="detailRequirements"></span>
             </div>
           </div>
@@ -71,6 +75,11 @@
           <div class="tab" data-tab="stories">Stories <span class="tab-count" id="storiesCount">0</span></div>
           <div class="tab" data-tab="tasks">Tasks <span class="tab-count" id="tasksCount">0</span></div>
           <div class="tab" data-tab="decisions">Decisions <span class="tab-count" id="decisionsCount">0</span></div>
+          <div class="tab hidden" data-tab="functional">Functional Requirements <span class="tab-count" id="functionalCount">0</span></div>
+          <div class="tab hidden" data-tab="architectural-decisions">Architectural Decisions <span class="tab-count" id="architecturalDecisionsCount">0</span></div>
+          <div class="tab hidden" data-tab="non-functional">Non-Functional Requirements <span class="tab-count" id="nonFunctionalCount">0</span></div>
+          <div class="tab hidden" data-tab="user-stories">User Stories <span class="tab-count" id="userStoriesCount">0</span></div>
+          <div class="tab hidden" data-tab="open-questions">Open Questions <span class="tab-count" id="openQuestionsCount">0</span></div>
         </div>
         
         <div class="tab-content show" id="tab-overview">
@@ -99,6 +108,26 @@
             </thead>
             <tbody id="decisionsList"></tbody>
           </table>
+        </div>
+
+        <div class="tab-content" id="tab-functional">
+          <div class="tasks-list" id="functionalList"></div>
+        </div>
+
+        <div class="tab-content" id="tab-architectural-decisions">
+          <div class="tasks-list" id="architecturalDecisionsList"></div>
+        </div>
+
+        <div class="tab-content" id="tab-non-functional">
+          <div class="tasks-list" id="nonFunctionalList"></div>
+        </div>
+
+        <div class="tab-content" id="tab-user-stories">
+          <div class="tasks-list" id="userStoriesRequirementsList"></div>
+        </div>
+
+        <div class="tab-content" id="tab-open-questions">
+          <div class="tasks-list" id="openQuestionsList"></div>
         </div>
       </div>
     </div>

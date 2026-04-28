@@ -90,6 +90,35 @@ body::after {
   gap: 24px;
 }
 
+.section-switch {
+  display: inline-flex;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(31, 34, 37, 0.9);
+}
+
+.section-switch-tab {
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.section-switch-tab:hover {
+  color: var(--ink);
+}
+
+.section-switch-tab.active {
+  color: #1c1d1f;
+  background: linear-gradient(145deg, #8f8c84 0%, #b0aba0 60%, #cec8ba 100%);
+}
+
 .logo {
   font-family: 'Lora', Georgia, serif;
   font-size: 32px;
@@ -163,6 +192,11 @@ body::after {
 .type-plan { background: rgba(154, 151, 143, 0.24); color: #dad7d0; }
 .type-story { background: rgba(145, 142, 135, 0.24); color: #d7d3cb; }
 .type-task { background: rgba(135, 133, 128, 0.24); color: #d2cfc8; }
+.type-requirement { background: rgba(120, 150, 182, 0.28); color: #e3eef9; }
+.type-rf { background: rgba(117, 156, 129, 0.28); color: #e2f6e8; }
+.type-rnf { background: rgba(169, 146, 107, 0.3); color: #fff3de; }
+.type-user-story { background: rgba(143, 132, 166, 0.28); color: #efe8ff; }
+.type-open-question { background: rgba(171, 124, 124, 0.3); color: #ffeaea; }
 
 .main {
   max-width: 1400px;
@@ -259,6 +293,7 @@ body::after {
 .tab { padding: 14px 20px; font-size: 14px; font-weight: 600; color: #c8c1b5; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
 .tab:hover { color: #d6d2ca; }
 .tab.active { color: #e5e2db; border-bottom-color: var(--brand); }
+.tab.hidden { display: none; }
 .tab-count {
   margin-left: 6px;
   min-width: 34px;
@@ -638,6 +673,7 @@ details.summary-block { margin-top: 10px; }
   .main { grid-template-columns: 1fr; }
   .sidebar { position: static; }
   .header-content { flex-direction: column; align-items: stretch; }
+  .section-switch { align-self: flex-start; }
   .search-box { max-width: 100%; }
   .detail-title { font-size: 32px; }
   .tabs {
