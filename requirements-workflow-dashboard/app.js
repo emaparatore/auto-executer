@@ -163,9 +163,9 @@ function renderPlanDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Notes</div>
-          <button type="button" class="icon-action-btn" onclick="enablePlanNotesEditFromEvent(event)" aria-label="Modifica note piano" title="Modifica note piano">✎</button>
+          <button type="button" class="icon-action-btn${currentNotes ? '' : ' is-add'}" onclick="enablePlanNotesEditFromEvent(event)" aria-label="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}" title="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}">${currentNotes ? '✎' : '+'}</button>
         </div>
-        <div class="section-body">${currentNotes ? escapeHtml(currentNotes) : 'Nessuna nota'}</div>
+        ${currentNotes ? `<div class="section-body">${escapeHtml(currentNotes)}</div>` : ''}
       </div>
     `;
 
@@ -273,9 +273,9 @@ function renderPlanDetail() {
         ` : `
           <div class="task-notes-title-row">
             <strong>Implementation Notes</strong>
-            <button type="button" class="icon-action-btn" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="Modifica implementation notes" title="Modifica implementation notes">✎</button>
+            <button type="button" class="icon-action-btn${t.implementationNotes ? '' : ' is-add'}" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}" title="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}">${t.implementationNotes ? '✎' : '+'}</button>
           </div>
-          ${t.implementationNotes ? `<div class="task-notes">${escapeHtml(t.implementationNotes)}</div>` : '<div class="task-notes">Nessuna implementation note</div>'}
+          ${t.implementationNotes ? `<div class="task-notes">${escapeHtml(t.implementationNotes)}</div>` : ''}
         `}
         ${editingTaskNotesId === t.id ? `
           <div class="task-notes-form" onclick="event.stopPropagation()">
@@ -294,9 +294,9 @@ function renderPlanDetail() {
         ` : `
           <div class="task-notes-title-row">
             <strong>Task Notes</strong>
-            <button type="button" class="icon-action-btn" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="Modifica task notes" title="Modifica task notes">✎</button>
+            <button type="button" class="icon-action-btn${t.notes ? '' : ' is-add'}" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}" title="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}">${t.notes ? '✎' : '+'}</button>
           </div>
-          ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : '<div class="task-notes">Nessuna nota</div>'}
+          ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
         `}
       </details>
     </div>

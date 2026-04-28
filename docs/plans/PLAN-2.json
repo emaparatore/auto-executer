@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": null,
-  "lastUpdated": "2026-04-28T03:19:31.521Z",
+  "lastUpdated": "2026-04-28T03:46:04.360Z",
   "decisions": [
     {
       "decision": "Isolamento ambienti",
@@ -127,7 +127,8 @@
         }
       ],
       "decision": null,
-      "notes": null
+      "notes": null,
+      "implementationNotes": ""
     },
     {
       "id": "T-4",
