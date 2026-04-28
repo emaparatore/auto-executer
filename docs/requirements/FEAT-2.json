@@ -1,0 +1,236 @@
+{
+  "document": {
+    "id": "FEAT-2",
+    "title": "GDPR & Privacy Compliance",
+    "status": "completed",
+    "version": "1.0",
+    "language": "it",
+    "sourcePath": "docs/requirements/FEAT-2.md",
+    "notes": "Conversione da markdown a JSON per requirements workflow"
+  },
+  "overview": "L'applicazione deve conformarsi al GDPR (Reg. UE 2016/679): privacy policy e termini accessibili, consenso esplicito in registrazione, export dati personali (Art. 15), diritto all'oblio (Art. 17) e data retention automatica.",
+  "currentState": [
+    { "area": "Audit logging", "status": "Esistente", "notes": "Sistema completo con IP, user agent, azioni" },
+    { "area": "Dati raccolti", "status": "OK", "notes": "Solo email, nome, cognome" },
+    { "area": "Condivisione dati terzi", "status": "OK", "notes": "Nessuna integrazione esterna" },
+    { "area": "HTTPS", "status": "OK", "notes": "UseHttpsRedirection + HSTS" },
+    { "area": "Password hashing", "status": "OK", "notes": "ASP.NET Identity" },
+    { "area": "Cancellazione account", "status": "Parziale", "notes": "Solo soft delete" },
+    { "area": "Privacy Policy / ToS", "status": "Mancante", "notes": "Nessuna pagina o route" },
+    { "area": "Consenso registrazione", "status": "Mancante", "notes": "Nessun tracciamento" },
+    { "area": "Export dati utente", "status": "Mancante", "notes": "Solo GET /auth/me" },
+    { "area": "Data retention", "status": "Mancante", "notes": "Nessuna pulizia automatica" }
+  ],
+  "functionalRequirements": [
+    {
+      "id": "RF-1",
+      "title": "Pagine Privacy Policy e Terms of Service",
+      "description": "Pagine pubbliche senza autenticazione, raggiungibili da footer e form registrazione."
+    },
+    {
+      "id": "RF-2",
+      "title": "Consenso alla Registrazione",
+      "description": "Checkbox obbligatoria con consenso esplicito; tracciamento timestamp e versione documento accettato."
+    },
+    {
+      "id": "RF-3",
+      "title": "Diritto di Accesso — Export Dati Personali",
+      "description": "Export JSON con profilo, storico accessi e consensi dell'utente autenticato."
+    },
+    {
+      "id": "RF-4",
+      "title": "Diritto all'Oblio — Cancellazione Effettiva",
+      "description": "Hard delete dati utente; anonimizzazione audit log; eliminazione refresh token."
+    },
+    {
+      "id": "RF-5",
+      "title": "Data Retention e Pulizia Automatica",
+      "description": "Purge utenti soft-deleted, cleanup refresh token, retention audit log con periodi configurabili."
+    }
+  ],
+  "nonFunctionalRequirements": [
+    {
+      "id": "RNF-1",
+      "title": "Sicurezza dei dati esportati",
+      "description": "Endpoint protetto e limitato ai soli dati dell'utente autenticato."
+    },
+    {
+      "id": "RNF-2",
+      "title": "Idempotenza della cancellazione",
+      "description": "Richieste ripetute su account già cancellati non causano errori o side effect."
+    },
+    {
+      "id": "RNF-3",
+      "title": "Configurabilità retention",
+      "description": "Periodi configurabili via appsettings.json senza modifiche codice."
+    },
+    {
+      "id": "RNF-4",
+      "title": "Contenuti privacy policy",
+      "description": "Contenuti statici facilmente modificabili, senza CMS."
+    }
+  ],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Visualizzare la Privacy Policy",
+      "asA": "visitatore del sito",
+      "iWant": "accedere alla pagina della Privacy Policy",
+      "soThat": "possa leggere come vengono trattati i miei dati prima di registrarmi",
+      "acceptanceCriteria": [
+        { "text": "Esiste una route /privacy-policy accessibile senza autenticazione", "checked": true },
+        { "text": "La pagina mostra il contenuto dell'informativa privacy", "checked": true },
+        { "text": "Il footer contiene un link alla Privacy Policy", "checked": true },
+        { "text": "Il form di registrazione contiene un link alla Privacy Policy", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-002",
+      "title": "Visualizzare i Terms of Service",
+      "asA": "visitatore del sito",
+      "iWant": "accedere alla pagina dei Terms of Service",
+      "soThat": "possa leggere le condizioni d'uso prima di registrarmi",
+      "acceptanceCriteria": [
+        { "text": "Esiste una route /terms-of-service accessibile senza autenticazione", "checked": true },
+        { "text": "La pagina mostra il contenuto dei termini di servizio", "checked": true },
+        { "text": "Il footer contiene un link ai Terms of Service", "checked": true },
+        { "text": "Il form di registrazione contiene un link ai Terms of Service", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-003",
+      "title": "Accettare Privacy Policy e ToS alla registrazione",
+      "asA": "nuovo utente",
+      "iWant": "dare consenso esplicito alla Privacy Policy e ai Terms of Service in registrazione",
+      "soThat": "il consenso sia tracciato e dimostrabile",
+      "acceptanceCriteria": [
+        { "text": "Checkbox obbligatoria con link ai documenti", "checked": true },
+        { "text": "Il backend salva PrivacyPolicyAcceptedAt e TermsAcceptedAt", "checked": true },
+        { "text": "Il backend salva ConsentVersion", "checked": true },
+        { "text": "RegisterCommand include i campi consenso", "checked": true },
+        { "text": "Validazione backend rifiuta registrazione senza consenso", "checked": true },
+        { "text": "Audit log registra consenso", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-004",
+      "title": "Esportare i propri dati personali",
+      "asA": "utente autenticato",
+      "iWant": "scaricare tutti i miei dati personali in JSON",
+      "soThat": "esercitare diritto di accesso e portabilità",
+      "acceptanceCriteria": [
+        { "text": "Esiste endpoint GET /api/v1/auth/export-my-data autenticato", "checked": true },
+        { "text": "JSON include profilo, consensi e ruoli", "checked": true },
+        { "text": "JSON include storico audit log utente", "checked": true },
+        { "text": "Espone solo i dati dell'utente autenticato", "checked": true },
+        { "text": "Audit log registra richiesta export", "checked": true },
+        { "text": "Frontend profilo contiene pulsante export", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-005",
+      "title": "Cancellare definitivamente il proprio account",
+      "asA": "utente autenticato",
+      "iWant": "cancellare definitivamente account e dati personali",
+      "soThat": "esercitare diritto all'oblio",
+      "acceptanceCriteria": [
+        { "text": "DELETE /api/v1/auth/account esegue hard delete", "checked": true },
+        { "text": "Elimina profilo, refresh token e consensi", "checked": true },
+        { "text": "Audit log anonimizzato (UserId null, details ripuliti)", "checked": true },
+        { "text": "Conferma password obbligatoria", "checked": true },
+        { "text": "Token utente invalidati", "checked": true },
+        { "text": "Audit log registra evento cancellazione", "checked": true },
+        { "text": "Operazione idempotente", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-006",
+      "title": "Purge automatico utenti soft-deleted",
+      "asA": "amministratore del sistema",
+      "iWant": "eliminazione definitiva dopo periodo configurabile",
+      "soThat": "non conservare dati oltre il necessario",
+      "acceptanceCriteria": [
+        { "text": "Background service di purge periodico", "checked": true },
+        { "text": "Retention configurabile (default 30 giorni)", "checked": true },
+        { "text": "Intervallo job configurabile (default 24 ore)", "checked": true },
+        { "text": "Purge riusa hard delete + anonimizzazione", "checked": true },
+        { "text": "Job logga numero utenti purgati", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-007",
+      "title": "Cleanup refresh token scaduti",
+      "asA": "amministratore del sistema",
+      "iWant": "eliminare periodicamente token scaduti/revocati",
+      "soThat": "ridurre dati inutili",
+      "acceptanceCriteria": [
+        { "text": "Background service cleanup token", "checked": true },
+        { "text": "Esecuzione periodica configurabile", "checked": true },
+        { "text": "Elimina token expires/revoked oltre soglia configurata", "checked": true },
+        { "text": "Job logga numero token eliminati", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-008",
+      "title": "Retention e cleanup audit log",
+      "asA": "amministratore del sistema",
+      "iWant": "eliminare entry audit log oltre retention",
+      "soThat": "contenere crescita DB e rispettare policy",
+      "acceptanceCriteria": [
+        { "text": "Background service cleanup audit log", "checked": true },
+        { "text": "Retention configurabile (default 365 giorni)", "checked": true },
+        { "text": "Esecuzione periodica configurabile (default 24 ore)", "checked": true },
+        { "text": "Job logga numero entry eliminate", "checked": true }
+      ],
+      "notes": null
+    }
+  ],
+  "storyDependencies": [
+    "US-003 dipende da US-001 e US-002",
+    "US-005 condivide logica hard delete con US-006",
+    "US-006 riutilizza logica di US-005",
+    "US-007 e US-008 sono indipendenti"
+  ],
+  "implementationOrder": [],
+  "outOfScope": [
+    "Cookie banner",
+    "Crittografia at-rest colonne PII",
+    "DPO / Registro trattamenti",
+    "Consenso marketing/newsletter",
+    "Testo legale definitivo privacy policy"
+  ],
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Hard delete vs anonimizzazione del record utente",
+      "answer": "Non definito nel documento; richiesta conferma.",
+      "status": "open"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Grace period soft-delete default 30 giorni adeguato?",
+      "answer": "Non definito nel documento; richiesta conferma.",
+      "status": "open"
+    },
+    {
+      "id": "OQ-3",
+      "question": "Background jobs nello stesso processo API o processo separato",
+      "answer": "Non definito nel documento; richiesta conferma.",
+      "status": "open"
+    },
+    {
+      "id": "OQ-4",
+      "question": "Ri-accettazione privacy policy per utenti esistenti su cambio versione",
+      "answer": "Non definito nel documento; richiesta conferma.",
+      "status": "open"
+    }
+  ],
+  "rawMarkdown": null
+}

@@ -1,0 +1,327 @@
+{
+  "document": {
+    "id": "FEAT-3",
+    "title": "Subscription Plans & Payments (Stripe)",
+    "status": "in_progress",
+    "version": "1.0",
+    "language": "it",
+    "sourcePath": "docs/requirements/FEAT-3.md",
+    "notes": "Modulo pagamenti configurabile con provider Stripe"
+  },
+  "overview": "Supporto piani di abbonamento con pagamenti ricorrenti Stripe, modulo attivabile/disattivabile via configurazione, integrazione basata su IPaymentGateway astratto.",
+  "currentState": [
+    { "area": "Modello dati piani", "status": "Mancante", "notes": "Nessuna entità Plan/Subscription" },
+    { "area": "Payment gateway", "status": "Mancante", "notes": "Nessuna integrazione pagamenti" },
+    { "area": "Stripe integration", "status": "Mancante", "notes": "Nessun SDK/webhook" },
+    { "area": "Subscription guards", "status": "Mancante", "notes": "Nessun plan-based access" },
+    { "area": "Pricing page", "status": "Mancante", "notes": "Nessuna UI pubblica" },
+    { "area": "User subscription UI", "status": "Mancante", "notes": "Nessuna sezione profilo" },
+    { "area": "Admin plans management", "status": "Mancante", "notes": "Nessun CRUD piani" },
+    { "area": "Feature module toggle", "status": "Mancante", "notes": "Nessun sistema modulo attivabile" }
+  ],
+  "architecturalDecisions": [
+    {
+      "id": "DA-1",
+      "title": "Modulo attivabile via configurazione",
+      "decision": "Payments disabilitato di default con Modules.Payments.Enabled=false; quando disabilitato API/routes/guard non bloccano",
+      "rationale": "Permette ai progetti derivati di includere o escludere facilmente il modulo"
+    },
+    {
+      "id": "DA-2",
+      "title": "Interfaccia IPaymentGateway",
+      "decision": "Interfaccia in Application con implementazioni Stripe e Mock",
+      "rationale": "Coerenza architetturale e testabilità senza dipendenza Stripe reale"
+    },
+    {
+      "id": "DA-3",
+      "title": "Stripe source of truth",
+      "decision": "Stripe è autorità per pagamenti e billing; DB locale mantiene stato subscription sincronizzato via webhook",
+      "rationale": "Riduce complessità e inconsistenze lato applicazione"
+    },
+    {
+      "id": "DA-4",
+      "title": "Stripe Checkout redirect",
+      "decision": "Flusso checkout con redirect Stripe Checkout invece di form embedded",
+      "rationale": "PCI compliance, meno codice custom, supporto nativo pagamenti evoluti"
+    },
+    {
+      "id": "DA-5",
+      "title": "Stripe Customer Portal",
+      "decision": "Self-service (carta, pagamenti, cancellazione) via portale Stripe",
+      "rationale": "Evita reimplementazione funzionalità complesse"
+    },
+    {
+      "id": "DA-6",
+      "title": "Billing B2C senza invoicing automatico",
+      "decision": "Ricevute Stripe automatiche; fattura formale solo su richiesta manuale",
+      "rationale": "Allineamento con modello operativo iniziale"
+    }
+  ],
+  "functionalRequirements": [
+    { "id": "RF-1", "title": "Modello dati dei piani", "description": "Gestione piani con prezzi mensili/annuali, feature/limiti, stato, ordinamento, riferimenti Stripe, free/default/popular e billing intervals." },
+    { "id": "RF-2", "title": "Gestione subscription utente", "description": "Tracciamento piano attivo, stato subscription, date periodo/trial, Stripe subscription ID e storico." },
+    { "id": "RF-3", "title": "Checkout e pagamento", "description": "Selezione piano dalla pricing page con redirect a Stripe Checkout e ritorno success/cancel." },
+    { "id": "RF-4", "title": "Gestione self-service abbonamento", "description": "Visualizzazione piano corrente, accesso Customer Portal, upgrade/downgrade con proration Stripe." },
+    { "id": "RF-5", "title": "Webhook Stripe", "description": "Gestione eventi subscription/payment con validazione firma, idempotenza, logging e sync stato locale." },
+    { "id": "RF-6", "title": "Subscription guards backend", "description": "Policy RequiresPlan/RequiresFeature e controllo stato subscription; bypass quando modulo disabilitato." },
+    { "id": "RF-7", "title": "Admin gestione piani", "description": "CRUD piani, sync con Stripe, lista abbonamenti e metriche base (MRR, abbonati, churn)." },
+    { "id": "RF-8", "title": "Trial period", "description": "Trial configurabile per piano, conversione/scadenza a fine periodo e notifica pre-scadenza." },
+    { "id": "RF-9", "title": "Richiesta fattura manuale", "description": "Richiesta fattura con dati fiscali, notifica admin e storico richieste per utente/admin." }
+  ],
+  "nonFunctionalRequirements": [
+    { "id": "RNF-1", "title": "Sicurezza webhook", "description": "Validazione firma Stripe, eventi invalidi rifiutati con HTTP 400." },
+    { "id": "RNF-2", "title": "Idempotenza eventi", "description": "Deduplicazione su Stripe event ID, ogni evento processato al massimo una volta." },
+    { "id": "RNF-3", "title": "Configurabilità", "description": "Modulo/chiavi/trial URL checkout configurabili via appsettings.json." },
+    { "id": "RNF-4", "title": "Resilienza", "description": "In assenza Stripe: letture da DB locale, scritture con errore chiaro, webhook ritentati da Stripe." },
+    { "id": "RNF-5", "title": "Modularità", "description": "Dipendenze minime, integrazione con utenti/audit log senza dipendenze circolari." },
+    { "id": "RNF-6", "title": "Testabilità", "description": "MockPaymentGateway e test webhook con Stripe CLI/Testcontainers senza account Stripe obbligatorio." }
+  ],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Visualizzare i piani disponibili",
+      "asA": "visitatore del sito",
+      "iWant": "vedere i piani disponibili con prezzi e feature",
+      "soThat": "confrontarli e scegliere il più adatto",
+      "acceptanceCriteria": [
+        { "text": "Route /pricing pubblica", "checked": true },
+        { "text": "Lista piani attivi con prezzo mensile/annuale e feature", "checked": true },
+        { "text": "Evidenza piano più popolare", "checked": true },
+        { "text": "Toggle mensile/annuale", "checked": true },
+        { "text": "CTA checkout/login per ogni piano", "checked": true },
+        { "text": "CTA free tier verso registrazione", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-002",
+      "title": "Sottoscrivere un piano a pagamento",
+      "asA": "utente autenticato",
+      "iWant": "sottoscrivere un piano a pagamento",
+      "soThat": "accedere alle feature premium",
+      "acceptanceCriteria": [
+        { "text": "Redirect a Stripe Checkout dalla pricing", "checked": true },
+        { "text": "Sessione checkout precompilata con email utente", "checked": true },
+        { "text": "Ritorno su pagina conferma dopo pagamento", "checked": true },
+        { "text": "Subscription attiva visibile nel profilo", "checked": true },
+        { "text": "Audit log evento sottoscrizione", "checked": true },
+        { "text": "Annullamento checkout ritorna alla pricing", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-003",
+      "title": "Visualizzare il proprio abbonamento",
+      "asA": "utente autenticato",
+      "iWant": "vedere i dettagli del mio abbonamento",
+      "soThat": "sapere piano, stato, rinnovo e prezzo",
+      "acceptanceCriteria": [
+        { "text": "Sezione Il mio abbonamento nel profilo", "checked": true },
+        { "text": "Mostra piano, stato, prezzo e prossima data rinnovo", "checked": true },
+        { "text": "Gestione caso senza piano pagamento", "checked": true },
+        { "text": "Pulsanti gestione pagamento/cambia piano/cancella", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-004",
+      "title": "Gestire pagamento e cancellare abbonamento",
+      "asA": "utente abbonato",
+      "iWant": "aggiornare metodo di pagamento o cancellare",
+      "soThat": "gestire il mio account in autonomia",
+      "acceptanceCriteria": [
+        { "text": "Pulsante gestisci pagamento apre Stripe Customer Portal", "checked": true },
+        { "text": "Portal consente carta/storico/ricevute", "checked": true },
+        { "text": "Cancella abbonamento con conferma", "checked": true },
+        { "text": "Cancellazione effettiva a fine periodo pagato", "checked": true },
+        { "text": "Stato aggiornato via webhook", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-005",
+      "title": "Upgrade/downgrade del piano",
+      "asA": "utente abbonato",
+      "iWant": "cambiare piano",
+      "soThat": "adattare il servizio alle mie esigenze",
+      "acceptanceCriteria": [
+        { "text": "Azione cambia piano da pagina abbonamento", "checked": true },
+        { "text": "Lista piani con piano attuale evidenziato", "checked": true },
+        { "text": "Upgrade immediato con proration Stripe", "checked": true },
+        { "text": "Downgrade a fine periodo corrente", "checked": true },
+        { "text": "Audit log cambio piano", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-006",
+      "title": "Trial period",
+      "asA": "nuovo utente",
+      "iWant": "provare un piano premium gratuitamente",
+      "soThat": "valutare il servizio prima di pagare",
+      "acceptanceCriteria": [
+        { "text": "CTA prova gratis per X giorni quando trial presente", "checked": true },
+        { "text": "Accesso completo feature durante trial", "checked": true },
+        { "text": "UI mostra giorni rimanenti", "checked": true },
+        { "text": "Email notifica prima scadenza trial", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-007",
+      "title": "Admin CRUD piani di abbonamento",
+      "asA": "amministratore",
+      "iWant": "creare e gestire i piani",
+      "soThat": "definire l'offerta commerciale",
+      "acceptanceCriteria": [
+        { "text": "Sezione admin Piani con lista completa", "checked": true },
+        { "text": "Creazione piano con campi principali", "checked": true },
+        { "text": "Modifica piano con gestione prezzo via nuovo Price Stripe", "checked": true },
+        { "text": "Archiviazione piano per nuovi utenti", "checked": true },
+        { "text": "Sync automatico Product/Price su Stripe", "checked": true },
+        { "text": "Conteggio utenti abbonati per piano", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-008",
+      "title": "Admin dashboard abbonamenti",
+      "asA": "amministratore",
+      "iWant": "panoramica abbonamenti e ricavi",
+      "soThat": "monitorare andamento business",
+      "acceptanceCriteria": [
+        { "text": "Sezione admin Abbonamenti con metriche aggregate", "checked": false },
+        { "text": "Metriche MRR, attivi, trial, churn", "checked": false },
+        { "text": "Lista abbonamenti filtrabile per piano/stato", "checked": false },
+        { "text": "Dettaglio abbonamento con storico pagamenti", "checked": false }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-009",
+      "title": "Webhook processing",
+      "asA": "sistema",
+      "iWant": "processare eventi Stripe in tempo reale",
+      "soThat": "mantenere sync stato subscription locale",
+      "acceptanceCriteria": [
+        { "text": "Endpoint pubblico POST /webhooks/stripe", "checked": true },
+        { "text": "Validazione firma Stripe e 400 su firma invalida", "checked": true },
+        { "text": "Processamento eventi supportati", "checked": true },
+        { "text": "Deduplicazione eventi su event ID", "checked": true },
+        { "text": "Logging eventi ricevuti", "checked": true },
+        { "text": "Eventi non supportati loggati e ignorati", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-010",
+      "title": "Subscription guard su endpoint",
+      "asA": "sviluppatore",
+      "iWant": "proteggere endpoint API in base al piano",
+      "soThat": "consentire accesso solo a piani idonei",
+      "acceptanceCriteria": [
+        { "text": "Attributo RequiresPlan applicabile a controller/action", "checked": true },
+        { "text": "Attributo RequiresFeature per gating granulare", "checked": true },
+        { "text": "403 con messaggio chiaro su piano non idoneo", "checked": true },
+        { "text": "Bypass quando modulo pagamenti disabilitato", "checked": true },
+        { "text": "Verifica subscription attiva", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-011",
+      "title": "Feature gating frontend",
+      "asA": "sviluppatore frontend",
+      "iWant": "mostrare/nascondere UI in base al piano",
+      "soThat": "riflettere feature disponibili del piano",
+      "acceptanceCriteria": [
+        { "text": "Directive/pipe Angular requiresPlan", "checked": true },
+        { "text": "SubscriptionService espone piano corrente", "checked": true },
+        { "text": "Guard route frontend con redirect pricing", "checked": true },
+        { "text": "Bypass gating quando modulo disabilitato", "checked": true },
+        { "text": "Piano utente incluso in /auth/me o endpoint dedicato", "checked": true }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-012",
+      "title": "Richiesta fattura manuale",
+      "asA": "utente abbonato",
+      "iWant": "richiedere fattura formale per un pagamento",
+      "soThat": "avere documentazione fiscale",
+      "acceptanceCriteria": [
+        { "text": "Pulsante Richiedi fattura in sezione abbonamento", "checked": true },
+        { "text": "Form con dati fiscali completi", "checked": true },
+        { "text": "Dati fiscali salvati per riuso", "checked": true },
+        { "text": "Richiesta salvata con riferimento pagamento Stripe", "checked": true },
+        { "text": "Admin notificato della richiesta", "checked": true },
+        { "text": "Storico richieste e stato visibile all'utente", "checked": true }
+      ],
+      "notes": null
+    }
+  ],
+  "storyDependencies": [
+    "US-002 dipende da US-001 e US-009",
+    "US-003, US-004, US-005 dipendono da US-002",
+    "US-006 dipende da US-002",
+    "US-007 propedeutico a US-001",
+    "US-008 dipende da US-007 e US-009",
+    "US-009 è trasversale",
+    "US-010 e US-011 dipendono dal modello dati",
+    "US-012 dipende da US-002"
+  ],
+  "implementationOrder": [
+    "Infrastruttura base: modello dati, IPaymentGateway, configurazione modulo, migration",
+    "Admin CRUD piani (US-007)",
+    "Webhook handler (US-009)",
+    "Pricing page (US-001)",
+    "Checkout flow (US-002)",
+    "Subscription UI (US-003, US-004, US-005)",
+    "Trial (US-006)",
+    "Guards (US-010, US-011)",
+    "Admin dashboard (US-008)",
+    "Fattura manuale (US-012)"
+  ],
+  "outOfScope": [
+    "Invoicing automatico",
+    "Metered billing / pay-per-use",
+    "Multi-currency avanzato",
+    "Coupon e promozioni lato app",
+    "Marketplace / Stripe Connect",
+    "Notifiche in-app",
+    "Dunning management avanzato"
+  ],
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Free tier obbligatorio?",
+      "answer": "Deciso: si, free tier obbligatorio quando modulo Payments attivo.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Trial senza carta?",
+      "answer": "Deciso: no, trial richiede sempre metodo di pagamento.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-3",
+      "question": "Stripe Tax in scope?",
+      "answer": "Deciso: fuori scope per ora, aggiungibile in futuro.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-4",
+      "question": "Strategia su cancellazione subscription in GDPR account deletion",
+      "answer": "Deciso: cancellare subscription/customer su Stripe, anonimizzare subscription locale e mantenere richieste fattura per obblighi fiscali.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-5",
+      "question": "Path endpoint webhook",
+      "answer": "Deciso: /webhooks/stripe fuori dal versioning API.",
+      "status": "resolved"
+    }
+  ],
+  "rawMarkdown": null
+}
