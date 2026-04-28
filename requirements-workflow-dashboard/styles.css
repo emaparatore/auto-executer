@@ -694,6 +694,27 @@ details.summary-block { margin-top: 10px; }
 .task-status-trigger.status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
 .task-status-trigger.status-skipped { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
 .task-status-trigger.status-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+.task-phase-trigger {
+  width: 100%;
+  justify-content: space-between;
+  background: rgba(68, 73, 80, 0.88);
+  color: #f4efe4;
+  border: 1px solid rgba(221, 212, 196, 0.48);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.task-phase-trigger:hover {
+  background: rgba(78, 84, 92, 0.92);
+  border-color: rgba(230, 220, 203, 0.6);
+}
+
+.task-phase-dropdown.is-open .task-phase-trigger {
+  border-color: rgba(157, 211, 176, 0.7);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.22), 0 8px 24px rgba(0, 0, 0, 0.32);
+}
 
 .task-status-caret {
   opacity: 0.9;
@@ -718,6 +739,28 @@ details.summary-block { margin-top: 10px; }
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.22s ease;
   z-index: 5;
+}
+
+.task-phase-dropdown .task-status-menu {
+  background: rgba(31, 35, 40, 0.98);
+  border: 1px solid rgba(226, 216, 199, 0.3);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.task-phase-dropdown .task-status-option {
+  color: #efe8dc;
+}
+
+.task-phase-dropdown .task-status-option:hover {
+  background: rgba(122, 170, 140, 0.24);
+  color: #f8f3ea;
+}
+
+.task-phase-dropdown .task-status-option.is-current {
+  background: rgba(145, 199, 165, 0.28);
+  color: #fdfaf4;
+  border: 1px solid rgba(157, 211, 176, 0.45);
 }
 
 .task-status-dropdown.is-open .task-status-menu {

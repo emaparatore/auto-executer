@@ -396,13 +396,27 @@ function renderPlanDetail() {
         ? `
           <div class="task-notes-form" onclick="event.stopPropagation()">
             <label class="open-question-label" for="task-phase-${escapeHtml(t.id)}">Phase</label>
-            <select id="task-phase-${escapeHtml(t.id)}" class="task-inline-input" ${isTaskFieldUpdating ? 'disabled' : ''}>
-              ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
-                const title = String(phase?.title || '').trim();
-                if (!title) return '';
-                return `<option value="${escapeHtml(title)}" ${title === phaseValue ? 'selected' : ''}>${escapeHtml(title)}</option>`;
-              }).join('')}
-            </select>
+            <input id="task-phase-${escapeHtml(t.id)}" type="hidden" value="${escapeHtml(phaseValue)}">
+            <div class="task-status-dropdown task-phase-dropdown${isTaskFieldUpdating ? ' is-updating' : ''}">
+              <button type="button" class="task-status-trigger task-phase-trigger" onclick="toggleTaskPhaseDropdown(this)" ${isTaskFieldUpdating ? 'disabled' : ''}>
+                <span class="task-status-label">${escapeHtml(phaseValue || 'Select phase')}</span>
+                <span class="task-status-caret">▾</span>
+              </button>
+              <div class="task-status-menu">
+                ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
+                  const title = String(phase?.title || '').trim();
+                  if (!title) return '';
+                  return `
+                    <button
+                      type="button"
+                      class="task-status-option${title === phaseValue ? ' is-current' : ''}"
+                      onclick="handleTaskPhaseSelectByEncodedId('${encodeURIComponent(t.id)}', '${encodeURIComponent(title)}', this)">
+                      ${escapeHtml(title)}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
             <div class="task-notes-actions">
               <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'phase')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
               <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
@@ -411,7 +425,7 @@ function renderPlanDetail() {
         `
         : `
           <div class="task-notes-title-row"><strong>Phase</strong><button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')" aria-label="${phaseValue ? 'Modifica phase task' : 'Aggiungi phase task'}" title="${phaseValue ? 'Modifica phase task' : 'Aggiungi phase task'}">${phaseValue ? '✎' : '+'}</button></div>
-          ${phaseValue ? `<div class="task-phase"><span class="task-phase-value">${escapeHtml(phaseValue)}</span></div>` : ''}
+          ${phaseValue ? `<div class="task-phase"><span class="task-context-values"><code>${escapeHtml(phaseValue)}</code></span></div>` : ''}
         `}
       ${isTaskFieldEditing(t.id, 'files')
         ? `
@@ -902,6 +916,34 @@ function closeAllTaskStatusDropdowns() {
   document.querySelectorAll('.task-status-dropdown.is-open').forEach(dropdown => {
     dropdown.classList.remove('is-open');
   });
+}
+
+function toggleTaskPhaseDropdown(triggerEl) {
+  const dropdownRoot = triggerEl.closest('.task-phase-dropdown');
+  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
+
+  const willOpen = !dropdownRoot.classList.contains('is-open');
+  closeAllTaskStatusDropdowns();
+  if (willOpen) dropdownRoot.classList.add('is-open');
+}
+
+function handleTaskPhaseSelect(taskId, phaseTitle, optionEl) {
+  const dropdownRoot = optionEl.closest('.task-phase-dropdown');
+  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
+
+  const hiddenInput = document.getElementById(`task-phase-${taskId}`);
+  const label = dropdownRoot.querySelector('.task-status-label');
+  if (!hiddenInput || !label) return;
+
+  hiddenInput.value = phaseTitle;
+  label.textContent = phaseTitle;
+  dropdownRoot.classList.remove('is-open');
+  dropdownRoot.querySelectorAll('.task-status-option').forEach(option => option.classList.remove('is-current'));
+  optionEl.classList.add('is-current');
+}
+
+function handleTaskPhaseSelectByEncodedId(encodedTaskId, encodedPhaseTitle, optionEl) {
+  handleTaskPhaseSelect(decodeURIComponent(encodedTaskId), decodeURIComponent(encodedPhaseTitle), optionEl);
 }
 
 function enableTaskDodEdit(taskId) {
@@ -1965,6 +2007,8 @@ window.selectPlanByEncodedId = selectPlanByEncodedId;
 window.selectRequirementByEncodedId = selectRequirementByEncodedId;
 window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
 window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
+window.toggleTaskPhaseDropdown = toggleTaskPhaseDropdown;
+window.handleTaskPhaseSelectByEncodedId = handleTaskPhaseSelectByEncodedId;
 window.openSearchResult = openSearchResult;
 window.enableTaskDodEditByEncodedId = enableTaskDodEditByEncodedId;
 window.disableTaskDodEditFromEvent = disableTaskDodEditFromEvent;
