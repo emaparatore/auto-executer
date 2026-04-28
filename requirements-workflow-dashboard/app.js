@@ -36,6 +36,31 @@ function isTaskFieldEditing(taskId, field) {
   return editingTaskField?.taskId === taskId && editingTaskField?.field === field;
 }
 
+function buildPhasesForEditor(plan) {
+  const planPhases = Array.isArray(plan?.phases) ? plan.phases : [];
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  const tasksById = new Map(tasks.map(task => [String(task.id), task]));
+
+  return planPhases
+    .map(phase => {
+      const title = String(phase?.title || '').trim();
+      if (!title) return null;
+
+      const fromPhaseList = Array.isArray(phase?.tasks)
+        ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean)
+        : [];
+      const fromTaskField = tasks
+        .filter(task => String(task?.phase || '').trim() === title)
+        .map(task => String(task.id));
+
+      const mergedTaskIds = Array.from(new Set([...fromPhaseList, ...fromTaskField]))
+        .filter(taskId => tasksById.has(taskId));
+
+      return { title, tasks: mergedTaskIds };
+    })
+    .filter(Boolean);
+}
+
 async function loadPlans() {
   const res = await fetch('/api/plans', { cache: 'no-store' });
   plans = await res.json();
@@ -371,7 +396,13 @@ function renderPlanDetail() {
         ? `
           <div class="task-notes-form" onclick="event.stopPropagation()">
             <label class="open-question-label" for="task-phase-${escapeHtml(t.id)}">Phase</label>
-            <input id="task-phase-${escapeHtml(t.id)}" class="task-inline-input" type="text" value="${escapeHtml(phaseValue)}" ${isTaskFieldUpdating ? 'disabled' : ''}>
+            <select id="task-phase-${escapeHtml(t.id)}" class="task-inline-input" ${isTaskFieldUpdating ? 'disabled' : ''}>
+              ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
+                const title = String(phase?.title || '').trim();
+                if (!title) return '';
+                return `<option value="${escapeHtml(title)}" ${title === phaseValue ? 'selected' : ''}>${escapeHtml(title)}</option>`;
+              }).join('')}
+            </select>
             <div class="task-notes-actions">
               <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'phase')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
               <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
@@ -980,10 +1011,7 @@ function savePlanObjectiveFromEvent(event) {
 function enablePlanPhasesEdit() {
   if (!currentPlan || currentSection !== 'plans' || isPlanPhasesUpdating) return;
   if (isPlanPhasesEditing) return;
-  editingPlanPhases = (Array.isArray(currentPlan.phases) ? currentPlan.phases : []).map(phase => ({
-    title: String(phase?.title || ''),
-    tasks: Array.isArray(phase?.tasks) ? phase.tasks.map(taskId => String(taskId)) : []
-  }));
+  editingPlanPhases = buildPhasesForEditor(currentPlan);
   if (!editingPlanPhases.length) {
     editingPlanPhases = [{ title: '', tasks: [] }];
   }
@@ -1194,6 +1222,10 @@ function savePlanNotesFromEvent(event) {
 function enableTaskFieldEdit(taskId, field) {
   if (!currentPlan || currentSection !== 'plans' || isTaskFieldUpdating) return;
   if (!taskId || !field) return;
+  if (field === 'phase' && !(Array.isArray(currentPlan.phases) && currentPlan.phases.some(phase => String(phase?.title || '').trim()))) {
+    showToast('Nessuna phase disponibile nel piano', 'error');
+    return;
+  }
   editingTaskField = { taskId, field };
   renderPlanDetail();
 }

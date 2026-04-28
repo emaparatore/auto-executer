@@ -552,7 +552,21 @@ app.patch('/api/plans/:id/tasks/:taskId/phase', (req, res) => {
   const task = (data.tasks || []).find(t => t.id === req.params.taskId);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  task.phase = phase.trim();
+  const phaseTitle = phase.trim();
+  const phases = Array.isArray(data.phases) ? data.phases : [];
+  const targetPhase = phases.find(item => String(item?.title || '').trim() === phaseTitle);
+  if (!targetPhase) {
+    return res.status(400).json({ error: 'Invalid phase. Select an existing plan phase.' });
+  }
+
+  for (const currentPhase of phases) {
+    if (!Array.isArray(currentPhase.tasks)) currentPhase.tasks = [];
+    currentPhase.tasks = currentPhase.tasks.map(taskId => String(taskId).trim()).filter(Boolean).filter(taskId => taskId !== task.id);
+  }
+
+  targetPhase.tasks.push(task.id);
+
+  task.phase = phaseTitle;
   touchPlan(data);
   writePlan(filePath, data);
 
