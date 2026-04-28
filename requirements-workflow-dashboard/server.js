@@ -100,14 +100,23 @@ function recomputeStoriesFromTasks(data) {
   return hasChanges;
 }
 
+function derivePlanStatusFromTasks(tasks) {
+  const taskList = Array.isArray(tasks) ? tasks : [];
+  if (taskList.length > 0 && taskList.every(task => task.status === 'completed')) return 'completed';
+  if (taskList.some(task => task.status === 'completed')) return 'in_progress';
+  if (taskList.some(task => task.status === 'in_progress')) return 'in_progress';
+  return 'pending';
+}
+
 app.get('/api/plans', (req, res) => {
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
   const plans = files.map(file => {
     const data = JSON.parse(fs.readFileSync(path.join(PLANS_DIR, file), 'utf-8'));
+    const computedStatus = derivePlanStatusFromTasks(data.tasks);
     return {
       id: data.id,
       title: data.title,
-      status: data.status,
+      status: data.status || computedStatus,
       created: data.created,
       lastUpdated: data.lastUpdated,
       requirements: data.requirements,
@@ -123,6 +132,9 @@ app.get('/api/plans/:id', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) {
     return res.status(404).json({ error: 'Plan not found' });
+  }
+  if (!plan.data.status) {
+    plan.data.status = derivePlanStatusFromTasks(plan.data.tasks);
   }
   res.json(plan.data);
 });
@@ -179,12 +191,14 @@ app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
 
   task.status = status;
   const storiesChanged = recomputeStoriesFromTasks(data);
+  data.status = derivePlanStatusFromTasks(data.tasks);
   touchPlan(data);
   writePlan(filePath, data);
 
   res.json({
     ok: true,
     task,
+    status: data.status,
     stories: data.stories || [],
     storiesChanged,
     lastUpdated: data.lastUpdated

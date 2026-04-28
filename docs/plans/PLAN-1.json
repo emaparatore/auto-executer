@@ -82,7 +82,7 @@
       "id": "US-002",
       "description": "Cambio password obbligatorio",
       "tasks": "T-05",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-003",
@@ -172,7 +172,7 @@
       "id": "US-017",
       "description": "Accesso condizionale admin",
       "tasks": "T-05, T-13, T-14",
-      "status": "Done"
+      "status": "completed"
     }
   ],
   "tasks": [

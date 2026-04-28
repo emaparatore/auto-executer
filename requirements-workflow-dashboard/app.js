@@ -7,6 +7,14 @@ let searchDebounceTimer = null;
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
+function derivePlanStatusFromTasks(tasks) {
+  const taskList = Array.isArray(tasks) ? tasks : [];
+  if (taskList.length > 0 && taskList.every(task => task.status === 'completed')) return 'completed';
+  if (taskList.some(task => task.status === 'completed')) return 'in_progress';
+  if (taskList.some(task => task.status === 'in_progress')) return 'in_progress';
+  return 'pending';
+}
+
 async function loadPlans() {
   const res = await fetch('/api/plans');
   plans = await res.json();
@@ -73,6 +81,8 @@ async function selectPlan(id) {
 function renderPlanDetail() {
   const p = currentPlan;
   const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+  const effectivePlanStatus = derivePlanStatusFromTasks(tasks);
+  p.status = effectivePlanStatus;
   const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'overview';
 
   showDetail();
@@ -80,8 +90,8 @@ function renderPlanDetail() {
 
   document.getElementById('detailId').textContent = p.id;
   document.getElementById('detailTitle').textContent = p.title;
-  document.getElementById('detailStatus').textContent = formatStatus(p.status);
-  document.getElementById('detailStatus').className = `plan-item-status status-${p.status}`;
+  document.getElementById('detailStatus').textContent = formatStatus(effectivePlanStatus);
+  document.getElementById('detailStatus').className = `plan-item-status status-${effectivePlanStatus}`;
   document.getElementById('detailCreated').textContent = p.created || 'N/A';
   document.getElementById('detailLastUpdated').textContent = p.lastUpdated || 'N/A';
   document.getElementById('detailRequirementsLabel').textContent = 'Requirements: ';
@@ -443,12 +453,18 @@ async function updateTaskStatus(taskId, status, dropdownRoot) {
     const updated = await res.json();
     const task = currentPlan.tasks?.find(t => t.id === taskId);
     if (task) task.status = updated.task.status;
+    currentPlan.status = updated.status || derivePlanStatusFromTasks(currentPlan.tasks);
     if (Array.isArray(updated.stories)) currentPlan.stories = updated.stories;
     currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
 
     const planCard = plans.find(p => p.id === currentPlan.id);
-    if (planCard) planCard.lastUpdated = currentPlan.lastUpdated;
+    if (planCard) {
+      planCard.lastUpdated = currentPlan.lastUpdated;
+      planCard.status = currentPlan.status;
+    }
 
+    renderPlansList();
+    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
   } catch (error) {
     if (previousStatus) setStatusSelectClass(dropdownRoot, previousStatus);
