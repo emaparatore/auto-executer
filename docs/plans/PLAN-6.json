@@ -4,9 +4,9 @@
   "requirements": "docs/requirements/FEAT-AUTOEXEC.md",
   "objective": "Automate the implementation of tasks defined in a plan-*.json file by interfacing with OpenCode (via SDK) to execute tasks autonomously within a sandbox, running tests, and committing changes.",
   "targetArchitecture": null,
-  "status": "in_progress",
+  "status": "pending",
   "created": "2026-04-24",
-  "lastUpdated": "2026-04-28",
+  "lastUpdated": "2026-04-28T02:06:48.000Z",
   "lastUpdatedNote": "T-01, T-02 completed. CLI infrastructure and task discovery logic implemented.",
   "notes": null,
   "phases": [
@@ -149,7 +149,7 @@
         "US-001"
       ],
       "size": "Medium",
-      "status": "in_progress",
+      "status": "pending",
       "dependsOn": [],
       "files": [
         "package.json",

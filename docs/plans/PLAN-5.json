@@ -2,7 +2,7 @@
   "id": "PLAN-5",
   "title": "FEAT-3 — Subscription Plans & Payments (Stripe)",
   "requirements": "docs/requirements/FEAT-3.md",
-  "status": "in_progress",
+  "status": "completed",
   "created": "2026-04-09",
   "lastUpdated": "2026-04-09",
   "stories": [
@@ -94,380 +94,916 @@
   "tasks": [
     {
       "id": "T-01",
-      "stories": ["US-TR-002"],
+      "stories": [
+        "US-TR-002"
+      ],
       "size": "Small",
       "status": "completed",
       "dependsOn": [],
       "whatToDo": "Create the module toggle and Stripe configuration infrastructure: Add ModulesSettings and PaymentsModuleSettings POCOs with Enabled (bool) and Provider (string) properties. Add StripeSettings POCO with SecretKey, PublishableKey, WebhookSecret. Add configuration sections to appsettings.json (disabled by default) and appsettings.Development.json (with placeholder keys). Register services.Configure<>() calls in DependencyInjection.cs. Add helper method IsPaymentsModuleEnabled(IConfiguration) for conditional registration.",
       "definitionOfDone": [
-        { "description": "PaymentsModuleSettings, ModulesSettings, and StripeSettings POCOs exist with correct section names", "completed": true },
-        { "description": "appsettings.json contains Modules:Payments section (disabled) and Stripe section (empty keys)", "completed": true },
-        { "description": "appsettings.Development.json contains Stripe section with test placeholder keys", "completed": true },
-        { "description": "Settings registered in DI (ModulesSettings always, StripeSettings conditionally)", "completed": true },
-        { "description": "Extension method IsPaymentsModuleEnabled implemented with 3 unit tests", "completed": true },
-        { "description": "Solution builds and all tests pass", "completed": true }
+        {
+          "description": "PaymentsModuleSettings, ModulesSettings, and StripeSettings POCOs exist with correct section names",
+          "completed": true
+        },
+        {
+          "description": "appsettings.json contains Modules:Payments section (disabled) and Stripe section (empty keys)",
+          "completed": true
+        },
+        {
+          "description": "appsettings.Development.json contains Stripe section with test placeholder keys",
+          "completed": true
+        },
+        {
+          "description": "Settings registered in DI (ModulesSettings always, StripeSettings conditionally)",
+          "completed": true
+        },
+        {
+          "description": "Extension method IsPaymentsModuleEnabled implemented with 3 unit tests",
+          "completed": true
+        },
+        {
+          "description": "Solution builds and all tests pass",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-02",
-      "stories": ["US-001", "US-002", "US-003", "US-007", "US-012"],
+      "stories": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-007",
+        "US-012"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-01"],
+      "dependsOn": [
+        "T-01"
+      ],
       "whatToDo": "Create domain entities: SubscriptionPlan (Id, Name, Description, MonthlyPrice, YearlyPrice, StripePriceIdMonthly, StripePriceIdYearly, StripeProductId, TrialDays, IsFreeTier, IsDefault, IsPopular, Status, SortOrder, CreatedAt, UpdatedAt), PlanFeature (Id, PlanId, Key, Description, LimitValue, SortOrder), UserSubscription (Id, UserId, PlanId, Status, StripeSubscriptionId, StripeCustomerId, CurrentPeriodStart, CurrentPeriodEnd, TrialEnd, CanceledAt, CreatedAt, UpdatedAt), InvoiceRequest (Id, UserId, StripePaymentIntentId, CustomerType, FullName, CompanyName, Address, City, PostalCode, Country, FiscalCode, VatNumber, SdiCode, PecEmail, Status, CreatedAt, UpdatedAt, ProcessedAt). Create PlanStatus, SubscriptionStatus, CustomerType, InvoiceRequestStatus, BillingInterval enums. Add navigation properties.",
       "definitionOfDone": [
-        { "description": "All entities created with proper types and nullable annotations", "completed": true },
-        { "description": "Enums created for Status fields", "completed": true },
-        { "description": "Navigation properties set correctly", "completed": true },
-        { "description": "Solution builds successfully", "completed": true }
+        {
+          "description": "All entities created with proper types and nullable annotations",
+          "completed": true
+        },
+        {
+          "description": "Enums created for Status fields",
+          "completed": true
+        },
+        {
+          "description": "Navigation properties set correctly",
+          "completed": true
+        },
+        {
+          "description": "Solution builds successfully",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-03",
-      "stories": ["US-TR-001"],
+      "stories": [
+        "US-TR-001"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-02"],
+      "dependsOn": [
+        "T-02"
+      ],
       "whatToDo": "Create EF Core entity configurations: SubscriptionPlanConfiguration (table name, indexes on Status/IsDefault, decimal precision), PlanFeatureConfiguration (composite unique index on PlanId, Key), UserSubscriptionConfiguration (index on UserId + Status, unique index on StripeSubscriptionId), InvoiceRequestConfiguration (index on UserId, index on Status). Add DbSet properties to ApplicationDbContext. Generate migration AddSubscriptionPayments.",
       "definitionOfDone": [
-        { "description": "4 entity configurations created with proper constraints, indexes, and FK relationships", "completed": true },
-        { "description": "4 DbSets added to ApplicationDbContext", "completed": true },
-        { "description": "Migration AddSubscriptionPayments generated and verified", "completed": true },
-        { "description": "Solution builds successfully", "completed": true },
-        { "description": "All tests pass", "completed": true }
+        {
+          "description": "4 entity configurations created with proper constraints, indexes, and FK relationships",
+          "completed": true
+        },
+        {
+          "description": "4 DbSets added to ApplicationDbContext",
+          "completed": true
+        },
+        {
+          "description": "Migration AddSubscriptionPayments generated and verified",
+          "completed": true
+        },
+        {
+          "description": "Solution builds successfully",
+          "completed": true
+        },
+        {
+          "description": "All tests pass",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-04",
-      "stories": ["US-TR-002"],
+      "stories": [
+        "US-TR-002"
+      ],
       "size": "Medium",
       "status": "completed",
       "whatToDo": "Create IPaymentGateway interface with methods: CreateCustomerAsync, CreateCheckoutSessionAsync, CreateCustomerPortalSessionAsync, CancelSubscriptionAsync, GetSubscriptionAsync, SyncPlanToProviderAsync. Create DTOs: CreateCheckoutRequest, SubscriptionDetails, SyncPlanRequest, ProductSyncResult. Create MockPaymentGateway in Seed.Infrastructure that returns deterministic fake data. Register conditionally in DI when module enabled.",
       "definitionOfDone": [
-        { "description": "IPaymentGateway interface defined with all 6 methods", "completed": true },
-        { "description": "4 gateway DTOs created as sealed records", "completed": true },
-        { "description": "MockPaymentGateway implemented with deterministic fake data and logging", "completed": true },
-        { "description": "Conditional DI registration", "completed": true },
-        { "description": "6 unit tests for MockPaymentGateway, all passing", "completed": true },
-        { "description": "Solution builds and all tests pass", "completed": true }
+        {
+          "description": "IPaymentGateway interface defined with all 6 methods",
+          "completed": true
+        },
+        {
+          "description": "4 gateway DTOs created as sealed records",
+          "completed": true
+        },
+        {
+          "description": "MockPaymentGateway implemented with deterministic fake data and logging",
+          "completed": true
+        },
+        {
+          "description": "Conditional DI registration",
+          "completed": true
+        },
+        {
+          "description": "6 unit tests for MockPaymentGateway, all passing",
+          "completed": true
+        },
+        {
+          "description": "Solution builds and all tests pass",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-05",
-      "stories": ["US-TR-002"],
+      "stories": [
+        "US-TR-002"
+      ],
       "size": "Large",
       "status": "completed",
-      "dependsOn": ["T-01", "T-04"],
+      "dependsOn": [
+        "T-01",
+        "T-04"
+      ],
       "whatToDo": "Add Stripe.net NuGet package. Create StripePaymentGateway implementing IPaymentGateway: CreateCustomerAsync -> CustomerService.CreateAsync(), CreateCheckoutSessionAsync -> SessionService.CreateAsync(), CreateCustomerPortalSessionAsync -> SessionService.CreateAsync(), CancelSubscriptionAsync -> SubscriptionService.CancelAsync(), GetSubscriptionAsync -> SubscriptionService.GetAsync(), SyncPlanToProviderAsync -> ProductService.CreateAsync/UpdateAsync() + PriceService.CreateAsync(). Register conditionally when module enabled and provider is Stripe.",
       "definitionOfDone": [
-        { "description": "Stripe.net 47.4.0 package added", "completed": true },
-        { "description": "StripePaymentGateway fully implements all 6 IPaymentGateway methods", "completed": true },
-        { "description": "Conditional DI registration (Stripe vs Mock vs disabled)", "completed": true },
-        { "description": "Solution builds successfully", "completed": true },
-        { "description": "4 integration tests verifying DI wiring", "completed": true }
+        {
+          "description": "Stripe.net 47.4.0 package added",
+          "completed": true
+        },
+        {
+          "description": "StripePaymentGateway fully implements all 6 IPaymentGateway methods",
+          "completed": true
+        },
+        {
+          "description": "Conditional DI registration (Stripe vs Mock vs disabled)",
+          "completed": true
+        },
+        {
+          "description": "Solution builds successfully",
+          "completed": true
+        },
+        {
+          "description": "4 integration tests verifying DI wiring",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-06",
-      "stories": ["US-009"],
+      "stories": [
+        "US-009"
+      ],
       "size": "Large",
       "status": "completed",
-      "dependsOn": ["T-02", "T-03", "T-05"],
+      "dependsOn": [
+        "T-02",
+        "T-03",
+        "T-05"
+      ],
       "whatToDo": "Create StripeWebhookController at POST /webhooks/stripe: validate Stripe signature, parse event type, dispatch to handler. Create IWebhookEventHandler and StripeWebhookEventHandler: handle checkout.session.completed, invoice.payment_succeeded, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end. Implement idempotency via IMemoryCache. Log events.",
       "definitionOfDone": [
-        { "description": "Webhook endpoint created at POST /webhooks/stripe", "completed": true },
-        { "description": "Stripe signature validation working", "completed": true },
-        { "description": "All 6 event types handled correctly", "completed": true },
-        { "description": "Idempotency implemented via IMemoryCache", "completed": true },
-        { "description": "Events logged via IAuditService", "completed": true },
-        { "description": "HTTP 200 for unknown event types, HTTP 400 for invalid signatures", "completed": true },
-        { "description": "15 unit tests and 2 integration tests", "completed": true }
+        {
+          "description": "Webhook endpoint created at POST /webhooks/stripe",
+          "completed": true
+        },
+        {
+          "description": "Stripe signature validation working",
+          "completed": true
+        },
+        {
+          "description": "All 6 event types handled correctly",
+          "completed": true
+        },
+        {
+          "description": "Idempotency implemented via IMemoryCache",
+          "completed": true
+        },
+        {
+          "description": "Events logged via IAuditService",
+          "completed": true
+        },
+        {
+          "description": "HTTP 200 for unknown event types, HTTP 400 for invalid signatures",
+          "completed": true
+        },
+        {
+          "description": "15 unit tests and 2 integration tests",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-07",
-      "stories": ["US-001"],
+      "stories": [
+        "US-001"
+      ],
       "size": "Small",
       "status": "completed",
-      "dependsOn": ["T-02", "T-03"],
+      "dependsOn": [
+        "T-02",
+        "T-03"
+      ],
       "whatToDo": "Create GetPlansQuery and GetPlansQueryHandler: returns all plans with Status = Active, ordered by SortOrder, includes PlanFeatures, no auth required. Create DTOs: PlanDto, PlanFeatureDto. Create PlansController at api/v1.0/plans with AllowAnonymous GET. Controller only registered when payments module is enabled.",
       "definitionOfDone": [
-        { "description": "Query + Handler created following existing patterns", "completed": true },
-        { "description": "DTOs created as sealed records", "completed": true },
-        { "description": "Controller with AllowAnonymous GET endpoint", "completed": true },
-        { "description": "Endpoint returns plans with features, sorted by SortOrder, filtered by Status == Active", "completed": true },
-        { "description": "4 unit tests for handler, 2 integration tests for endpoint", "completed": true }
+        {
+          "description": "Query + Handler created following existing patterns",
+          "completed": true
+        },
+        {
+          "description": "DTOs created as sealed records",
+          "completed": true
+        },
+        {
+          "description": "Controller with AllowAnonymous GET endpoint",
+          "completed": true
+        },
+        {
+          "description": "Endpoint returns plans with features, sorted by SortOrder, filtered by Status == Active",
+          "completed": true
+        },
+        {
+          "description": "4 unit tests for handler, 2 integration tests for endpoint",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-08",
-      "stories": ["US-002", "US-006"],
+      "stories": [
+        "US-002",
+        "US-006"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-04", "T-05", "T-07"],
+      "dependsOn": [
+        "T-04",
+        "T-05",
+        "T-07"
+      ],
       "whatToDo": "Create CreateCheckoutSessionCommand and handler: Input PlanId, BillingInterval, UserId. Validate plan exists and is active. If user doesn't have StripeCustomerId, call CreateCustomerAsync. Call CreateCheckoutSessionAsync with correct Price ID, customer ID, trial days if applicable. Return checkout session URL. Create validator. Add endpoint POST api/v1.0/billing/checkout. Add audit log entry.",
       "definitionOfDone": [
-        { "description": "Command + Handler + Validator created", "completed": true },
-        { "description": "Stripe customer creation for first-time users", "completed": true },
-        { "description": "Correct price ID selected based on billing interval", "completed": true },
-        { "description": "Trial period included when plan has TrialDays > 0", "completed": true },
-        { "description": "Returns checkout URL via CheckoutSessionResponse DTO", "completed": true },
-        { "description": "Audit log entry on checkout session creation", "completed": true },
-        { "description": "Unit tests for handler (9 test cases), Validator tests (4 test cases)", "completed": true }
+        {
+          "description": "Command + Handler + Validator created",
+          "completed": true
+        },
+        {
+          "description": "Stripe customer creation for first-time users",
+          "completed": true
+        },
+        {
+          "description": "Correct price ID selected based on billing interval",
+          "completed": true
+        },
+        {
+          "description": "Trial period included when plan has TrialDays > 0",
+          "completed": true
+        },
+        {
+          "description": "Returns checkout URL via CheckoutSessionResponse DTO",
+          "completed": true
+        },
+        {
+          "description": "Audit log entry on checkout session creation",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for handler (9 test cases), Validator tests (4 test cases)",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-09",
-      "stories": ["US-003", "US-004", "US-005"],
+      "stories": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-06", "T-08"],
+      "dependsOn": [
+        "T-06",
+        "T-08"
+      ],
       "whatToDo": "Create GetMySubscriptionQuery and handler: returns current active/trialing subscription for UserId, includes plan details and features. Create CreatePortalSessionCommand and handler: gets user's StripeCustomerId, calls CreateCustomerPortalSessionAsync, returns portal URL. Create CancelSubscriptionCommand and handler: sets cancel_at_period_end via gateway, audit log entry. Add endpoints to BillingController.",
       "definitionOfDone": [
-        { "description": "GetMySubscription query returns subscription with plan details", "completed": true },
-        { "description": "CreatePortalSession returns valid portal URL", "completed": true },
-        { "description": "CancelSubscription sets cancel_at_period_end", "completed": true },
-        { "description": "All endpoints created and auth-protected", "completed": true },
-        { "description": "Audit log for cancel action", "completed": true },
-        { "description": "Unit tests for all handlers (13 test cases)", "completed": true },
-        { "description": "Integration tests for endpoints (4 tests)", "completed": true }
+        {
+          "description": "GetMySubscription query returns subscription with plan details",
+          "completed": true
+        },
+        {
+          "description": "CreatePortalSession returns valid portal URL",
+          "completed": true
+        },
+        {
+          "description": "CancelSubscription sets cancel_at_period_end",
+          "completed": true
+        },
+        {
+          "description": "All endpoints created and auth-protected",
+          "completed": true
+        },
+        {
+          "description": "Audit log for cancel action",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for all handlers (13 test cases)",
+          "completed": true
+        },
+        {
+          "description": "Integration tests for endpoints (4 tests)",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-10",
-      "stories": ["US-007"],
+      "stories": [
+        "US-007"
+      ],
       "size": "Large",
       "status": "completed",
-      "dependsOn": ["T-02", "T-03", "T-05"],
+      "dependsOn": [
+        "T-02",
+        "T-03",
+        "T-05"
+      ],
       "whatToDo": "Create commands and handlers in Seed.Application/Admin/Plans/: CreatePlanCommand (creates plan + features, syncs to Stripe), UpdatePlanCommand (updates plan, syncs to Stripe), ArchivePlanCommand (sets Status = Archived), GetPlansQuery (admin version), GetPlanByIdQuery. Create validators. Create AdminPlansController at api/v1.0/admin/plans. Add Plans permissions. Add audit log actions.",
       "definitionOfDone": [
-        { "description": "Create, Update, Archive commands with handlers and validators", "completed": true },
-        { "description": "Admin list query with subscriber counts", "completed": true },
-        { "description": "Admin detail query", "completed": true },
-        { "description": "Stripe sync on create/update", "completed": true },
-        { "description": "Plans permissions added and auto-registered", "completed": true },
-        { "description": "Audit log for all mutations", "completed": true },
-        { "description": "Controller with proper permission attributes", "completed": true },
-        { "description": "Unit tests for all handlers, Validator tests", "completed": true }
+        {
+          "description": "Create, Update, Archive commands with handlers and validators",
+          "completed": true
+        },
+        {
+          "description": "Admin list query with subscriber counts",
+          "completed": true
+        },
+        {
+          "description": "Admin detail query",
+          "completed": true
+        },
+        {
+          "description": "Stripe sync on create/update",
+          "completed": true
+        },
+        {
+          "description": "Plans permissions added and auto-registered",
+          "completed": true
+        },
+        {
+          "description": "Audit log for all mutations",
+          "completed": true
+        },
+        {
+          "description": "Controller with proper permission attributes",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for all handlers, Validator tests",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-11",
-      "stories": ["US-008"],
+      "stories": [
+        "US-008"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-03", "T-06"],
+      "dependsOn": [
+        "T-03",
+        "T-06"
+      ],
       "whatToDo": "Create queries in Seed.Application/Admin/Subscriptions/: GetSubscriptionMetricsQuery (MRR, active count, trialing count, churn rate), GetSubscriptionsListQuery (paginated, filters), GetSubscriptionDetailQuery. Create DTOs. Create AdminSubscriptionsController at api/v1.0/admin/subscriptions. Add Subscriptions permissions.",
       "definitionOfDone": [
-        { "description": "Metrics query calculates MRR, active count, trialing count, churn", "completed": true },
-        { "description": "List query with pagination and filtering", "completed": true },
-        { "description": "Detail query", "completed": true },
-        { "description": "Subscriptions permissions added and auto-seeded", "completed": true },
-        { "description": "Controller with proper permission attributes", "completed": true },
-        { "description": "Unit tests for all three handlers", "completed": true },
-        { "description": "Integration test for metrics and list endpoints", "completed": true }
+        {
+          "description": "Metrics query calculates MRR, active count, trialing count, churn",
+          "completed": true
+        },
+        {
+          "description": "List query with pagination and filtering",
+          "completed": true
+        },
+        {
+          "description": "Detail query",
+          "completed": true
+        },
+        {
+          "description": "Subscriptions permissions added and auto-seeded",
+          "completed": true
+        },
+        {
+          "description": "Controller with proper permission attributes",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for all three handlers",
+          "completed": true
+        },
+        {
+          "description": "Integration test for metrics and list endpoints",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-12",
-      "stories": ["US-010"],
+      "stories": [
+        "US-010"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-03"],
+      "dependsOn": [
+        "T-03"
+      ],
       "whatToDo": "Create RequiresPlanAttribute (accepts plan names). Create RequiresFeatureAttribute (accepts feature key). Create RequiresPlanAuthorizationHandler: check if module disabled, check user's plan, check status Active/Trialing, return 403. Create RequiresFeatureAuthorizationHandler. Register authorization policies. Add ISubscriptionAccessService in Application layer.",
       "definitionOfDone": [
-        { "description": "RequiresPlan attribute works on controllers/actions", "completed": true },
-        { "description": "RequiresFeature attribute works on controllers/actions", "completed": true },
-        { "description": "Guards pass always when module is disabled", "completed": true },
-        { "description": "Guards check subscription status (active/trialing only)", "completed": true },
-        { "description": "HTTP 403 returned when user lacks required plan or feature", "completed": true },
-        { "description": "Unit tests for authorization handlers (17 new tests)", "completed": true }
+        {
+          "description": "RequiresPlan attribute works on controllers/actions",
+          "completed": true
+        },
+        {
+          "description": "RequiresFeature attribute works on controllers/actions",
+          "completed": true
+        },
+        {
+          "description": "Guards pass always when module is disabled",
+          "completed": true
+        },
+        {
+          "description": "Guards check subscription status (active/trialing only)",
+          "completed": true
+        },
+        {
+          "description": "HTTP 403 returned when user lacks required plan or feature",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for authorization handlers (17 new tests)",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-13",
-      "stories": ["US-011"],
+      "stories": [
+        "US-011"
+      ],
       "size": "Small",
       "status": "completed",
-      "dependsOn": ["T-03"],
+      "dependsOn": [
+        "T-03"
+      ],
       "whatToDo": "Extend MeResponse with subscription fields: CurrentPlan (name), PlanFeatures (list of feature keys), SubscriptionStatus, TrialEndsAt. Update GetMeQueryHandler to load user's active subscription with plan and features when payments module is enabled. When disabled, return null for subscription fields.",
       "definitionOfDone": [
-        { "description": "MeResponse includes subscription data", "completed": true },
-        { "description": "Handler loads subscription conditionally (only when module enabled)", "completed": true },
-        { "description": "Returns null/empty when module disabled or no subscription", "completed": true },
-        { "description": "Existing auth tests still pass", "completed": true },
-        { "description": "Unit tests added for handler", "completed": true }
+        {
+          "description": "MeResponse includes subscription data",
+          "completed": true
+        },
+        {
+          "description": "Handler loads subscription conditionally (only when module enabled)",
+          "completed": true
+        },
+        {
+          "description": "Returns null/empty when module disabled or no subscription",
+          "completed": true
+        },
+        {
+          "description": "Existing auth tests still pass",
+          "completed": true
+        },
+        {
+          "description": "Unit tests added for handler",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-14",
-      "stories": ["US-001"],
+      "stories": [
+        "US-001"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-07"],
+      "dependsOn": [
+        "T-07"
+      ],
       "whatToDo": "Create PricingComponent at frontend/web/projects/app/src/app/pages/pricing/. Create BillingService with methods to call backend APIs. Create billing.models.ts with TypeScript interfaces. Implement pricing page: fetch plans, monthly/yearly toggle, plan cards with features, Most Popular badge, CTA buttons. Add route /pricing. Use Angular Material.",
       "definitionOfDone": [
-        { "description": "Pricing page renders all active plans", "completed": true },
-        { "description": "Monthly/yearly price toggle works", "completed": true },
-        { "description": "Popular plan highlighted", "completed": true },
-        { "description": "Free tier CTA links to registration", "completed": true },
-        { "description": "Paid plan CTA redirects to login if not authenticated", "completed": true },
-        { "description": "Route accessible without authentication", "completed": true },
-        { "description": "Responsive layout", "completed": true }
+        {
+          "description": "Pricing page renders all active plans",
+          "completed": true
+        },
+        {
+          "description": "Monthly/yearly price toggle works",
+          "completed": true
+        },
+        {
+          "description": "Popular plan highlighted",
+          "completed": true
+        },
+        {
+          "description": "Free tier CTA links to registration",
+          "completed": true
+        },
+        {
+          "description": "Paid plan CTA redirects to login if not authenticated",
+          "completed": true
+        },
+        {
+          "description": "Route accessible without authentication",
+          "completed": true
+        },
+        {
+          "description": "Responsive layout",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-15",
-      "stories": ["US-002", "US-006"],
+      "stories": [
+        "US-002",
+        "US-006"
+      ],
       "size": "Small",
       "status": "completed",
-      "dependsOn": ["T-08", "T-14"],
+      "dependsOn": [
+        "T-08",
+        "T-14"
+      ],
       "whatToDo": "Add createCheckoutSession(planId, billingInterval) to BillingService. When authenticated user clicks Scegli piano, call checkout API and redirect to Stripe. Create CheckoutSuccessComponent at /billing/success showing confirmation. Create CheckoutCancelComponent at /billing/cancel. Add routes with authGuard.",
       "definitionOfDone": [
-        { "description": "Clicking plan CTA creates checkout session and redirects to Stripe", "completed": true },
-        { "description": "Success page rendered after successful checkout", "completed": true },
-        { "description": "Cancel page rendered when user cancels checkout", "completed": true },
-        { "description": "Trial CTA shows trial period when plan has trial", "completed": true },
-        { "description": "Routes protected by authGuard", "completed": true }
+        {
+          "description": "Clicking plan CTA creates checkout session and redirects to Stripe",
+          "completed": true
+        },
+        {
+          "description": "Success page rendered after successful checkout",
+          "completed": true
+        },
+        {
+          "description": "Cancel page rendered when user cancels checkout",
+          "completed": true
+        },
+        {
+          "description": "Trial CTA shows trial period when plan has trial",
+          "completed": true
+        },
+        {
+          "description": "Routes protected by authGuard",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-16",
-      "stories": ["US-003", "US-004", "US-005"],
+      "stories": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-09", "T-15"],
+      "dependsOn": [
+        "T-09",
+        "T-15"
+      ],
       "whatToDo": "Create SubscriptionComponent at /billing/subscription. Add methods to BillingService: getMySubscription, createPortalSession, cancelSubscription. Implement subscription view: show current plan, status, price, renewal date, trial days, portal button, change plan button, cancel with dialog. Add route with authGuard.",
       "definitionOfDone": [
-        { "description": "Subscription details displayed correctly for all states", "completed": true },
-        { "description": "Portal redirect works", "completed": true },
-        { "description": "Cancel flow with confirmation dialog", "completed": true },
-        { "description": "Upgrade/change plan navigates to pricing", "completed": true },
-        { "description": "Trial days remaining shown when applicable", "completed": true },
-        { "description": "Link accessible from profile/navigation", "completed": true }
+        {
+          "description": "Subscription details displayed correctly for all states",
+          "completed": true
+        },
+        {
+          "description": "Portal redirect works",
+          "completed": true
+        },
+        {
+          "description": "Cancel flow with confirmation dialog",
+          "completed": true
+        },
+        {
+          "description": "Upgrade/change plan navigates to pricing",
+          "completed": true
+        },
+        {
+          "description": "Trial days remaining shown when applicable",
+          "completed": true
+        },
+        {
+          "description": "Link accessible from profile/navigation",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-17",
-      "stories": ["US-007"],
+      "stories": [
+        "US-007"
+      ],
       "size": "Large",
       "status": "completed",
-      "dependsOn": ["T-10"],
+      "dependsOn": [
+        "T-10"
+      ],
       "whatToDo": "Create AdminPlansComponent (list) and AdminPlanEditComponent (create/edit dialog). Create AdminBillingService with admin API calls. Implement: plans list table with columns, create/edit plan dialog, archive with confirmation, subscriber count. Add admin route /admin/plans with permissionGuard. Add Piani to admin sidebar.",
       "definitionOfDone": [
-        { "description": "Plans list with all columns rendered", "completed": true },
-        { "description": "Create plan dialog with all fields + dynamic feature list", "completed": true },
-        { "description": "Edit plan dialog", "completed": true },
-        { "description": "Archive with confirmation", "completed": true },
-        { "description": "Subscriber count shown per plan", "completed": true },
-        { "description": "Permission-gated route and navigation item", "completed": true },
-        { "description": "Form validation", "completed": true }
+        {
+          "description": "Plans list with all columns rendered",
+          "completed": true
+        },
+        {
+          "description": "Create plan dialog with all fields + dynamic feature list",
+          "completed": true
+        },
+        {
+          "description": "Edit plan dialog",
+          "completed": true
+        },
+        {
+          "description": "Archive with confirmation",
+          "completed": true
+        },
+        {
+          "description": "Subscriber count shown per plan",
+          "completed": true
+        },
+        {
+          "description": "Permission-gated route and navigation item",
+          "completed": true
+        },
+        {
+          "description": "Form validation",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-18",
-      "stories": ["US-008"],
+      "stories": [
+        "US-008"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-11", "T-17"],
+      "dependsOn": [
+        "T-11",
+        "T-17"
+      ],
       "whatToDo": "Create AdminSubscriptionsComponent. Implement: metrics cards, subscriptions list table with filters and pagination, detail view. Add admin route /admin/subscriptions with permissionGuard. Add Abbonamenti to admin sidebar navigation.",
       "definitionOfDone": [
-        { "description": "Metrics cards displayed with correct values", "completed": true },
-        { "description": "Subscriptions list with filtering and pagination", "completed": true },
-        { "description": "Detail view accessible via read-only dialog", "completed": true },
-        { "description": "Permission-gated route and navigation item", "completed": true }
+        {
+          "description": "Metrics cards displayed with correct values",
+          "completed": true
+        },
+        {
+          "description": "Subscriptions list with filtering and pagination",
+          "completed": true
+        },
+        {
+          "description": "Detail view accessible via read-only dialog",
+          "completed": true
+        },
+        {
+          "description": "Permission-gated route and navigation item",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-13b",
-      "stories": ["US-011"],
+      "stories": [
+        "US-011"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-13"],
+      "dependsOn": [
+        "T-13"
+      ],
       "whatToDo": "Create SubscriptionService: exposes currentPlan signal, planFeatures signal, hasPlan(), hasFeature() methods (return true when module disabled). Create RequiresPlanDirective (*requiresPlan) for conditional rendering. Create requiresPlanGuard Angular route guard. Export from public-api.ts.",
       "definitionOfDone": [
-        { "description": "SubscriptionService exposes plan signals from auth/me data", "completed": true },
-        { "description": "*requiresPlan directive conditionally renders elements", "completed": true },
-        { "description": "requiresPlanGuard protects routes, redirects to /pricing", "completed": true },
-        { "description": "All checks pass when payments module is disabled", "completed": true },
-        { "description": "Unit tests for service (9 tests), directive (3 tests), guard (3 tests)", "completed": true }
+        {
+          "description": "SubscriptionService exposes plan signals from auth/me data",
+          "completed": true
+        },
+        {
+          "description": "*requiresPlan directive conditionally renders elements",
+          "completed": true
+        },
+        {
+          "description": "requiresPlanGuard protects routes, redirects to /pricing",
+          "completed": true
+        },
+        {
+          "description": "All checks pass when payments module is disabled",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for service (9 tests), directive (3 tests), guard (3 tests)",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-19",
-      "stories": ["US-012"],
+      "stories": [
+        "US-012"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-03", "T-09"],
+      "dependsOn": [
+        "T-03",
+        "T-09"
+      ],
       "whatToDo": "Create commands/queries: CreateInvoiceRequestCommand, GetMyInvoiceRequestsQuery, GetInvoiceRequestsQuery (admin), UpdateInvoiceRequestStatusCommand (admin). Create validators. Add endpoints: POST /billing/invoice-request, GET /billing/invoice-requests, GET /admin/invoice-requests, PUT /admin/invoice-requests/{id}/status.",
       "definitionOfDone": [
-        { "description": "Create invoice request with all fiscal fields", "completed": true },
-        { "description": "User can view own invoice request history", "completed": true },
-        { "description": "Admin can list and update request status", "completed": true },
-        { "description": "Audit log on create and status change", "completed": true },
-        { "description": "Validator tests", "completed": true },
-        { "description": "Unit tests for handlers", "completed": true }
+        {
+          "description": "Create invoice request with all fiscal fields",
+          "completed": true
+        },
+        {
+          "description": "User can view own invoice request history",
+          "completed": true
+        },
+        {
+          "description": "Admin can list and update request status",
+          "completed": true
+        },
+        {
+          "description": "Audit log on create and status change",
+          "completed": true
+        },
+        {
+          "description": "Validator tests",
+          "completed": true
+        },
+        {
+          "description": "Unit tests for handlers",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-20",
-      "stories": ["US-012"],
+      "stories": [
+        "US-012"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-16", "T-19"],
+      "dependsOn": [
+        "T-16",
+        "T-19"
+      ],
       "whatToDo": "Add Richiedi fattura button in subscription management. Create invoice request dialog/form: customer type toggle, fields for individual/company (name, address, CF, P.IVA, SDI, PEC), save fiscal data for reuse. Create invoice request history view. Admin side: add invoice requests list with status update.",
       "definitionOfDone": [
-        { "description": "Invoice request form with all fields and conditional rendering", "completed": true },
-        { "description": "Fiscal data pre-filled from previous requests", "completed": true },
-        { "description": "Request history visible to user", "completed": true },
-        { "description": "Admin can view and update request status", "completed": true },
-        { "description": "Form validation", "completed": true }
+        {
+          "description": "Invoice request form with all fields and conditional rendering",
+          "completed": true
+        },
+        {
+          "description": "Fiscal data pre-filled from previous requests",
+          "completed": true
+        },
+        {
+          "description": "Request history visible to user",
+          "completed": true
+        },
+        {
+          "description": "Admin can view and update request status",
+          "completed": true
+        },
+        {
+          "description": "Form validation",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-21",
-      "stories": ["US-TR-001"],
+      "stories": [
+        "US-TR-001"
+      ],
       "size": "Medium",
       "status": "completed",
-      "dependsOn": ["T-05", "T-06"],
+      "dependsOn": [
+        "T-05",
+        "T-06"
+      ],
       "whatToDo": "Extend IUserPurgeService / user deletion flow: Cancel active Stripe subscription via CancelSubscriptionAsync, Delete Stripe Customer via Stripe API, Anonymize UserSubscription records (remove UserId, keep data), Keep InvoiceRequest records for 10 years but anonymize personal data (keep fiscal codes for legal compliance). Ensure only runs when payments module is enabled.",
       "definitionOfDone": [
-        { "description": "Account deletion cancels Stripe subscription", "completed": true },
-        { "description": "Account deletion deletes Stripe Customer", "completed": true },
-        { "description": "UserSubscription anonymized (not deleted)", "completed": true },
-        { "description": "InvoiceRequest kept 10 years with anonymized personal data", "completed": true },
-        { "description": "No-op when payments module disabled", "completed": true },
-        { "description": "Integration tests for purge logic (3 tests)", "completed": true }
+        {
+          "description": "Account deletion cancels Stripe subscription",
+          "completed": true
+        },
+        {
+          "description": "Account deletion deletes Stripe Customer",
+          "completed": true
+        },
+        {
+          "description": "UserSubscription anonymized (not deleted)",
+          "completed": true
+        },
+        {
+          "description": "InvoiceRequest kept 10 years with anonymized personal data",
+          "completed": true
+        },
+        {
+          "description": "No-op when payments module disabled",
+          "completed": true
+        },
+        {
+          "description": "Integration tests for purge logic (3 tests)",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-22",
-      "stories": ["US-TR-002"],
+      "stories": [
+        "US-TR-002"
+      ],
       "size": "Small",
       "status": "completed",
-      "dependsOn": ["T-10", "T-11"],
+      "dependsOn": [
+        "T-10",
+        "T-11"
+      ],
       "whatToDo": "Add Plans.Read, Plans.Create, Plans.Update, Subscriptions.Read to Permissions.cs and permissions array. Update RolesAndPermissionsSeeder to seed new permissions. Update PermissionSeeder in Bootstrap if separate. Add new permissions to frontend PERMISSIONS constant in shared-auth.",
       "definitionOfDone": [
-        { "description": "New permissions in Permissions.cs and GetAll() array", "completed": true },
-        { "description": "Seeder updated to create new permissions", "completed": true },
-        { "description": "Frontend permissions constant updated", "completed": true },
-        { "description": "Bootstrap runs without errors", "completed": true },
-        { "description": "Existing permissions unchanged", "completed": true }
+        {
+          "description": "New permissions in Permissions.cs and GetAll() array",
+          "completed": true
+        },
+        {
+          "description": "Seeder updated to create new permissions",
+          "completed": true
+        },
+        {
+          "description": "Frontend permissions constant updated",
+          "completed": true
+        },
+        {
+          "description": "Bootstrap runs without errors",
+          "completed": true
+        },
+        {
+          "description": "Existing permissions unchanged",
+          "completed": true
+        }
       ]
     },
     {
       "id": "T-23",
-      "stories": ["US-TR-002"],
+      "stories": [
+        "US-TR-002"
+      ],
       "size": "Small",
       "status": "completed",
-      "dependsOn": ["T-01"],
+      "dependsOn": [
+        "T-01"
+      ],
       "whatToDo": "Create extension method AddPaymentsModule that registers all payments-related services, controllers, and authorization handlers only when enabled. Ensure billing/webhook controllers not registered when module disabled. Verify when disabled: no payment routes in Swagger, guards pass always, no Stripe SDK initialized. Frontend: add config flag indicating if payments module is active.",
       "definitionOfDone": [
-        { "description": "All payment services/controllers conditionally registered", "completed": true },
-        { "description": "Module disabled -> no payment routes", "completed": true },
-        { "description": "Module enabled -> full functionality", "completed": true },
-        { "description": "Frontend hides payment UI when module disabled", "completed": true },
-        { "description": "Integration test verifying disabled module behavior (5 tests)", "completed": true }
+        {
+          "description": "All payment services/controllers conditionally registered",
+          "completed": true
+        },
+        {
+          "description": "Module disabled -> no payment routes",
+          "completed": true
+        },
+        {
+          "description": "Module enabled -> full functionality",
+          "completed": true
+        },
+        {
+          "description": "Frontend hides payment UI when module disabled",
+          "completed": true
+        },
+        {
+          "description": "Integration test verifying disabled module behavior (5 tests)",
+          "completed": true
+        }
       ]
     }
   ]

@@ -7,16 +7,8 @@ let searchDebounceTimer = null;
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
-function derivePlanStatusFromTasks(tasks) {
-  const taskList = Array.isArray(tasks) ? tasks : [];
-  if (taskList.length > 0 && taskList.every(task => task.status === 'completed')) return 'completed';
-  if (taskList.some(task => task.status === 'completed')) return 'in_progress';
-  if (taskList.some(task => task.status === 'in_progress')) return 'in_progress';
-  return 'pending';
-}
-
 async function loadPlans() {
-  const res = await fetch('/api/plans');
+  const res = await fetch('/api/plans', { cache: 'no-store' });
   plans = await res.json();
   if (currentSection === 'plans') renderPlansList();
 }
@@ -73,7 +65,7 @@ async function selectPlan(id) {
   document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 
-  const res = await fetch(`/api/plans/${encodeURIComponent(id)}`);
+  const res = await fetch(`/api/plans/${encodeURIComponent(id)}`, { cache: 'no-store' });
   currentPlan = await res.json();
   renderPlanDetail();
 }
@@ -81,8 +73,7 @@ async function selectPlan(id) {
 function renderPlanDetail() {
   const p = currentPlan;
   const tasks = Array.isArray(p.tasks) ? p.tasks : [];
-  const effectivePlanStatus = derivePlanStatusFromTasks(tasks);
-  p.status = effectivePlanStatus;
+  const effectivePlanStatus = p.status || 'pending';
   const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'overview';
 
   showDetail();
@@ -450,20 +441,18 @@ async function updateTaskStatus(taskId, status, dropdownRoot) {
       throw new Error(err.error || 'Unable to update task status');
     }
 
-    const updated = await res.json();
-    const task = currentPlan.tasks?.find(t => t.id === taskId);
-    if (task) task.status = updated.task.status;
-    currentPlan.status = updated.status || derivePlanStatusFromTasks(currentPlan.tasks);
-    if (Array.isArray(updated.stories)) currentPlan.stories = updated.stories;
-    currentPlan.lastUpdated = updated.lastUpdated || currentPlan.lastUpdated;
+    await res.json();
 
-    const planCard = plans.find(p => p.id === currentPlan.id);
-    if (planCard) {
-      planCard.lastUpdated = currentPlan.lastUpdated;
-      planCard.status = currentPlan.status;
+    const [planDetailRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!planDetailRes.ok) {
+      throw new Error('Unable to refresh plan after status update');
     }
 
-    renderPlansList();
+    currentPlan = await planDetailRes.json();
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
   } catch (error) {
