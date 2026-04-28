@@ -6,7 +6,7 @@
   "targetArchitecture": null,
   "status": "pending",
   "created": "2026-04-24",
-  "lastUpdated": "2026-04-28T02:06:48.000Z",
+  "lastUpdated": "2026-04-28T03:46:35.463Z",
   "lastUpdatedNote": "T-01, T-02 completed. CLI infrastructure and task discovery logic implemented.",
   "notes": null,
   "phases": [
@@ -204,19 +204,19 @@
       "definitionOfDone": [
         {
           "description": "Script identifies first task with status: pending",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script verifies all IDs in dependsOn have status: completed or skipped",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script skips tasks with status: skipped or cancelled",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script reports 'No pending tasks' when all are done or blocked",
-          "completed": true
+          "completed": false
         }
       ],
       "decision": null,

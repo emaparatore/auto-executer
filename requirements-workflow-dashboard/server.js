@@ -140,6 +140,19 @@ function deriveTaskStatusFromDefinitionOfDone(definitionOfDone) {
   return 'in_progress';
 }
 
+function normalizeUniqueStringArray(values) {
+  if (!Array.isArray(values)) return null;
+  const result = [];
+  const seen = new Set();
+  for (const value of values) {
+    const normalized = String(value || '').trim();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
+}
+
 app.get('/api/plans', (req, res) => {
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
   const plans = files.map(file => {
@@ -438,6 +451,116 @@ app.patch('/api/plans/:id/tasks/:taskId/implementation-notes', (req, res) => {
     implementationNotes: task.implementationNotes,
     lastUpdated: data.lastUpdated
   });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/title', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { title } = req.body || {};
+  if (typeof title !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "title" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  task.title = title.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, title: task.title, lastUpdated: data.lastUpdated });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/phase', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { phase } = req.body || {};
+  if (typeof phase !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "phase" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  task.phase = phase.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, phase: task.phase, lastUpdated: data.lastUpdated });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/what-to-do', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { whatToDo } = req.body || {};
+  if (typeof whatToDo !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "whatToDo" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  task.whatToDo = whatToDo.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, whatToDo: task.whatToDo, lastUpdated: data.lastUpdated });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/files', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const files = normalizeUniqueStringArray(req.body?.files);
+  if (!files) {
+    return res.status(400).json({ error: 'Invalid payload. "files" must be an array of strings.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  task.files = files;
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, files: task.files, lastUpdated: data.lastUpdated });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/depends-on', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const dependsOn = normalizeUniqueStringArray(req.body?.dependsOn);
+  if (!dependsOn) {
+    return res.status(400).json({ error: 'Invalid payload. "dependsOn" must be an array of strings.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  if (dependsOn.includes(task.id)) {
+    return res.status(400).json({ error: 'A task cannot depend on itself.' });
+  }
+
+  const existingTaskIds = new Set((data.tasks || []).map(t => t.id));
+  const invalidTaskIds = dependsOn.filter(taskId => !existingTaskIds.has(taskId));
+  if (invalidTaskIds.length) {
+    return res.status(400).json({ error: `Invalid task IDs in dependsOn: ${invalidTaskIds.join(', ')}` });
+  }
+
+  task.dependsOn = dependsOn;
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, dependsOn: task.dependsOn, lastUpdated: data.lastUpdated });
 });
 
 app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
