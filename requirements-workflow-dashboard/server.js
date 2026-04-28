@@ -349,6 +349,9 @@ app.patch('/api/plans/:id/phases', (req, res) => {
   }
 
   const normalizedPhases = [];
+  const tasksById = new Map((plan.data.tasks || []).map(task => [String(task.id), task]));
+  const assignedTaskIds = new Set();
+
   for (const phase of phases) {
     if (!phase || typeof phase !== 'object') {
       return res.status(400).json({ error: 'Invalid payload. Each phase must be an object.' });
@@ -363,11 +366,32 @@ app.patch('/api/plans/:id/phases', (req, res) => {
       ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean)
       : [];
 
-    normalizedPhases.push({ title, tasks });
+    const validTasks = [];
+    for (const taskId of tasks) {
+      if (!tasksById.has(taskId)) continue;
+      if (assignedTaskIds.has(taskId)) continue;
+      assignedTaskIds.add(taskId);
+      validTasks.push(taskId);
+    }
+
+    normalizedPhases.push({ title, tasks: validTasks });
   }
 
   const { filePath, data } = plan;
   data.phases = normalizedPhases;
+
+  const phaseByTaskId = new Map();
+  for (const phase of normalizedPhases) {
+    for (const taskId of phase.tasks) {
+      phaseByTaskId.set(taskId, phase.title);
+    }
+  }
+
+  for (const task of data.tasks || []) {
+    const nextPhase = phaseByTaskId.get(String(task.id)) || '';
+    task.phase = nextPhase;
+  }
+
   touchPlan(data);
   writePlan(filePath, data);
 

@@ -6,7 +6,7 @@
   "targetArchitecture": null,
   "status": "completed",
   "created": "2026-03-18",
-  "lastUpdated": "2026-04-28T12:08:01.544Z",
+  "lastUpdated": "2026-04-28T12:21:46.727Z",
   "lastUpdatedNote": "aggiornato stato T-17 completato, story coverage US-012–US-013",
   "notes": "Piano di implementazione dettagliato per la funzionalità FEAT-1, suddiviso in 4 fasi principali (A-D) con 20 task specifici. Include decisioni architetturali chiave, storie utente collegate a ciascun task, e criteri di completamento definiti. Il piano è progettato per garantire una solida infrastruttura di autorizzazione basata su permessi, un audit log completo, e un'interfaccia di amministrazione funzionale e sicura.",
   "phases": [
@@ -16,7 +16,8 @@
       "tasks": [
         "T-02",
         "T-03",
-        "T-04"
+        "T-04",
+        "T-01"
       ]
     },
     {
@@ -24,8 +25,7 @@
       "title": "Fase B — Flusso Cambio Password e Audit Log",
       "tasks": [
         "T-05",
-        "T-06",
-        "T-01"
+        "T-06"
       ]
     },
     {
@@ -179,7 +179,7 @@
     {
       "id": "T-01",
       "title": "Sistema permessi — costanti e entità di dominio",
-      "phase": "Fase B — Flusso Cambio Password e Audit Log",
+      "phase": "Fase A — Fondazione: Permessi, Ruoli e Seeding",
       "stories": [
         "US-001",
         "US-017"
