@@ -459,7 +459,19 @@ function renderPlanDetail() {
         </div>
         <div class="task-meta-row">
           <span class="task-meta-label">Endpoints</span>
-          <div class="task-meta-value">${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}</div>
+          <div class="task-meta-value">
+            ${isTaskFieldEditing(t.id, 'endpoints')
+              ? `
+                <div class="task-meta-editor">
+                  <textarea id="task-endpoints-${escapeHtml(t.id)}" class="task-notes-input" rows="4" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml((Array.isArray(t.endpoints) ? t.endpoints : []).join('\n'))}</textarea>
+                  <div class="task-notes-actions">
+                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'endpoints')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
+                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+                  </div>
+                </div>
+              `
+              : `${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${t.endpoints?.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'endpoints')">${t.endpoints?.length ? '✎' : '+'}</button>`}
+          </div>
         </div>
       </div>
 
@@ -1322,6 +1334,12 @@ async function saveTaskField(planId, taskId, field) {
     body.files = String(textareaEl.value || '').split('\n').map(value => value.trim()).filter(Boolean);
     task.files = body.files;
     endpoint = 'files';
+  } else if (field === 'endpoints') {
+    const textareaEl = document.getElementById(`task-endpoints-${taskId}`);
+    if (!textareaEl) return;
+    body.endpoints = String(textareaEl.value || '').split('\n').map(value => value.trim()).filter(Boolean);
+    task.endpoints = body.endpoints;
+    endpoint = 'endpoints';
   } else if (field === 'dependsOn') {
     const editorEl = document.getElementById(`task-depends-on-editor-${taskId}`);
     if (!editorEl) return;

@@ -637,6 +637,26 @@ app.patch('/api/plans/:id/tasks/:taskId/files', (req, res) => {
   res.json({ ok: true, planId: data.id, taskId: task.id, files: task.files, lastUpdated: data.lastUpdated });
 });
 
+app.patch('/api/plans/:id/tasks/:taskId/endpoints', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const endpoints = normalizeUniqueStringArray(req.body?.endpoints);
+  if (!endpoints) {
+    return res.status(400).json({ error: 'Invalid payload. "endpoints" must be an array of strings.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  task.endpoints = endpoints;
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({ ok: true, planId: data.id, taskId: task.id, endpoints: task.endpoints, lastUpdated: data.lastUpdated });
+});
+
 app.patch('/api/plans/:id/tasks/:taskId/depends-on', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) return res.status(404).json({ error: 'Plan not found' });
