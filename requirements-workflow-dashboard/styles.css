@@ -131,7 +131,7 @@ body::after {
 }
 
 .logo-icon {
-  width: 36px;
+  width: 42px;
   height: 36px;
   background: linear-gradient(145deg, #7f7d77 0%, #a5a198 55%, #c3bfb4 100%);
   border-radius: 10px;
@@ -139,8 +139,11 @@ body::after {
   align-items: center;
   justify-content: center;
   color: #1c1d1f;
-  font-family: 'IBM Plex Mono', monospace;
-  font-weight: 700;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1;
   box-shadow: inset 0 1px 0 rgba(239, 235, 226, 0.7), 0 8px 14px rgba(0, 0, 0, 0.32);
 }
 
