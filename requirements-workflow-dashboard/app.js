@@ -7,6 +7,7 @@ let searchDebounceTimer = null;
 let editingAcceptanceStoryId = null;
 let isAcceptanceUpdating = false;
 let toastTimer = null;
+let acceptanceFocusTarget = null;
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
@@ -211,6 +212,7 @@ async function selectRequirement(id) {
   const res = await fetch(`/api/requirements/${encodeURIComponent(id)}`);
   currentRequirement = await res.json();
   editingAcceptanceStoryId = null;
+  acceptanceFocusTarget = null;
   renderRequirementDetail();
 }
 
@@ -286,6 +288,7 @@ function renderRequirementDetail() {
         <div class="task-context-row"><span class="task-context-label">So that</span><span class="task-context-values">${escapeHtml(story.soThat || '')}</span></div>
         <div
           class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}"
+          data-story-id="${encodeURIComponent(story.id)}"
           role="button"
           tabindex="0"
           aria-label="Apri modalita modifica acceptance criteria"
@@ -299,7 +302,7 @@ function renderRequirementDetail() {
           </div>
           ${(story.acceptanceCriteria || []).map((ac, index) => editingAcceptanceStoryId === story.id
             ? `
-              <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" ${isAcceptanceUpdating ? 'disabled' : ''}>
+              <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" onkeydown="handleAcceptanceItemKeydown(event)" ${isAcceptanceUpdating ? 'disabled' : ''}>
                 <span class="task-dod-bullet">${ac.checked ? '✓' : '○'}</span>
                 <span>${escapeHtml(ac.text || '')}</span>
               </button>
@@ -328,6 +331,8 @@ function renderRequirementDetail() {
       </div>
     `).join('')
     : '<p class="empty-state">No open questions</p>';
+
+  restoreAcceptanceFocusIfNeeded();
 }
 
 function renderRequirementItems(items, emptyText) {
@@ -533,6 +538,7 @@ function disableAcceptanceEdit() {
   if (!currentRequirement || currentSection !== 'requirements') return;
   if (!editingAcceptanceStoryId) return;
   editingAcceptanceStoryId = null;
+  acceptanceFocusTarget = null;
   renderRequirementDetail();
 }
 
@@ -546,6 +552,7 @@ function enableAcceptanceEditByEncodedId(encodedStoryId) {
 }
 
 function handleAcceptanceRegionKeydown(event, encodedStoryId) {
+  if (event.target !== event.currentTarget) return;
   if (event.key !== 'Enter' && event.key !== ' ') return;
   event.preventDefault();
   enableAcceptanceEditByEncodedId(encodedStoryId);
@@ -559,6 +566,7 @@ async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex,
   if (!story || !criterion) return;
 
   const previousChecked = Boolean(criterion.checked);
+  acceptanceFocusTarget = { storyId, criterionIndex };
   criterion.checked = checked;
   isAcceptanceUpdating = true;
   renderRequirementDetail();
@@ -605,6 +613,31 @@ function toggleAcceptanceCriterionByEncodedIds(event, encodedRequirementId, enco
   toggleAcceptanceCriterion(requirementId, storyId, Number(criterionIndex), checked);
 }
 
+function handleAcceptanceItemKeydown(event) {
+  const key = event.key;
+  if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(key)) return;
+
+  const currentBtn = event.currentTarget;
+  const container = currentBtn.closest('.task-dod');
+  if (!container) return;
+
+  const items = Array.from(container.querySelectorAll('.task-dod-toggle:not([disabled])'));
+  if (!items.length) return;
+
+  const currentIndex = items.indexOf(currentBtn);
+  if (currentIndex < 0) return;
+
+  event.preventDefault();
+
+  let nextIndex = currentIndex;
+  if (key === 'ArrowDown' || key === 'ArrowRight') nextIndex = Math.min(items.length - 1, currentIndex + 1);
+  if (key === 'ArrowUp' || key === 'ArrowLeft') nextIndex = Math.max(0, currentIndex - 1);
+  if (key === 'Home') nextIndex = 0;
+  if (key === 'End') nextIndex = items.length - 1;
+
+  items[nextIndex]?.focus();
+}
+
 function ensureToastEl() {
   let toastEl = document.getElementById('toastMessage');
   if (!toastEl) {
@@ -629,6 +662,28 @@ function showToast(message, type = 'success') {
   toastTimer = setTimeout(() => {
     toastEl.classList.remove('show');
   }, 1800);
+}
+
+function restoreAcceptanceFocusIfNeeded() {
+  if (!acceptanceFocusTarget || !editingAcceptanceStoryId) return;
+  if (editingAcceptanceStoryId !== acceptanceFocusTarget.storyId) return;
+
+  const { storyId, criterionIndex } = acceptanceFocusTarget;
+  requestAnimationFrame(() => {
+    const editingRegion = document.querySelector('.task-dod.is-editing');
+    if (!editingRegion) return;
+
+    const items = Array.from(editingRegion.querySelectorAll('.task-dod-toggle:not([disabled])'));
+    if (!items.length) return;
+
+    const safeIndex = Math.max(0, Math.min(Number(criterionIndex) || 0, items.length - 1));
+    const targetItem = items[safeIndex];
+    if (!targetItem) return;
+
+    const targetStoryId = decodeURIComponent(editingRegion.getAttribute('data-story-id') || '');
+    if (targetStoryId !== storyId) return;
+    targetItem.focus();
+  });
 }
 
 async function runSearch(query) {
@@ -743,6 +798,7 @@ window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
 window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
 window.handleAcceptanceRegionKeydown = handleAcceptanceRegionKeydown;
+window.handleAcceptanceItemKeydown = handleAcceptanceItemKeydown;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');

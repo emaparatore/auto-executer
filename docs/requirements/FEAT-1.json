@@ -192,7 +192,7 @@
       "acceptanceCriteria": [
         {
           "text": "Creazione SuperAdmin da variabili ambiente se assente",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Skip idempotente se esiste gia",
@@ -200,7 +200,7 @@
         },
         {
           "text": "MustChangePassword=true sul nuovo utente",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Operazione dopo migration DB",
@@ -226,11 +226,11 @@
         },
         {
           "text": "Navigazione bloccata verso altre pagine",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Nuova password conforme policy",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Rimozione flag dopo cambio riuscito",
@@ -312,19 +312,19 @@
       "acceptanceCriteria": [
         {
           "text": "Toggle status dalla lista utenti",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Utente disattivato non puo fare login",
-          "checked": false
+          "checked": true
         },
         {
           "text": "SuperAdmin originale non disattivabile",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Audit log operazione",
-          "checked": false
+          "checked": true
         }
       ],
       "notes": null
