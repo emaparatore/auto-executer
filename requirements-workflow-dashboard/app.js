@@ -21,8 +21,8 @@ async function loadRequirements() {
 
 function renderPlansList() {
   const container = document.getElementById('plansList');
-  document.getElementById('plansCount').textContent = `(${plans.length})`;
-  document.getElementById('listHeaderTitle').textContent = 'Plans';
+  document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
+  document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
 
   container.innerHTML = plans.map(plan => `
     <div class="plan-item" data-id="${escapeHtml(plan.id)}" onclick="selectPlanByEncodedId('${encodeURIComponent(plan.id)}')">
@@ -41,8 +41,8 @@ function renderPlansList() {
 
 function renderRequirementsList() {
   const container = document.getElementById('plansList');
-  document.getElementById('plansCount').textContent = `(${requirements.length})`;
-  document.getElementById('listHeaderTitle').textContent = 'Requirements';
+  document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
+  document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
 
   container.innerHTML = requirements.map(req => `
     <div class="plan-item" data-id="${escapeHtml(req.id)}" onclick="selectRequirementByEncodedId('${encodeURIComponent(req.id)}')">

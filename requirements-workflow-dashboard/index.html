@@ -14,10 +14,6 @@
         <div class="logo-icon">P</div>
         Plans Explorer
       </div>
-      <div class="section-switch" aria-label="Main section switcher">
-        <button class="section-switch-tab active" data-section="plans" type="button">Plans</button>
-        <button class="section-switch-tab" data-section="requirements" type="button">Requirements</button>
-      </div>
       <div class="search-box">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -32,7 +28,10 @@
     <aside class="sidebar">
       <div class="plans-list">
         <div class="plans-list-header">
-          <span id="listHeaderTitle">Plans</span> <span class="plans-count" id="plansCount"></span>
+          <div class="section-switch" aria-label="Main section switcher">
+            <button class="section-switch-tab active" data-section="plans" type="button"><span>Plans</span> <span class="switch-count" id="plansSwitchCount"></span></button>
+            <button class="section-switch-tab" data-section="requirements" type="button"><span>Requirements</span> <span class="switch-count" id="requirementsSwitchCount"></span></button>
+          </div>
         </div>
         <div id="plansList"></div>
       </div>
