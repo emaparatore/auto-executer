@@ -742,12 +742,30 @@ details.summary-block { margin-top: 10px; }
   border-radius: 8px;
   margin-top: 16px;
   color: #f1ece2;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.task-dod:hover {
+  border-color: rgba(221, 212, 197, 0.45);
+}
+
+.task-dod.is-editing {
+  border-color: rgba(157, 211, 176, 0.62);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.2);
 }
 
 .task-dod-title {
   font-weight: 700;
   color: #e0d9cb;
   margin-bottom: 8px;
+}
+
+.task-dod-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c8c0b2;
+  margin-left: 6px;
 }
 
 .task-dod-item {
@@ -760,6 +778,40 @@ details.summary-block { margin-top: 10px; }
 
 .task-dod-item + .task-dod-item {
   margin-top: 4px;
+}
+
+.task-dod-toggle {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  padding: 4px 6px;
+  margin-left: -6px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.task-dod-toggle + .task-dod-toggle {
+  margin-top: 6px;
+}
+
+.task-dod.is-editing .task-dod-toggle:hover {
+  background: rgba(220, 212, 197, 0.09);
+  border-color: rgba(220, 212, 197, 0.2);
+}
+
+.task-dod.is-editing .task-dod-toggle:focus-visible {
+  outline: none;
+  border-color: rgba(157, 211, 176, 0.66);
+  box-shadow: 0 0 0 2px rgba(126, 181, 145, 0.22);
+}
+
+.task-dod.is-busy .task-dod-toggle {
+  opacity: 0.68;
+  pointer-events: none;
 }
 
 .task-dod-bullet {

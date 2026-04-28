@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": null,
-  "lastUpdated": "2026-04-28T02:11:48.329Z",
+  "lastUpdated": "2026-04-28T02:14:47.373Z",
   "decisions": [
     {
       "decision": "Isolamento ambienti",
@@ -229,7 +229,7 @@
       "id": "T-7",
       "stories": [],
       "size": "small",
-      "status": "skipped",
+      "status": "cancelled",
       "dependsOn": [],
       "whatToDo": "Aggiornare CLAUDE.md: aggiornare entry di docs/vps-setup-guide.md nella lista docs se la descrizione cambia",
       "definitionOfDone": [

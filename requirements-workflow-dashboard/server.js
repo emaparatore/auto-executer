@@ -47,6 +47,10 @@ function readRequirementById(requirementId) {
   return { filePath, data };
 }
 
+function writeRequirement(filePath, data) {
+  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
+}
+
 function getRequirementsFiles() {
   if (!fs.existsSync(REQUIREMENTS_DIR)) return [];
   return fs
@@ -189,6 +193,43 @@ app.get('/api/requirements/:id', (req, res) => {
   }
 
   res.json(requirement.data);
+});
+
+app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ error: 'Requirement not found' });
+  }
+
+  const { checked } = req.body || {};
+  if (typeof checked !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid payload. "checked" must be a boolean.' });
+  }
+
+  const criterionIndex = Number.parseInt(req.params.index, 10);
+  if (!Number.isInteger(criterionIndex) || criterionIndex < 0) {
+    return res.status(400).json({ error: 'Invalid acceptance criterion index' });
+  }
+
+  const { filePath, data } = requirement;
+  const story = (data.userStories || []).find(item => item.id === req.params.storyId);
+  if (!story) {
+    return res.status(404).json({ error: 'User story not found' });
+  }
+
+  if (!Array.isArray(story.acceptanceCriteria) || !story.acceptanceCriteria[criterionIndex]) {
+    return res.status(404).json({ error: 'Acceptance criterion not found' });
+  }
+
+  story.acceptanceCriteria[criterionIndex].checked = checked;
+  writeRequirement(filePath, data);
+
+  res.json({
+    ok: true,
+    storyId: story.id,
+    criterionIndex,
+    checked
+  });
 });
 
 app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {

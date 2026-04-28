@@ -4,6 +4,8 @@ let currentPlan = null;
 let currentRequirement = null;
 let currentSection = 'plans';
 let searchDebounceTimer = null;
+let editingAcceptanceStoryId = null;
+let isAcceptanceUpdating = false;
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
@@ -207,6 +209,7 @@ async function selectRequirement(id) {
 
   const res = await fetch(`/api/requirements/${encodeURIComponent(id)}`);
   currentRequirement = await res.json();
+  editingAcceptanceStoryId = null;
   renderRequirementDetail();
 }
 
@@ -280,14 +283,22 @@ function renderRequirementDetail() {
         <div class="task-context-row"><span class="task-context-label">As a</span><span class="task-context-values">${escapeHtml(story.asA || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">I want</span><span class="task-context-values">${escapeHtml(story.iWant || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">So that</span><span class="task-context-values">${escapeHtml(story.soThat || '')}</span></div>
-        <div class="task-dod">
-          <div class="task-dod-title">Acceptance Criteria:</div>
-          ${(story.acceptanceCriteria || []).map(ac => `
-            <div class="task-dod-item${ac.checked ? ' is-completed' : ''}">
-              <span class="task-dod-bullet">${ac.checked ? '✓' : '○'}</span>
-              <span>${escapeHtml(ac.text || '')}</span>
-            </div>
-          `).join('') || '<div class="task-dod-item"><span class="task-dod-bullet">○</span><span>No acceptance criteria</span></div>'}
+        <div class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}" onclick="enableAcceptanceEditByEncodedId('${encodeURIComponent(story.id)}')">
+          <div class="task-dod-title">Acceptance Criteria: <span class="task-dod-hint">${editingAcceptanceStoryId === story.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span></div>
+          ${(story.acceptanceCriteria || []).map((ac, index) => editingAcceptanceStoryId === story.id
+            ? `
+              <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" ${isAcceptanceUpdating ? 'disabled' : ''}>
+                <span class="task-dod-bullet">${ac.checked ? '✓' : '○'}</span>
+                <span>${escapeHtml(ac.text || '')}</span>
+              </button>
+            `
+            : `
+              <div class="task-dod-item${ac.checked ? ' is-completed' : ''}">
+                <span class="task-dod-bullet">${ac.checked ? '✓' : '○'}</span>
+                <span>${escapeHtml(ac.text || '')}</span>
+              </div>
+            `
+          ).join('') || '<div class="task-dod-item"><span class="task-dod-bullet">○</span><span>No acceptance criteria</span></div>'}
         </div>
       </div>
     `).join('')
@@ -499,6 +510,70 @@ function closeAllTaskStatusDropdowns() {
   });
 }
 
+function enableAcceptanceEdit(storyId) {
+  if (!currentRequirement || currentSection !== 'requirements') return;
+  if (editingAcceptanceStoryId === storyId) return;
+  editingAcceptanceStoryId = storyId;
+  renderRequirementDetail();
+}
+
+function enableAcceptanceEditByEncodedId(encodedStoryId) {
+  enableAcceptanceEdit(decodeURIComponent(encodedStoryId));
+}
+
+async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex, checked) {
+  if (!currentRequirement || currentSection !== 'requirements' || isAcceptanceUpdating) return;
+
+  const story = (currentRequirement.userStories || []).find(item => item.id === storyId);
+  const criterion = story?.acceptanceCriteria?.[criterionIndex];
+  if (!story || !criterion) return;
+
+  const previousChecked = Boolean(criterion.checked);
+  criterion.checked = checked;
+  isAcceptanceUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}/acceptance/${criterionIndex}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checked })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update acceptance criterion');
+    }
+
+    const [updatedRequirementRes] = await Promise.all([
+      fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }),
+      loadRequirements()
+    ]);
+
+    if (!updatedRequirementRes.ok) {
+      throw new Error('Unable to refresh requirement after acceptance update');
+    }
+
+    currentRequirement = await updatedRequirementRes.json();
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+  } catch (error) {
+    criterion.checked = previousChecked;
+    renderRequirementDetail();
+    alert(error.message);
+  } finally {
+    isAcceptanceUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function toggleAcceptanceCriterionByEncodedIds(event, encodedRequirementId, encodedStoryId, criterionIndex, checked) {
+  event.stopPropagation();
+  const requirementId = decodeURIComponent(encodedRequirementId);
+  const storyId = decodeURIComponent(encodedStoryId);
+  toggleAcceptanceCriterion(requirementId, storyId, Number(criterionIndex), checked);
+}
+
 async function runSearch(query) {
   const searchResults = document.getElementById('searchResults');
   if (query.length < 2) {
@@ -607,6 +682,8 @@ window.selectRequirementByEncodedId = selectRequirementByEncodedId;
 window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
 window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
 window.openSearchResult = openSearchResult;
+window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
+window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');

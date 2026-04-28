@@ -13,22 +13,86 @@
     "permissionsModel": {
       "description": "Permesso atomico Risorsa.Azione; Ruolo come insieme permessi; Utente con 0..n ruoli e permessi effettivi come unione.",
       "permissionCatalog": [
-        { "area": "Utenti", "permission": "Users.Read", "description": "Visualizzare utenti" },
-        { "area": "Utenti", "permission": "Users.Create", "description": "Creare utente" },
-        { "area": "Utenti", "permission": "Users.Update", "description": "Modificare utente" },
-        { "area": "Utenti", "permission": "Users.Delete", "description": "Eliminare utente" },
-        { "area": "Utenti", "permission": "Users.ManageRoles", "description": "Assegnare/rimuovere ruoli" },
-        { "area": "Utenti", "permission": "Users.ToggleStatus", "description": "Attivare/disattivare account" },
-        { "area": "Ruoli", "permission": "Roles.Read", "description": "Visualizzare ruoli e permessi" },
-        { "area": "Ruoli", "permission": "Roles.Create", "description": "Creare ruolo" },
-        { "area": "Ruoli", "permission": "Roles.Update", "description": "Modificare ruolo e permessi" },
-        { "area": "Ruoli", "permission": "Roles.Delete", "description": "Eliminare ruolo non di sistema" },
-        { "area": "Audit", "permission": "AuditLog.Read", "description": "Consultare audit log" },
-        { "area": "Audit", "permission": "AuditLog.Export", "description": "Esportare audit log" },
-        { "area": "Impostazioni", "permission": "Settings.Read", "description": "Leggere impostazioni" },
-        { "area": "Impostazioni", "permission": "Settings.Manage", "description": "Gestire impostazioni" },
-        { "area": "Dashboard", "permission": "Dashboard.ViewStats", "description": "Visualizzare statistiche" },
-        { "area": "Sistema", "permission": "SystemHealth.Read", "description": "Visualizzare stato salute" }
+        {
+          "area": "Utenti",
+          "permission": "Users.Read",
+          "description": "Visualizzare utenti"
+        },
+        {
+          "area": "Utenti",
+          "permission": "Users.Create",
+          "description": "Creare utente"
+        },
+        {
+          "area": "Utenti",
+          "permission": "Users.Update",
+          "description": "Modificare utente"
+        },
+        {
+          "area": "Utenti",
+          "permission": "Users.Delete",
+          "description": "Eliminare utente"
+        },
+        {
+          "area": "Utenti",
+          "permission": "Users.ManageRoles",
+          "description": "Assegnare/rimuovere ruoli"
+        },
+        {
+          "area": "Utenti",
+          "permission": "Users.ToggleStatus",
+          "description": "Attivare/disattivare account"
+        },
+        {
+          "area": "Ruoli",
+          "permission": "Roles.Read",
+          "description": "Visualizzare ruoli e permessi"
+        },
+        {
+          "area": "Ruoli",
+          "permission": "Roles.Create",
+          "description": "Creare ruolo"
+        },
+        {
+          "area": "Ruoli",
+          "permission": "Roles.Update",
+          "description": "Modificare ruolo e permessi"
+        },
+        {
+          "area": "Ruoli",
+          "permission": "Roles.Delete",
+          "description": "Eliminare ruolo non di sistema"
+        },
+        {
+          "area": "Audit",
+          "permission": "AuditLog.Read",
+          "description": "Consultare audit log"
+        },
+        {
+          "area": "Audit",
+          "permission": "AuditLog.Export",
+          "description": "Esportare audit log"
+        },
+        {
+          "area": "Impostazioni",
+          "permission": "Settings.Read",
+          "description": "Leggere impostazioni"
+        },
+        {
+          "area": "Impostazioni",
+          "permission": "Settings.Manage",
+          "description": "Gestire impostazioni"
+        },
+        {
+          "area": "Dashboard",
+          "permission": "Dashboard.ViewStats",
+          "description": "Visualizzare statistiche"
+        },
+        {
+          "area": "Sistema",
+          "permission": "SystemHealth.Read",
+          "description": "Visualizzare stato salute"
+        }
       ],
       "systemRoles": [
         {
@@ -126,11 +190,26 @@
       "iWant": "creazione automatica account SuperAdmin al bootstrap",
       "soThat": "accedere subito alla dashboard",
       "acceptanceCriteria": [
-        { "text": "Creazione SuperAdmin da variabili ambiente se assente", "checked": false },
-        { "text": "Skip idempotente se esiste gia", "checked": false },
-        { "text": "MustChangePassword=true sul nuovo utente", "checked": false },
-        { "text": "Operazione dopo migration DB", "checked": false },
-        { "text": "Evento registrato in audit log", "checked": false }
+        {
+          "text": "Creazione SuperAdmin da variabili ambiente se assente",
+          "checked": true
+        },
+        {
+          "text": "Skip idempotente se esiste gia",
+          "checked": false
+        },
+        {
+          "text": "MustChangePassword=true sul nuovo utente",
+          "checked": true
+        },
+        {
+          "text": "Operazione dopo migration DB",
+          "checked": false
+        },
+        {
+          "text": "Evento registrato in audit log",
+          "checked": true
+        }
       ],
       "notes": null
     },
@@ -141,11 +220,26 @@
       "iWant": "essere obbligato a cambiarla al primo accesso",
       "soThat": "account sicuro fin da subito",
       "acceptanceCriteria": [
-        { "text": "Redirect forzato a cambio password con MustChangePassword attivo", "checked": false },
-        { "text": "Navigazione bloccata verso altre pagine", "checked": false },
-        { "text": "Nuova password conforme policy", "checked": false },
-        { "text": "Rimozione flag dopo cambio riuscito", "checked": false },
-        { "text": "API rifiuta richieste diverse da cambio password finche flag attivo", "checked": false }
+        {
+          "text": "Redirect forzato a cambio password con MustChangePassword attivo",
+          "checked": false
+        },
+        {
+          "text": "Navigazione bloccata verso altre pagine",
+          "checked": false
+        },
+        {
+          "text": "Nuova password conforme policy",
+          "checked": false
+        },
+        {
+          "text": "Rimozione flag dopo cambio riuscito",
+          "checked": false
+        },
+        {
+          "text": "API rifiuta richieste diverse da cambio password finche flag attivo",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -156,11 +250,26 @@
       "iWant": "vedere lista utenti con info principali",
       "soThat": "avere panoramica utenti",
       "acceptanceCriteria": [
-        { "text": "Tabella paginata server-side con colonne principali", "checked": false },
-        { "text": "Ricerca per nome/email", "checked": false },
-        { "text": "Filtri combinabili ruolo/stato/periodo", "checked": false },
-        { "text": "Ordinamento per colonna", "checked": false },
-        { "text": "Senza permesso Users.Read: 403 e sezione nascosta", "checked": false }
+        {
+          "text": "Tabella paginata server-side con colonne principali",
+          "checked": false
+        },
+        {
+          "text": "Ricerca per nome/email",
+          "checked": false
+        },
+        {
+          "text": "Filtri combinabili ruolo/stato/periodo",
+          "checked": false
+        },
+        {
+          "text": "Ordinamento per colonna",
+          "checked": false
+        },
+        {
+          "text": "Senza permesso Users.Read: 403 e sezione nascosta",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -171,11 +280,26 @@
       "iWant": "assegnare/rimuovere ruoli",
       "soThat": "delegare responsabilita amministrative",
       "acceptanceCriteria": [
-        { "text": "Gestione ruoli da dettaglio utente", "checked": false },
-        { "text": "Voce Admin visibile alla prossima navigazione", "checked": false },
-        { "text": "Visibilita sezioni in base ai permessi", "checked": false },
-        { "text": "Audit log before/after cambio ruoli", "checked": false },
-        { "text": "Non rimovibile ruolo SuperAdmin dal SuperAdmin originale", "checked": false }
+        {
+          "text": "Gestione ruoli da dettaglio utente",
+          "checked": false
+        },
+        {
+          "text": "Voce Admin visibile alla prossima navigazione",
+          "checked": false
+        },
+        {
+          "text": "Visibilita sezioni in base ai permessi",
+          "checked": false
+        },
+        {
+          "text": "Audit log before/after cambio ruoli",
+          "checked": false
+        },
+        {
+          "text": "Non rimovibile ruolo SuperAdmin dal SuperAdmin originale",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -186,10 +310,22 @@
       "iWant": "attivare/disattivare account",
       "soThat": "bloccare accesso senza eliminare dati",
       "acceptanceCriteria": [
-        { "text": "Toggle status dalla lista utenti", "checked": false },
-        { "text": "Utente disattivato non puo fare login", "checked": false },
-        { "text": "SuperAdmin originale non disattivabile", "checked": false },
-        { "text": "Audit log operazione", "checked": false }
+        {
+          "text": "Toggle status dalla lista utenti",
+          "checked": false
+        },
+        {
+          "text": "Utente disattivato non puo fare login",
+          "checked": false
+        },
+        {
+          "text": "SuperAdmin originale non disattivabile",
+          "checked": false
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -200,11 +336,26 @@
       "iWant": "creare account senza registrazione pubblica",
       "soThat": "invitare collaboratori direttamente",
       "acceptanceCriteria": [
-        { "text": "Campi nome/cognome/email/password temporanea con auto-generazione", "checked": false },
-        { "text": "Assegnazione ruoli iniziali", "checked": false },
-        { "text": "Opzione invio email benvenuto", "checked": false },
-        { "text": "MustChangePassword attivo sul nuovo utente", "checked": false },
-        { "text": "Email duplicata ritorna errore validazione", "checked": false }
+        {
+          "text": "Campi nome/cognome/email/password temporanea con auto-generazione",
+          "checked": false
+        },
+        {
+          "text": "Assegnazione ruoli iniziali",
+          "checked": false
+        },
+        {
+          "text": "Opzione invio email benvenuto",
+          "checked": false
+        },
+        {
+          "text": "MustChangePassword attivo sul nuovo utente",
+          "checked": false
+        },
+        {
+          "text": "Email duplicata ritorna errore validazione",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -215,11 +366,26 @@
       "iWant": "eliminare account con conferma esplicita",
       "soThat": "rimuovere account non necessari",
       "acceptanceCriteria": [
-        { "text": "Conferma modale obbligatoria", "checked": false },
-        { "text": "Divieto eliminare se stessi", "checked": false },
-        { "text": "Divieto eliminare SuperAdmin originale", "checked": false },
-        { "text": "Audit log operazione", "checked": false },
-        { "text": "Dati utente rimossi dal sistema", "checked": false }
+        {
+          "text": "Conferma modale obbligatoria",
+          "checked": false
+        },
+        {
+          "text": "Divieto eliminare se stessi",
+          "checked": false
+        },
+        {
+          "text": "Divieto eliminare SuperAdmin originale",
+          "checked": false
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": false
+        },
+        {
+          "text": "Dati utente rimossi dal sistema",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -230,10 +396,22 @@
       "iWant": "modificare nome, cognome, email",
       "soThat": "aggiornare o correggere dati",
       "acceptanceCriteria": [
-        { "text": "Modifica dati base da dettaglio utente", "checked": false },
-        { "text": "Reset password forzato via link email", "checked": false },
-        { "text": "Forza cambio password al prossimo accesso", "checked": false },
-        { "text": "Audit log with before/after", "checked": false }
+        {
+          "text": "Modifica dati base da dettaglio utente",
+          "checked": false
+        },
+        {
+          "text": "Reset password forzato via link email",
+          "checked": false
+        },
+        {
+          "text": "Forza cambio password al prossimo accesso",
+          "checked": false
+        },
+        {
+          "text": "Audit log with before/after",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -244,11 +422,26 @@
       "iWant": "creare ruoli personalizzati",
       "soThat": "definire accessi su misura",
       "acceptanceCriteria": [
-        { "text": "Definizione nome e descrizione ruolo", "checked": false },
-        { "text": "Selezione permessi da matrice per area", "checked": false },
-        { "text": "Select/deselect area con un click", "checked": false },
-        { "text": "Duplicazione ruolo esistente", "checked": false },
-        { "text": "Validazione nome ruolo duplicato", "checked": false }
+        {
+          "text": "Definizione nome e descrizione ruolo",
+          "checked": false
+        },
+        {
+          "text": "Selezione permessi da matrice per area",
+          "checked": false
+        },
+        {
+          "text": "Select/deselect area con un click",
+          "checked": false
+        },
+        {
+          "text": "Duplicazione ruolo esistente",
+          "checked": false
+        },
+        {
+          "text": "Validazione nome ruolo duplicato",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -259,11 +452,26 @@
       "iWant": "modificare permessi associati",
       "soThat": "adattare livelli accesso nel tempo",
       "acceptanceCriteria": [
-        { "text": "Visualizzazione chiara permessi attivi/non attivi", "checked": false },
-        { "text": "Conteggio utenti impattati", "checked": false },
-        { "text": "Audit log with before/after", "checked": false },
-        { "text": "Ruoli di sistema non eliminabili", "checked": false },
-        { "text": "Ruolo SuperAdmin conserva sempre tutti i permessi", "checked": false }
+        {
+          "text": "Visualizzazione chiara permessi attivi/non attivi",
+          "checked": false
+        },
+        {
+          "text": "Conteggio utenti impattati",
+          "checked": false
+        },
+        {
+          "text": "Audit log with before/after",
+          "checked": false
+        },
+        {
+          "text": "Ruoli di sistema non eliminabili",
+          "checked": false
+        },
+        {
+          "text": "Ruolo SuperAdmin conserva sempre tutti i permessi",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -274,10 +482,22 @@
       "iWant": "eliminare un ruolo personalizzato",
       "soThat": "rimuovere livelli non necessari",
       "acceptanceCriteria": [
-        { "text": "Conferma eliminazione obbligatoria", "checked": false },
-        { "text": "Ruoli sistema non eliminabili", "checked": false },
-        { "text": "Utenti con ruolo lo perdono", "checked": false },
-        { "text": "Audit log operazione", "checked": false }
+        {
+          "text": "Conferma eliminazione obbligatoria",
+          "checked": false
+        },
+        {
+          "text": "Ruoli sistema non eliminabili",
+          "checked": false
+        },
+        {
+          "text": "Utenti con ruolo lo perdono",
+          "checked": false
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -288,11 +508,26 @@
       "iWant": "consultare log cronologico attivita",
       "soThat": "verificare chi ha fatto cosa e quando",
       "acceptanceCriteria": [
-        { "text": "Ordine cronologico inverso", "checked": false },
-        { "text": "Filtri per azione, utente, date, ricerca testuale", "checked": false },
-        { "text": "Dettaglio espandibile con before/after", "checked": false },
-        { "text": "Log non modificabile/cancellabile", "checked": false },
-        { "text": "Tabella paginata server-side", "checked": false }
+        {
+          "text": "Ordine cronologico inverso",
+          "checked": false
+        },
+        {
+          "text": "Filtri per azione, utente, date, ricerca testuale",
+          "checked": false
+        },
+        {
+          "text": "Dettaglio espandibile con before/after",
+          "checked": false
+        },
+        {
+          "text": "Log non modificabile/cancellabile",
+          "checked": false
+        },
+        {
+          "text": "Tabella paginata server-side",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -303,9 +538,18 @@
       "iWant": "esportare log filtrato in CSV",
       "soThat": "analizzare dati offline o archiviare",
       "acceptanceCriteria": [
-        { "text": "Export rispetta filtri correnti", "checked": false },
-        { "text": "CSV contiene colonne significative", "checked": false },
-        { "text": "Nome file significativo tipo audit-log-YYYY-MM-DD.csv", "checked": false }
+        {
+          "text": "Export rispetta filtri correnti",
+          "checked": false
+        },
+        {
+          "text": "CSV contiene colonne significative",
+          "checked": false
+        },
+        {
+          "text": "Nome file significativo tipo audit-log-YYYY-MM-DD.csv",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -316,12 +560,30 @@
       "iWant": "modificare impostazioni senza rideploy",
       "soThat": "reagire rapidamente a esigenze operative",
       "acceptanceCriteria": [
-        { "text": "Impostazioni per categoria con controlli tipo-corretti", "checked": false },
-        { "text": "Visualizzazione ultimo modificatore e timestamp", "checked": false },
-        { "text": "Salvataggio con conferma", "checked": false },
-        { "text": "Effetto immediato con invalidazione cache", "checked": false },
-        { "text": "Audit log before/after", "checked": false },
-        { "text": "Con Settings.Read sola visualizzazione", "checked": false }
+        {
+          "text": "Impostazioni per categoria con controlli tipo-corretti",
+          "checked": false
+        },
+        {
+          "text": "Visualizzazione ultimo modificatore e timestamp",
+          "checked": false
+        },
+        {
+          "text": "Salvataggio con conferma",
+          "checked": false
+        },
+        {
+          "text": "Effetto immediato con invalidazione cache",
+          "checked": false
+        },
+        {
+          "text": "Audit log before/after",
+          "checked": false
+        },
+        {
+          "text": "Con Settings.Read sola visualizzazione",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -332,10 +594,22 @@
       "iWant": "vedere metriche principali a colpo d'occhio",
       "soThat": "capire subito stato applicazione",
       "acceptanceCriteria": [
-        { "text": "Conteggi utenti totali/attivi/disattivati", "checked": false },
-        { "text": "Registrazioni 7/30 giorni con trend", "checked": false },
-        { "text": "Distribuzione utenti per ruolo", "checked": false },
-        { "text": "Widget ultime 5 attivita audit con link", "checked": false }
+        {
+          "text": "Conteggi utenti totali/attivi/disattivati",
+          "checked": false
+        },
+        {
+          "text": "Registrazioni 7/30 giorni con trend",
+          "checked": false
+        },
+        {
+          "text": "Distribuzione utenti per ruolo",
+          "checked": false
+        },
+        {
+          "text": "Widget ultime 5 attivita audit con link",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -346,9 +620,18 @@
       "iWant": "verificare funzionamento componenti",
       "soThat": "intervenire rapidamente in caso di problemi",
       "acceptanceCriteria": [
-        { "text": "Stato DB/email con indicatori verde-giallo-rosso", "checked": false },
-        { "text": "Mostra versione, ambiente, uptime, memoria, disco", "checked": false },
-        { "text": "Pulsante Ricontrolla", "checked": false }
+        {
+          "text": "Stato DB/email con indicatori verde-giallo-rosso",
+          "checked": false
+        },
+        {
+          "text": "Mostra versione, ambiente, uptime, memoria, disco",
+          "checked": false
+        },
+        {
+          "text": "Pulsante Ricontrolla",
+          "checked": false
+        }
       ],
       "notes": null
     },
@@ -359,10 +642,22 @@
       "iWant": "vedere la voce Admin nel menu",
       "soThat": "accedere solo alle funzionalita assegnate",
       "acceptanceCriteria": [
-        { "text": "Voce Admin visibile solo con almeno un permesso admin", "checked": false },
-        { "text": "Sidebar admin mostra solo sezioni autorizzate", "checked": false },
-        { "text": "Accesso URL senza permesso: redirect frontend + 403 API", "checked": false },
-        { "text": "Permessi inclusi in login response e cache client", "checked": false }
+        {
+          "text": "Voce Admin visibile solo con almeno un permesso admin",
+          "checked": false
+        },
+        {
+          "text": "Sidebar admin mostra solo sezioni autorizzate",
+          "checked": false
+        },
+        {
+          "text": "Accesso URL senza permesso: redirect frontend + 403 API",
+          "checked": false
+        },
+        {
+          "text": "Permessi inclusi in login response e cache client",
+          "checked": false
+        }
       ],
       "notes": null
     }
