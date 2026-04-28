@@ -2,9 +2,9 @@
   "id": "PLAN-3",
   "title": "PLAN-3: Monitoring Stack",
   "requirements": null,
-  "status": "in_progress",
+  "status": "completed",
   "created": "2026-04-01",
-  "lastUpdated": "2026-04-28T02:12:04.199Z",
+  "lastUpdated": "2026-04-28T03:12:12.888Z",
   "decisions": [],
   "stories": [],
   "tasks": [
@@ -244,7 +244,7 @@
       "id": "T-8",
       "stories": [],
       "size": "medium",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [],
       "whatToDo": "Documentazione: creare docs/monitoring.md con architettura, accesso servizi, metriche custom, dashboard, alerting. Aggiornare docs/vps-setup-guide.md con sezione Monitoring Stack. Aggiornare CLAUDE.md. Aggiornare README.md.",
       "definitionOfDone": [

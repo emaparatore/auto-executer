@@ -130,6 +130,16 @@ function syncPlanStatusWithTasks(data) {
   return false;
 }
 
+function deriveTaskStatusFromDefinitionOfDone(definitionOfDone) {
+  const items = Array.isArray(definitionOfDone) ? definitionOfDone : [];
+  if (!items.length) return 'pending';
+
+  const completedCount = items.filter(item => Boolean(item?.completed)).length;
+  if (completedCount === 0) return 'pending';
+  if (completedCount === items.length) return 'completed';
+  return 'in_progress';
+}
+
 app.get('/api/plans', (req, res) => {
   const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
   const plans = files.map(file => {
@@ -327,6 +337,9 @@ app.patch('/api/plans/:id/tasks/:taskId/dod/:index', (req, res) => {
   }
 
   task.definitionOfDone[criterionIndex].completed = completed;
+  task.status = deriveTaskStatusFromDefinitionOfDone(task.definitionOfDone);
+  const storiesChanged = recomputeStoriesFromTasks(data);
+  syncPlanStatusWithTasks(data);
   touchPlan(data);
   writePlan(filePath, data);
 
@@ -335,6 +348,10 @@ app.patch('/api/plans/:id/tasks/:taskId/dod/:index', (req, res) => {
     taskId: task.id,
     criterionIndex,
     completed,
+    taskStatus: task.status,
+    planStatus: data.status,
+    stories: data.stories || [],
+    storiesChanged,
     lastUpdated: data.lastUpdated
   });
 });
