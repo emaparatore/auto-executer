@@ -192,19 +192,19 @@
       "acceptanceCriteria": [
         {
           "text": "Creazione SuperAdmin da variabili ambiente se assente",
-          "checked": true
+          "checked": false
         },
         {
           "text": "Skip idempotente se esiste gia",
-          "checked": false
-        },
-        {
-          "text": "MustChangePassword=true sul nuovo utente",
           "checked": true
         },
         {
-          "text": "Operazione dopo migration DB",
+          "text": "MustChangePassword=true sul nuovo utente",
           "checked": false
+        },
+        {
+          "text": "Operazione dopo migration DB",
+          "checked": true
         },
         {
           "text": "Evento registrato in audit log",
@@ -222,7 +222,7 @@
       "acceptanceCriteria": [
         {
           "text": "Redirect forzato a cambio password con MustChangePassword attivo",
-          "checked": false
+          "checked": true
         },
         {
           "text": "Navigazione bloccata verso altre pagine",
@@ -234,11 +234,11 @@
         },
         {
           "text": "Rimozione flag dopo cambio riuscito",
-          "checked": false
+          "checked": true
         },
         {
           "text": "API rifiuta richieste diverse da cambio password finche flag attivo",
-          "checked": false
+          "checked": true
         }
       ],
       "notes": null

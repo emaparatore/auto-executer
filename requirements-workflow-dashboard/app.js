@@ -6,6 +6,7 @@ let currentSection = 'plans';
 let searchDebounceTimer = null;
 let editingAcceptanceStoryId = null;
 let isAcceptanceUpdating = false;
+let toastTimer = null;
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 
@@ -283,8 +284,19 @@ function renderRequirementDetail() {
         <div class="task-context-row"><span class="task-context-label">As a</span><span class="task-context-values">${escapeHtml(story.asA || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">I want</span><span class="task-context-values">${escapeHtml(story.iWant || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">So that</span><span class="task-context-values">${escapeHtml(story.soThat || '')}</span></div>
-        <div class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}" onclick="enableAcceptanceEditByEncodedId('${encodeURIComponent(story.id)}')">
-          <div class="task-dod-title">Acceptance Criteria: <span class="task-dod-hint">${editingAcceptanceStoryId === story.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span></div>
+        <div
+          class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}"
+          role="button"
+          tabindex="0"
+          aria-label="Apri modalita modifica acceptance criteria"
+          aria-expanded="${editingAcceptanceStoryId === story.id ? 'true' : 'false'}"
+          onclick="enableAcceptanceEditByEncodedId('${encodeURIComponent(story.id)}')"
+          onkeydown="handleAcceptanceRegionKeydown(event, '${encodeURIComponent(story.id)}')">
+          <div class="task-dod-title">
+            <span>Acceptance Criteria:</span>
+            <span class="task-dod-hint">${editingAcceptanceStoryId === story.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span>
+            ${editingAcceptanceStoryId === story.id ? `<button type="button" class="task-dod-exit" onclick="disableAcceptanceEditFromEvent(event)">Fine modifica</button>` : ''}
+          </div>
           ${(story.acceptanceCriteria || []).map((ac, index) => editingAcceptanceStoryId === story.id
             ? `
               <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" ${isAcceptanceUpdating ? 'disabled' : ''}>
@@ -517,8 +529,26 @@ function enableAcceptanceEdit(storyId) {
   renderRequirementDetail();
 }
 
+function disableAcceptanceEdit() {
+  if (!currentRequirement || currentSection !== 'requirements') return;
+  if (!editingAcceptanceStoryId) return;
+  editingAcceptanceStoryId = null;
+  renderRequirementDetail();
+}
+
+function disableAcceptanceEditFromEvent(event) {
+  event.stopPropagation();
+  disableAcceptanceEdit();
+}
+
 function enableAcceptanceEditByEncodedId(encodedStoryId) {
   enableAcceptanceEdit(decodeURIComponent(encodedStoryId));
+}
+
+function handleAcceptanceRegionKeydown(event, encodedStoryId) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  enableAcceptanceEditByEncodedId(encodedStoryId);
 }
 
 async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex, checked) {
@@ -557,10 +587,11 @@ async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex,
     currentRequirement = await updatedRequirementRes.json();
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
+    showToast('Acceptance criterion salvato');
   } catch (error) {
     criterion.checked = previousChecked;
     renderRequirementDetail();
-    alert(error.message);
+    showToast(error.message, 'error');
   } finally {
     isAcceptanceUpdating = false;
     renderRequirementDetail();
@@ -572,6 +603,32 @@ function toggleAcceptanceCriterionByEncodedIds(event, encodedRequirementId, enco
   const requirementId = decodeURIComponent(encodedRequirementId);
   const storyId = decodeURIComponent(encodedStoryId);
   toggleAcceptanceCriterion(requirementId, storyId, Number(criterionIndex), checked);
+}
+
+function ensureToastEl() {
+  let toastEl = document.getElementById('toastMessage');
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.id = 'toastMessage';
+    toastEl.className = 'toast-message';
+    toastEl.setAttribute('role', 'status');
+    toastEl.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toastEl);
+  }
+  return toastEl;
+}
+
+function showToast(message, type = 'success') {
+  const toastEl = ensureToastEl();
+  toastEl.textContent = message;
+  toastEl.classList.remove('is-error');
+  if (type === 'error') toastEl.classList.add('is-error');
+  toastEl.classList.add('show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.classList.remove('show');
+  }, 1800);
 }
 
 async function runSearch(query) {
@@ -684,6 +741,8 @@ window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
 window.openSearchResult = openSearchResult;
 window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
+window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
+window.handleAcceptanceRegionKeydown = handleAcceptanceRegionKeydown;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');
