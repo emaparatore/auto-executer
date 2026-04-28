@@ -313,6 +313,72 @@ app.patch('/api/plans/:id/notes', (req, res) => {
   });
 });
 
+app.patch('/api/plans/:id/objective', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { objective } = req.body || {};
+  if (typeof objective !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "objective" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  data.objective = objective.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    planId: data.id,
+    objective: data.objective,
+    lastUpdated: data.lastUpdated
+  });
+});
+
+app.patch('/api/plans/:id/phases', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { phases } = req.body || {};
+  if (!Array.isArray(phases)) {
+    return res.status(400).json({ error: 'Invalid payload. "phases" must be an array.' });
+  }
+
+  const normalizedPhases = [];
+  for (const phase of phases) {
+    if (!phase || typeof phase !== 'object') {
+      return res.status(400).json({ error: 'Invalid payload. Each phase must be an object.' });
+    }
+
+    const title = String(phase.title || '').trim();
+    if (!title) {
+      return res.status(400).json({ error: 'Invalid payload. Each phase must include a non-empty "title".' });
+    }
+
+    const tasks = Array.isArray(phase.tasks)
+      ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean)
+      : [];
+
+    normalizedPhases.push({ title, tasks });
+  }
+
+  const { filePath, data } = plan;
+  data.phases = normalizedPhases;
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    planId: data.id,
+    phases: data.phases,
+    lastUpdated: data.lastUpdated
+  });
+});
+
 app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) {

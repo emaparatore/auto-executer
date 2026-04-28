@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": null,
-  "lastUpdated": "2026-04-28T03:46:26.189Z",
+  "lastUpdated": "2026-04-28T11:47:35.574Z",
   "decisions": [
     {
       "decision": "Isolamento ambienti",
@@ -258,5 +258,6 @@
       "decision": null,
       "notes": "Task manuale - richiede ~1 minuto di downtime per fermare il vecchio stack"
     }
-  ]
+  ],
+  "objective": ""
 }

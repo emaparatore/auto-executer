@@ -13,6 +13,11 @@ let isTaskDodUpdating = false;
 let taskDodFocusTarget = null;
 let isPlanNotesEditing = false;
 let isPlanNotesUpdating = false;
+let isPlanObjectiveEditing = false;
+let isPlanObjectiveUpdating = false;
+let isPlanPhasesEditing = false;
+let isPlanPhasesUpdating = false;
+let editingPlanPhases = [];
 let editingTaskNotesId = null;
 let isTaskNotesUpdating = false;
 let editingTaskImplementationNotesId = null;
@@ -95,6 +100,11 @@ async function selectPlan(id) {
   taskDodFocusTarget = null;
   isPlanNotesEditing = false;
   isPlanNotesUpdating = false;
+  isPlanObjectiveEditing = false;
+  isPlanObjectiveUpdating = false;
+  isPlanPhasesEditing = false;
+  isPlanPhasesUpdating = false;
+  editingPlanPhases = [];
   editingTaskNotesId = null;
   isTaskNotesUpdating = false;
   editingTaskImplementationNotesId = null;
@@ -149,8 +159,92 @@ function renderPlanDetail() {
       return `<span class="chip">${escapeHtml(title)}${ids.length ? ` (${done}/${ids.length})` : ''}</span>`;
     }).join('')}</div>`
     : '';
+  const planPhasesSection = isPlanPhasesEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Phases</span>
+          <span class="task-dod-hint">Edit mode attiva</span>
+        </div>
+        <div class="plan-phases-form">
+          ${editingPlanPhases.map((phase, phaseIndex) => {
+            const selectedTaskIds = Array.isArray(phase.tasks) ? phase.tasks : [];
+            const taskOptions = tasks.map(task => `
+              <label class="task-depends-on-option">
+                <input
+                  type="checkbox"
+                  ${selectedTaskIds.includes(task.id) ? 'checked' : ''}
+                  ${isPlanPhasesUpdating ? 'disabled' : ''}
+                  onchange="togglePlanPhaseTaskByEncodedId(event, ${phaseIndex}, '${encodeURIComponent(task.id)}')">
+                <span><code>${escapeHtml(task.id)}</code>${task.title ? ` - ${escapeHtml(task.title)}` : ''}</span>
+              </label>
+            `).join('');
+
+            return `
+              <div class="plan-phase-editor-row">
+                <div class="plan-phase-editor-head">
+                  <label class="open-question-label" for="plan-phase-title-${phaseIndex}">Fase ${phaseIndex + 1}</label>
+                  <button type="button" class="icon-action-btn" onclick="removePlanPhaseFromEvent(event, ${phaseIndex})" ${isPlanPhasesUpdating ? 'disabled' : ''} aria-label="Rimuovi fase" title="Rimuovi fase">−</button>
+                </div>
+                <input
+                  id="plan-phase-title-${phaseIndex}"
+                  class="task-inline-input"
+                  type="text"
+                  value="${escapeHtml(phase.title || '')}"
+                  ${isPlanPhasesUpdating ? 'disabled' : ''}
+                  oninput="updatePlanPhaseTitleFromEvent(event, ${phaseIndex})"
+                >
+                <div class="task-depends-on-options">
+                  ${taskOptions || '<div class="empty-state">Nessun task disponibile</div>'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn is-secondary" onclick="addPlanPhaseFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>+ Fase</button>
+            <button type="button" class="open-question-btn" onclick="savePlanPhasesFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanPhasesEditFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Phases</div>
+          <button type="button" class="icon-action-btn${phases.length ? '' : ' is-add'}" onclick="enablePlanPhasesEditFromEvent(event)" aria-label="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}" title="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}">${phases.length ? '✎' : '+'}</button>
+        </div>
+        ${phasesChips || ''}
+      </div>
+    `;
 
   const currentNotes = typeof p.notes === 'string' ? p.notes : '';
+  const currentObjective = typeof p.objective === 'string' ? p.objective : '';
+  const planObjectiveSection = isPlanObjectiveEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Objective</span>
+          <span class="task-dod-hint">Edit mode attiva</span>
+        </div>
+        <div class="plan-notes-form">
+          <textarea id="plan-objective-input" class="plan-notes-input" rows="5" ${isPlanObjectiveUpdating ? 'disabled' : ''}>${escapeHtml(currentObjective)}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="savePlanObjectiveFromEvent(event)" ${isPlanObjectiveUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanObjectiveEditFromEvent(event)" ${isPlanObjectiveUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Objective</div>
+          <button type="button" class="icon-action-btn${currentObjective ? '' : ' is-add'}" onclick="enablePlanObjectiveEditFromEvent(event)" aria-label="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}" title="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}">${currentObjective ? '✎' : '+'}</button>
+        </div>
+        ${currentObjective ? `<div class="section-body">${escapeHtml(currentObjective)}</div>` : ''}
+      </div>
+    `;
   const planNotesSection = isPlanNotesEditing
     ? `
       <div class="section-card">
@@ -179,9 +273,9 @@ function renderPlanDetail() {
 
   document.getElementById('overviewContent').innerHTML = `
     <div class="overview-sections">
-      ${p.objective ? `<div class="section-card"><div class="section-title">Objective</div><div class="section-body">${escapeHtml(p.objective)}</div></div>` : ''}
+      ${planObjectiveSection}
       ${p.targetArchitecture ? `<div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div>` : ''}
-      ${phasesChips ? `<div class="section-card"><div class="section-title">Phases</div>${phasesChips}</div>` : ''}
+      ${planPhasesSection}
       ${planNotesSection}
     </div>
   `;
@@ -645,6 +739,11 @@ function setSection(section) {
   taskDodFocusTarget = null;
   isPlanNotesEditing = false;
   isPlanNotesUpdating = false;
+  isPlanObjectiveEditing = false;
+  isPlanObjectiveUpdating = false;
+  isPlanPhasesEditing = false;
+  isPlanPhasesUpdating = false;
+  editingPlanPhases = [];
   editingTaskNotesId = null;
   isTaskNotesUpdating = false;
   editingTaskImplementationNotesId = null;
@@ -799,6 +898,227 @@ function enablePlanNotesEdit() {
   if (isPlanNotesEditing) return;
   isPlanNotesEditing = true;
   renderPlanDetail();
+}
+
+function enablePlanObjectiveEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanObjectiveUpdating) return;
+  if (isPlanObjectiveEditing) return;
+  isPlanObjectiveEditing = true;
+  renderPlanDetail();
+}
+
+function enablePlanObjectiveEditFromEvent(event) {
+  event.stopPropagation();
+  enablePlanObjectiveEdit();
+}
+
+function cancelPlanObjectiveEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanObjectiveUpdating) return;
+  if (!isPlanObjectiveEditing) return;
+  isPlanObjectiveEditing = false;
+  renderPlanDetail();
+}
+
+function cancelPlanObjectiveEditFromEvent(event) {
+  event.stopPropagation();
+  cancelPlanObjectiveEdit();
+}
+
+async function savePlanObjective() {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanObjectiveEditing || isPlanObjectiveUpdating) return;
+  const objectiveEl = document.getElementById('plan-objective-input');
+  if (!objectiveEl) return;
+
+  const objective = String(objectiveEl.value || '');
+  const previousObjective = currentPlan.objective || '';
+
+  currentPlan.objective = objective;
+  isPlanObjectiveUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/objective`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ objective })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update plan objective');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after objective update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    isPlanObjectiveEditing = false;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Objective piano salvato');
+  } catch (error) {
+    currentPlan.objective = previousObjective;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isPlanObjectiveUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function savePlanObjectiveFromEvent(event) {
+  event.stopPropagation();
+  savePlanObjective();
+}
+
+function enablePlanPhasesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanPhasesUpdating) return;
+  if (isPlanPhasesEditing) return;
+  editingPlanPhases = (Array.isArray(currentPlan.phases) ? currentPlan.phases : []).map(phase => ({
+    title: String(phase?.title || ''),
+    tasks: Array.isArray(phase?.tasks) ? phase.tasks.map(taskId => String(taskId)) : []
+  }));
+  if (!editingPlanPhases.length) {
+    editingPlanPhases = [{ title: '', tasks: [] }];
+  }
+  isPlanPhasesEditing = true;
+  renderPlanDetail();
+}
+
+function addPlanPhase() {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  editingPlanPhases = [...editingPlanPhases, { title: '', tasks: [] }];
+  renderPlanDetail();
+}
+
+function addPlanPhaseFromEvent(event) {
+  event.stopPropagation();
+  addPlanPhase();
+}
+
+function removePlanPhase(index) {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  editingPlanPhases = editingPlanPhases.filter((_, currentIndex) => currentIndex !== index);
+  if (!editingPlanPhases.length) editingPlanPhases = [{ title: '', tasks: [] }];
+  renderPlanDetail();
+}
+
+function removePlanPhaseFromEvent(event, index) {
+  event.stopPropagation();
+  removePlanPhase(index);
+}
+
+function updatePlanPhaseTitle(index, value) {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  if (!editingPlanPhases[index]) return;
+  editingPlanPhases[index].title = String(value || '');
+}
+
+function updatePlanPhaseTitleFromEvent(event, index) {
+  event.stopPropagation();
+  updatePlanPhaseTitle(index, event.target.value);
+}
+
+function togglePlanPhaseTask(index, taskId) {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  const phase = editingPlanPhases[index];
+  if (!phase) return;
+  const selectedTaskIds = Array.isArray(phase.tasks) ? phase.tasks : [];
+  if (selectedTaskIds.includes(taskId)) {
+    phase.tasks = selectedTaskIds.filter(id => id !== taskId);
+  } else {
+    phase.tasks = [...selectedTaskIds, taskId];
+  }
+}
+
+function togglePlanPhaseTaskByEncodedId(event, index, encodedTaskId) {
+  event.stopPropagation();
+  togglePlanPhaseTask(index, decodeURIComponent(encodedTaskId));
+}
+
+function enablePlanPhasesEditFromEvent(event) {
+  event.stopPropagation();
+  enablePlanPhasesEdit();
+}
+
+function cancelPlanPhasesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanPhasesUpdating) return;
+  if (!isPlanPhasesEditing) return;
+  isPlanPhasesEditing = false;
+  editingPlanPhases = [];
+  renderPlanDetail();
+}
+
+function cancelPlanPhasesEditFromEvent(event) {
+  event.stopPropagation();
+  cancelPlanPhasesEdit();
+}
+
+async function savePlanPhases() {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  const previousPhases = Array.isArray(currentPlan.phases) ? currentPlan.phases : [];
+  const phases = editingPlanPhases
+    .map(phase => ({
+      title: String(phase?.title || '').trim(),
+      tasks: Array.isArray(phase?.tasks) ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean) : []
+    }))
+    .filter(phase => phase.title);
+
+  if (!phases.length) {
+    showToast('Aggiungi almeno una fase con titolo', 'error');
+    return;
+  }
+
+  currentPlan.phases = phases;
+  isPlanPhasesUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/phases`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phases })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update plan phases');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after phases update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    isPlanPhasesEditing = false;
+    editingPlanPhases = [];
+    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Phases piano salvate');
+  } catch (error) {
+    currentPlan.phases = previousPhases;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isPlanPhasesUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function savePlanPhasesFromEvent(event) {
+  event.stopPropagation();
+  savePlanPhases();
 }
 
 function enablePlanNotesEditFromEvent(event) {
@@ -1621,6 +1941,16 @@ window.toggleTaskDodItemByEncodedIds = toggleTaskDodItemByEncodedIds;
 window.enablePlanNotesEditFromEvent = enablePlanNotesEditFromEvent;
 window.cancelPlanNotesEditFromEvent = cancelPlanNotesEditFromEvent;
 window.savePlanNotesFromEvent = savePlanNotesFromEvent;
+window.enablePlanObjectiveEditFromEvent = enablePlanObjectiveEditFromEvent;
+window.cancelPlanObjectiveEditFromEvent = cancelPlanObjectiveEditFromEvent;
+window.savePlanObjectiveFromEvent = savePlanObjectiveFromEvent;
+window.enablePlanPhasesEditFromEvent = enablePlanPhasesEditFromEvent;
+window.cancelPlanPhasesEditFromEvent = cancelPlanPhasesEditFromEvent;
+window.savePlanPhasesFromEvent = savePlanPhasesFromEvent;
+window.addPlanPhaseFromEvent = addPlanPhaseFromEvent;
+window.removePlanPhaseFromEvent = removePlanPhaseFromEvent;
+window.updatePlanPhaseTitleFromEvent = updatePlanPhaseTitleFromEvent;
+window.togglePlanPhaseTaskByEncodedId = togglePlanPhaseTaskByEncodedId;
 window.enableTaskFieldEditByEncodedId = enableTaskFieldEditByEncodedId;
 window.cancelTaskFieldEditFromEvent = cancelTaskFieldEditFromEvent;
 window.saveTaskFieldByEncodedIds = saveTaskFieldByEncodedIds;

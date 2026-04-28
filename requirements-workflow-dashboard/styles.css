@@ -1153,6 +1153,28 @@ details.summary-block { margin-top: 10px; }
   gap: 8px;
 }
 
+.plan-phases-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-phase-editor-row {
+  border: 1px solid rgba(214, 207, 194, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(42, 46, 51, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-phase-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .summary-block {
   margin-top: 14px;
   border: 1px solid rgba(201, 193, 178, 0.22);
