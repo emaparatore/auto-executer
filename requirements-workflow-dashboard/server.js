@@ -59,7 +59,7 @@ function validateStatus(status, allowedStatuses) {
 }
 
 function touchPlan(data) {
-  data.lastUpdated = new Date().toISOString().slice(0, 10);
+  data.lastUpdated = new Date().toISOString();
 }
 
 function parseStoryTaskIds(tasksValue) {
