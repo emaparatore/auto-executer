@@ -6,7 +6,7 @@
   "targetArchitecture": null,
   "status": "completed",
   "created": "2026-03-18",
-  "lastUpdated": "2026-04-28T03:11:46.811Z",
+  "lastUpdated": "2026-04-28T03:28:29.731Z",
   "lastUpdatedNote": "aggiornato stato T-17 completato, story coverage US-012–US-013",
   "notes": "Piano di implementazione dettagliato per la funzionalità FEAT-1, suddiviso in 4 fasi principali (A-D) con 20 task specifici. Include decisioni architetturali chiave, storie utente collegate a ciascun task, e criteri di completamento definiti. Il piano è progettato per garantire una solida infrastruttura di autorizzazione basata su permessi, un audit log completo, e un'interfaccia di amministrazione funzionale e sicura.",
   "phases": [
@@ -230,7 +230,7 @@
       ],
       "decision": null,
       "implementationNotes": "RolesAndPermissionsSeeder in Seed.Infrastructure/Persistence/Seeders/. Registered as scoped service in DependencyInjection.cs, called in Program.cs after MigrateAsync(). 7 integration tests: all permissions created, 3 system roles, SuperAdmin all perms, Admin excluded perms, User no perms, idempotency, correct categories. Build OK, unit tests 81/81 pass. Integration tests require Docker (Testcontainers) — not available locally but code compiles and logic verified.",
-      "notes": null
+      "notes": ""
     },
     {
       "id": "T-02",
@@ -406,7 +406,7 @@
       ],
       "decision": null,
       "implementationNotes": "SuperAdminSettings config class in Seed.Shared/Configuration/ with SectionName = 'SuperAdmin', bound via IOptions<T> pattern. SuperAdminSeeder in Seed.Infrastructure/Persistence/Seeders/ — uses UserManager<ApplicationUser> for creation and role assignment. Idempotency via UserManager.GetUsersInRoleAsync(SuperAdmin) — skips if any SuperAdmin exists. 5 unit tests (NSubstitute mocks) + 5 integration tests (Testcontainers). Config: appsettings.Development.json for local dev, env vars via Docker .env files. Build OK, unit tests pass. Integration tests require Docker (Testcontainers).",
-      "notes": null
+      "notes": ""
     },
     {
       "id": "T-05",

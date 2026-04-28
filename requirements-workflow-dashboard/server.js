@@ -276,6 +276,30 @@ app.patch('/api/requirements/:id/open-questions/:questionId', (req, res) => {
   });
 });
 
+app.patch('/api/plans/:id/notes', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { notes } = req.body || {};
+  if (typeof notes !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "notes" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  data.notes = notes.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    planId: data.id,
+    notes: data.notes,
+    lastUpdated: data.lastUpdated
+  });
+});
+
 app.patch('/api/plans/:id/tasks/:taskId/status', (req, res) => {
   const plan = readPlanById(req.params.id);
   if (!plan) {
@@ -352,6 +376,36 @@ app.patch('/api/plans/:id/tasks/:taskId/dod/:index', (req, res) => {
     planStatus: data.status,
     stories: data.stories || [],
     storiesChanged,
+    lastUpdated: data.lastUpdated
+  });
+});
+
+app.patch('/api/plans/:id/tasks/:taskId/notes', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) {
+    return res.status(404).json({ error: 'Plan not found' });
+  }
+
+  const { notes } = req.body || {};
+  if (typeof notes !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "notes" must be a string.' });
+  }
+
+  const { filePath, data } = plan;
+  const task = (data.tasks || []).find(t => t.id === req.params.taskId);
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  task.notes = notes.trim();
+  touchPlan(data);
+  writePlan(filePath, data);
+
+  res.json({
+    ok: true,
+    planId: data.id,
+    taskId: task.id,
+    notes: task.notes,
     lastUpdated: data.lastUpdated
   });
 });

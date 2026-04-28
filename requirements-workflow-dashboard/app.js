@@ -11,6 +11,11 @@ let acceptanceFocusTarget = null;
 let editingTaskDodId = null;
 let isTaskDodUpdating = false;
 let taskDodFocusTarget = null;
+let isPlanNotesEditing = false;
+let isPlanNotesUpdating = false;
+let editingTaskNotesId = null;
+let isTaskNotesUpdating = false;
+let openTaskNotesIds = new Set();
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
 
@@ -80,6 +85,11 @@ async function selectPlan(id) {
   currentPlan = await res.json();
   editingTaskDodId = null;
   taskDodFocusTarget = null;
+  isPlanNotesEditing = false;
+  isPlanNotesUpdating = false;
+  editingTaskNotesId = null;
+  isTaskNotesUpdating = false;
+  openTaskNotesIds = new Set();
   renderPlanDetail();
 }
 
@@ -128,12 +138,33 @@ function renderPlanDetail() {
     }).join('')}</div>`
     : '';
 
+  const currentNotes = typeof p.notes === 'string' ? p.notes : '';
+  const planNotesSection = isPlanNotesEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Notes</span>
+          <span class="task-dod-hint">Edit mode attiva</span>
+        </div>
+        <div class="plan-notes-form">
+          <textarea id="plan-notes-input" class="plan-notes-input" rows="6" ${isPlanNotesUpdating ? 'disabled' : ''}>${escapeHtml(currentNotes)}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="savePlanNotesFromEvent(event)" ${isPlanNotesUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanNotesEditFromEvent(event)" ${isPlanNotesUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      ${currentNotes ? `<div class="section-card"><div class="section-title">Notes</div><div class="section-body">${escapeHtml(currentNotes)}</div><div class="plan-notes-actions"><button type="button" class="open-question-btn is-secondary" onclick="enablePlanNotesEditFromEvent(event)">Modifica</button></div></div>` : `<div class="section-card"><div class="section-title">Notes</div><div class="section-body">Nessuna nota</div><div class="plan-notes-actions"><button type="button" class="open-question-btn is-secondary" onclick="enablePlanNotesEditFromEvent(event)">Aggiungi note</button></div></div>`}
+    `;
+
   document.getElementById('overviewContent').innerHTML = `
     <div class="overview-sections">
       ${p.objective ? `<div class="section-card"><div class="section-title">Objective</div><div class="section-body">${escapeHtml(p.objective)}</div></div>` : ''}
       ${p.targetArchitecture ? `<div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div>` : ''}
       ${phasesChips ? `<div class="section-card"><div class="section-title">Phases</div>${phasesChips}</div>` : ''}
-      ${p.notes ? `<div class="section-card"><div class="section-title">Notes</div><div class="section-body">${escapeHtml(p.notes)}</div></div>` : ''}
+      ${planNotesSection}
     </div>
   `;
 
@@ -213,11 +244,30 @@ function renderPlanDetail() {
           ).join('')}
         </div>
       ` : ''}
-      ${(t.implementationNotes || t.notes) ? `
-        <details class="summary-block">
+      ${(t.implementationNotes || t.notes || editingTaskNotesId === t.id) ? `
+        <details class="summary-block" ${openTaskNotesIds.has(t.id) || editingTaskNotesId === t.id ? 'open' : ''} ontoggle="handleTaskNotesDetailsToggleByEncodedId(event, '${encodeURIComponent(t.id)}')">
           <summary>Notes</summary>
           ${t.implementationNotes ? `<div class="task-notes"><strong>Implementation Notes:</strong><br>${escapeHtml(t.implementationNotes)}</div>` : ''}
-          ${t.notes ? `<div class="task-notes"><strong>Notes:</strong><br>${escapeHtml(t.notes)}</div>` : ''}
+          ${editingTaskNotesId === t.id ? `
+            <div class="task-notes-form" onclick="event.stopPropagation()">
+              <label class="open-question-label" for="task-notes-${escapeHtml(t.id)}">Task Notes</label>
+              <textarea
+                id="task-notes-${escapeHtml(t.id)}"
+                class="task-notes-input"
+                rows="5"
+                ${isTaskNotesUpdating ? 'disabled' : ''}
+              >${escapeHtml(t.notes || '')}</textarea>
+              <div class="task-notes-actions">
+                <button type="button" class="open-question-btn" onclick="saveTaskNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskNotesUpdating ? 'disabled' : ''}>Salva</button>
+                <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskNotesEditFromEvent(event)" ${isTaskNotesUpdating ? 'disabled' : ''}>Annulla</button>
+              </div>
+            </div>
+          ` : `
+            ${t.notes ? `<div class="task-notes"><strong>Notes:</strong><br>${escapeHtml(t.notes)}</div>` : '<div class="task-notes">Nessuna nota</div>'}
+            <div class="task-notes-actions">
+              <button type="button" class="open-question-btn is-secondary" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')">${t.notes ? 'Modifica note' : 'Aggiungi note'}</button>
+            </div>
+          `}
         </details>
       ` : ''}
     </div>
@@ -467,6 +517,11 @@ function setSection(section) {
   currentRequirement = null;
   editingTaskDodId = null;
   taskDodFocusTarget = null;
+  isPlanNotesEditing = false;
+  isPlanNotesUpdating = false;
+  editingTaskNotesId = null;
+  isTaskNotesUpdating = false;
+  openTaskNotesIds = new Set();
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
 
@@ -607,6 +662,181 @@ function disableTaskDodEdit() {
 function disableTaskDodEditFromEvent(event) {
   event.stopPropagation();
   disableTaskDodEdit();
+}
+
+function enablePlanNotesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanNotesUpdating) return;
+  if (isPlanNotesEditing) return;
+  isPlanNotesEditing = true;
+  renderPlanDetail();
+}
+
+function enablePlanNotesEditFromEvent(event) {
+  event.stopPropagation();
+  enablePlanNotesEdit();
+}
+
+function cancelPlanNotesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isPlanNotesUpdating) return;
+  if (!isPlanNotesEditing) return;
+  isPlanNotesEditing = false;
+  renderPlanDetail();
+}
+
+function cancelPlanNotesEditFromEvent(event) {
+  event.stopPropagation();
+  cancelPlanNotesEdit();
+}
+
+async function savePlanNotes() {
+  if (!currentPlan || currentSection !== 'plans' || !isPlanNotesEditing || isPlanNotesUpdating) return;
+  const notesEl = document.getElementById('plan-notes-input');
+  if (!notesEl) return;
+
+  const notes = String(notesEl.value || '');
+  const previousNotes = currentPlan.notes || '';
+
+  currentPlan.notes = notes;
+  isPlanNotesUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/notes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update plan notes');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after notes update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    isPlanNotesEditing = false;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Note piano salvate');
+  } catch (error) {
+    currentPlan.notes = previousNotes;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isPlanNotesUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function savePlanNotesFromEvent(event) {
+  event.stopPropagation();
+  savePlanNotes();
+}
+
+function enableTaskNotesEdit(taskId) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
+  if (!taskId || editingTaskNotesId === taskId) return;
+  editingTaskNotesId = taskId;
+  openTaskNotesIds.add(taskId);
+  renderPlanDetail();
+}
+
+function enableTaskNotesEditByEncodedId(event, encodedTaskId) {
+  event.stopPropagation();
+  enableTaskNotesEdit(decodeURIComponent(encodedTaskId));
+}
+
+function cancelTaskNotesEdit() {
+  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
+  if (!editingTaskNotesId) return;
+  editingTaskNotesId = null;
+  renderPlanDetail();
+}
+
+function cancelTaskNotesEditFromEvent(event) {
+  event.stopPropagation();
+  cancelTaskNotesEdit();
+}
+
+async function saveTaskNotes(planId, taskId) {
+  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
+  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
+  if (!task) return;
+
+  const notesEl = document.getElementById(`task-notes-${taskId}`);
+  if (!notesEl) return;
+
+  const notes = String(notesEl.value || '');
+  const previousNotes = task.notes || '';
+
+  task.notes = notes;
+  isTaskNotesUpdating = true;
+  renderPlanDetail();
+
+  try {
+    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/notes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update task notes');
+    }
+
+    const [updatedPlanRes] = await Promise.all([
+      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
+      loadPlans()
+    ]);
+
+    if (!updatedPlanRes.ok) {
+      throw new Error('Unable to refresh plan after task notes update');
+    }
+
+    currentPlan = await updatedPlanRes.json();
+    openTaskNotesIds.add(taskId);
+    editingTaskNotesId = null;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
+    renderPlanDetail();
+    showToast('Note task salvate');
+  } catch (error) {
+    task.notes = previousNotes;
+    renderPlanDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isTaskNotesUpdating = false;
+    renderPlanDetail();
+  }
+}
+
+function saveTaskNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
+  event.stopPropagation();
+  const planId = decodeURIComponent(encodedPlanId);
+  const taskId = decodeURIComponent(encodedTaskId);
+  saveTaskNotes(planId, taskId);
+}
+
+function handleTaskNotesDetailsToggle(taskId, detailsEl) {
+  if (!taskId || !detailsEl) return;
+  if (detailsEl.open) {
+    openTaskNotesIds.add(taskId);
+  } else {
+    openTaskNotesIds.delete(taskId);
+  }
+}
+
+function handleTaskNotesDetailsToggleByEncodedId(event, encodedTaskId) {
+  const taskId = decodeURIComponent(encodedTaskId);
+  handleTaskNotesDetailsToggle(taskId, event.currentTarget);
 }
 
 function enableTaskDodEditByEncodedId(encodedTaskId) {
@@ -1068,6 +1298,13 @@ window.enableTaskDodEditByEncodedId = enableTaskDodEditByEncodedId;
 window.disableTaskDodEditFromEvent = disableTaskDodEditFromEvent;
 window.handleTaskDodRegionKeydown = handleTaskDodRegionKeydown;
 window.toggleTaskDodItemByEncodedIds = toggleTaskDodItemByEncodedIds;
+window.enablePlanNotesEditFromEvent = enablePlanNotesEditFromEvent;
+window.cancelPlanNotesEditFromEvent = cancelPlanNotesEditFromEvent;
+window.savePlanNotesFromEvent = savePlanNotesFromEvent;
+window.enableTaskNotesEditByEncodedId = enableTaskNotesEditByEncodedId;
+window.cancelTaskNotesEditFromEvent = cancelTaskNotesEditFromEvent;
+window.saveTaskNotesByEncodedIds = saveTaskNotesByEncodedIds;
+window.handleTaskNotesDetailsToggleByEncodedId = handleTaskNotesDetailsToggleByEncodedId;
 window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
 window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
