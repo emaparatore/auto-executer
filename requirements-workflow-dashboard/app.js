@@ -31,8 +31,8 @@ let isRequirementOverviewEditing = false;
 let isRequirementOverviewUpdating = false;
 let isRequirementCurrentStateEditing = false;
 let isRequirementCurrentStateUpdating = false;
-let isRequirementDomainContextEditing = false;
-let isRequirementDomainContextUpdating = false;
+let isRequirementNotesEditing = false;
+let isRequirementNotesUpdating = false;
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -711,8 +711,8 @@ async function selectRequirement(id) {
   isRequirementOverviewUpdating = false;
   isRequirementCurrentStateEditing = false;
   isRequirementCurrentStateUpdating = false;
-  isRequirementDomainContextEditing = false;
-  isRequirementDomainContextUpdating = false;
+  isRequirementNotesEditing = false;
+  isRequirementNotesUpdating = false;
   renderRequirementDetail();
 }
 
@@ -809,21 +809,19 @@ function renderRequirementDetail() {
     `;
   overviewChunks.push(currentStateSection);
 
-  const domainContext = data.domainContext && typeof data.domainContext === 'object' ? data.domainContext : {};
-  const domainContextJson = JSON.stringify(domainContext, null, 2);
-  const hasDomainContext = Object.keys(domainContext).length > 0;
-  const domainContextSection = isRequirementDomainContextEditing
+  const requirementNotes = typeof data.notes === 'string' ? data.notes : '';
+  const hasRequirementNotes = requirementNotes.trim().length > 0;
+  const requirementNotesSection = isRequirementNotesEditing
     ? `
       <div class="section-card">
         <div class="task-dod-title">
-          <span>Domain Context</span>
-          <span class="task-dod-hint">Edit mode attiva (JSON)</span>
+          <span>Notes</span>
         </div>
         <div class="plan-notes-form">
-          <textarea id="requirement-domain-context-input" class="plan-notes-input" rows="10" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>${escapeHtml(domainContextJson)}</textarea>
+          <textarea id="requirement-notes-input" class="plan-notes-input" rows="10" ${isRequirementNotesUpdating ? 'disabled' : ''}>${escapeHtml(requirementNotes)}</textarea>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveRequirementDomainContextFromEvent(event)" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementDomainContextEditFromEvent(event)" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveRequirementNotesFromEvent(event)" ${isRequirementNotesUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementNotesEditFromEvent(event)" ${isRequirementNotesUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       </div>
@@ -831,13 +829,13 @@ function renderRequirementDetail() {
     : `
       <div class="section-card">
         <div class="section-title-row">
-          <div class="section-title">Domain Context</div>
-          <button type="button" class="icon-action-btn${hasDomainContext ? '' : ' is-add'}" onclick="enableRequirementDomainContextEditFromEvent(event)" aria-label="${hasDomainContext ? 'Modifica domain context requirement' : 'Aggiungi domain context requirement'}" title="${hasDomainContext ? 'Modifica domain context requirement' : 'Aggiungi domain context requirement'}">${hasDomainContext ? '✎' : '+'}</button>
+          <div class="section-title">Notes</div>
+          <button type="button" class="icon-action-btn${hasRequirementNotes ? '' : ' is-add'}" onclick="enableRequirementNotesEditFromEvent(event)" aria-label="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}" title="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}">${hasRequirementNotes ? '✎' : '+'}</button>
         </div>
-        ${hasDomainContext ? `<div class="section-body">${escapeHtml(domainContextJson)}</div>` : ''}
+        ${hasRequirementNotes ? `<div class="section-body">${escapeHtml(requirementNotes)}</div>` : ''}
       </div>
     `;
-  overviewChunks.push(domainContextSection);
+  overviewChunks.push(requirementNotesSection);
   document.getElementById('overviewContent').innerHTML = `<div class="overview-sections">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
   document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements');
@@ -1030,8 +1028,8 @@ function setSection(section) {
   isRequirementOverviewUpdating = false;
   isRequirementCurrentStateEditing = false;
   isRequirementCurrentStateUpdating = false;
-  isRequirementDomainContextEditing = false;
-  isRequirementDomainContextUpdating = false;
+  isRequirementNotesEditing = false;
+  isRequirementNotesUpdating = false;
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
 
@@ -2124,68 +2122,67 @@ function saveRequirementCurrentStateFromEvent(event) {
   saveRequirementCurrentState();
 }
 
-function enableRequirementDomainContextEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementDomainContextUpdating) return;
-  if (isRequirementDomainContextEditing) return;
-  isRequirementDomainContextEditing = true;
+function enableRequirementNotesEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementNotesUpdating) return;
+  if (isRequirementNotesEditing) return;
+  isRequirementNotesEditing = true;
   renderRequirementDetail();
 }
 
-function enableRequirementDomainContextEditFromEvent(event) {
+function enableRequirementNotesEditFromEvent(event) {
   event.stopPropagation();
-  enableRequirementDomainContextEdit();
+  enableRequirementNotesEdit();
 }
 
-function cancelRequirementDomainContextEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementDomainContextUpdating) return;
-  if (!isRequirementDomainContextEditing) return;
-  isRequirementDomainContextEditing = false;
+function cancelRequirementNotesEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementNotesUpdating) return;
+  if (!isRequirementNotesEditing) return;
+  isRequirementNotesEditing = false;
   renderRequirementDetail();
 }
 
-function cancelRequirementDomainContextEditFromEvent(event) {
+function cancelRequirementNotesEditFromEvent(event) {
   event.stopPropagation();
-  cancelRequirementDomainContextEdit();
+  cancelRequirementNotesEdit();
 }
 
-async function saveRequirementDomainContext() {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementDomainContextEditing || isRequirementDomainContextUpdating) return;
-  const domainContextEl = document.getElementById('requirement-domain-context-input');
-  if (!domainContextEl) return;
-  let parsed;
-  try { parsed = JSON.parse(String(domainContextEl.value || '{}')); } catch { showToast('Domain Context deve essere JSON valido', 'error'); return; }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) { showToast('Domain Context deve essere un oggetto JSON', 'error'); return; }
+async function saveRequirementNotes() {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementNotesEditing || isRequirementNotesUpdating) return;
+  const notesEl = document.getElementById('requirement-notes-input');
+  if (!notesEl) return;
+  const value = String(notesEl.value || '').trim();
+  const parsed = value.length ? value : null;
 
-  const previousDomainContext = currentRequirement.domainContext && typeof currentRequirement.domainContext === 'object' ? currentRequirement.domainContext : {};
-  currentRequirement.domainContext = parsed;
-  isRequirementDomainContextUpdating = true;
+  const previousNotes = typeof currentRequirement.notes === 'string' ? currentRequirement.notes : null;
+  currentRequirement.notes = parsed;
+  isRequirementNotesUpdating = true;
   renderRequirementDetail();
   try {
     const requirementId = currentRequirement.document?.id || currentRequirement.id;
     if (!requirementId) throw new Error('Requirement ID non trovato');
-    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/domain-context`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainContext: parsed })
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/notes`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: parsed })
     });
-    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update requirement domain context'); }
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update requirement notes'); }
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
-    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after domain context update');
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after notes update');
     currentRequirement = await updatedRequirementRes.json();
-    isRequirementDomainContextEditing = false;
+    isRequirementNotesEditing = false;
     renderRequirementDetail();
-    showToast('Domain context requirement salvato');
+    showToast('Notes requirement salvate');
   } catch (error) {
-    currentRequirement.domainContext = previousDomainContext;
+    currentRequirement.notes = previousNotes;
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isRequirementDomainContextUpdating = false;
+    isRequirementNotesUpdating = false;
     renderRequirementDetail();
   }
 }
 
-function saveRequirementDomainContextFromEvent(event) {
+function saveRequirementNotesFromEvent(event) {
   event.stopPropagation();
-  saveRequirementDomainContext();
+  saveRequirementNotes();
 }
 
 function enableOpenQuestionEdit(questionId) {
@@ -2583,9 +2580,9 @@ window.saveRequirementOverviewFromEvent = saveRequirementOverviewFromEvent;
 window.enableRequirementCurrentStateEditFromEvent = enableRequirementCurrentStateEditFromEvent;
 window.cancelRequirementCurrentStateEditFromEvent = cancelRequirementCurrentStateEditFromEvent;
 window.saveRequirementCurrentStateFromEvent = saveRequirementCurrentStateFromEvent;
-window.enableRequirementDomainContextEditFromEvent = enableRequirementDomainContextEditFromEvent;
-window.cancelRequirementDomainContextEditFromEvent = cancelRequirementDomainContextEditFromEvent;
-window.saveRequirementDomainContextFromEvent = saveRequirementDomainContextFromEvent;
+window.enableRequirementNotesEditFromEvent = enableRequirementNotesEditFromEvent;
+window.cancelRequirementNotesEditFromEvent = cancelRequirementNotesEditFromEvent;
+window.saveRequirementNotesFromEvent = saveRequirementNotesFromEvent;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');

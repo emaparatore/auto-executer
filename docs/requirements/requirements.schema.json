@@ -70,9 +70,9 @@
         "$ref": "#/$defs/currentStateItem"
       }
     },
-    "domainContext": {
+    "notes": {
       "type": [
-        "object",
+        "string",
         "null"
       ]
     },

@@ -263,25 +263,25 @@ app.patch('/api/requirements/:id/current-state', (req, res) => {
   });
 });
 
-app.patch('/api/requirements/:id/domain-context', (req, res) => {
+app.patch('/api/requirements/:id/notes', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {
     return res.status(404).json({ error: 'Requirement not found' });
   }
 
-  const { domainContext } = req.body || {};
-  if (!domainContext || typeof domainContext !== 'object' || Array.isArray(domainContext)) {
-    return res.status(400).json({ error: 'Invalid payload. "domainContext" must be an object.' });
+  const { notes } = req.body || {};
+  if (notes !== null && notes !== undefined && typeof notes !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "notes" must be a string or null.' });
   }
 
   const { filePath, data } = requirement;
-  data.domainContext = domainContext;
+  data.notes = notes ?? null;
   writeRequirement(filePath, data);
 
   res.json({
     ok: true,
     requirementId: data.document?.id || req.params.id,
-    domainContext: data.domainContext
+    notes: data.notes
   });
 });
 
