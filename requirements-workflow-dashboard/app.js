@@ -298,6 +298,7 @@ async function selectPlan(id) {
   editingTaskField = null;
   isTaskFieldUpdating = false;
   renderPlanDetail();
+  scrollWorkspaceToTop();
 }
 
 function renderPlanDetail() {
@@ -775,6 +776,12 @@ async function selectRequirement(id) {
   newOpenQuestionStatus = 'open';
   deletingOpenQuestionId = null;
   renderRequirementDetail();
+  scrollWorkspaceToTop();
+}
+
+function scrollWorkspaceToTop() {
+  const contentEl = document.querySelector('.content');
+  contentEl?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderRequirementDetail() {
