@@ -3358,6 +3358,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
     tab.classList.add('active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.add('show');
+    const contentEl = document.querySelector('.content');
+    contentEl?.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
 
