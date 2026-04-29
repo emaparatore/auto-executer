@@ -146,6 +146,7 @@ function renderRequirementsList() {
 
 async function selectPlan(id) {
   if (currentSection !== 'plans') return;
+  closeSidebarOnMobile();
   document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 
@@ -601,6 +602,7 @@ function renderPlanDetail() {
 
 async function selectRequirement(id) {
   if (currentSection !== 'requirements') return;
+  closeSidebarOnMobile();
   document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 
@@ -2027,6 +2029,38 @@ function escapeHtml(str) {
     .replaceAll("'", '&#39;');
 }
 
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 900px)').matches;
+}
+
+function setMobileSidebarOpen(open) {
+  const shouldOpen = Boolean(open && isMobileViewport());
+  document.body.classList.toggle('sidebar-open', shouldOpen);
+  const toggleButton = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (toggleButton) {
+    toggleButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    toggleButton.setAttribute('aria-label', shouldOpen ? 'Chiudi sidebar' : 'Apri sidebar');
+  }
+  if (sidebar) {
+    sidebar.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+  }
+  if (backdrop) {
+    backdrop.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+  }
+}
+
+function closeSidebarOnMobile() {
+  if (!isMobileViewport()) return;
+  setMobileSidebarOpen(false);
+}
+
+function toggleSidebarOnMobile() {
+  if (!isMobileViewport()) return;
+  setMobileSidebarOpen(!document.body.classList.contains('sidebar-open'));
+}
+
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     if (tab.classList.contains('hidden')) return;
@@ -2043,6 +2077,8 @@ document.querySelectorAll('.section-switch-tab').forEach(btn => {
 
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const plansListElement = document.getElementById('plansList');
 
 searchInput.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
@@ -2054,6 +2090,22 @@ searchInput.addEventListener('input', e => {
   }, 200);
 });
 
+sidebarToggle?.addEventListener('click', () => {
+  toggleSidebarOnMobile();
+});
+
+plansListElement?.addEventListener('click', event => {
+  const item = event.target.closest('.plan-item');
+  if (!item) return;
+  const id = item.dataset.id;
+  if (!id) return;
+  if (currentSection === 'requirements') {
+    selectRequirement(id);
+  } else {
+    selectPlan(id);
+  }
+});
+
 document.addEventListener('click', e => {
   if (!e.target.closest('.search-box')) {
     searchResults.classList.remove('show');
@@ -2061,6 +2113,12 @@ document.addEventListener('click', e => {
 
   if (!e.target.closest('.task-status-dropdown')) {
     closeAllTaskStatusDropdowns();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeSidebarOnMobile();
   }
 });
 
@@ -2117,6 +2175,11 @@ Promise.all([loadPlans(), loadRequirements()])
   .then(() => {
     updateSidebarHeight();
     window.addEventListener('resize', updateSidebarHeight);
+    window.addEventListener('resize', () => {
+      if (!isMobileViewport()) {
+        setMobileSidebarOpen(false);
+      }
+    });
     setSection('plans');
   })
   .catch(error => {
