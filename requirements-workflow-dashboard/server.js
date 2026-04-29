@@ -285,6 +285,86 @@ app.patch('/api/requirements/:id/notes', (req, res) => {
   });
 });
 
+app.post('/api/requirements/:id/functional-requirements', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+
+  const { functionalId, title, description } = req.body || {};
+  if (typeof functionalId !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "functionalId" must be a string.' });
+  }
+
+  const normalizedId = functionalId.trim();
+  if (!normalizedId) {
+    return res.status(400).json({ error: 'functionalId is required.' });
+  }
+  if (typeof title !== 'string' || typeof description !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "title" and "description" must be strings.' });
+  }
+  const normalizedTitle = title.trim();
+  const normalizedDescription = description.trim();
+  if (!normalizedTitle || !normalizedDescription) {
+    return res.status(400).json({ error: 'Title and description are required.' });
+  }
+
+  const { filePath, data } = requirement;
+  const functionalRequirements = Array.isArray(data.functionalRequirements) ? data.functionalRequirements : [];
+  if (functionalRequirements.some(item => item.id === normalizedId)) {
+    return res.status(409).json({ error: 'Functional requirement ID already exists.' });
+  }
+
+  const newRequirement = {
+    id: normalizedId,
+    title: normalizedTitle,
+    description: normalizedDescription
+  };
+
+  data.functionalRequirements = [...functionalRequirements, newRequirement];
+  writeRequirement(filePath, data);
+  res.status(201).json({ ok: true, item: newRequirement });
+});
+
+app.patch('/api/requirements/:id/functional-requirements/:functionalId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+
+  const { title, description } = req.body || {};
+  if (typeof title !== 'string' || typeof description !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "title" and "description" must be strings.' });
+  }
+
+  const normalizedTitle = title.trim();
+  const normalizedDescription = description.trim();
+  if (!normalizedTitle || !normalizedDescription) {
+    return res.status(400).json({ error: 'Title and description are required.' });
+  }
+
+  const { filePath, data } = requirement;
+  const item = (data.functionalRequirements || []).find(entry => entry.id === req.params.functionalId);
+  if (!item) return res.status(404).json({ error: 'Functional requirement not found' });
+
+  item.title = normalizedTitle;
+  item.description = normalizedDescription;
+  writeRequirement(filePath, data);
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/requirements/:id/functional-requirements/:functionalId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.functionalRequirements) ? data.functionalRequirements : [];
+  const nextList = list.filter(entry => entry.id !== req.params.functionalId);
+  if (nextList.length === list.length) {
+    return res.status(404).json({ error: 'Functional requirement not found' });
+  }
+
+  data.functionalRequirements = nextList;
+  writeRequirement(filePath, data);
+  res.json({ ok: true });
+});
+
 app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {

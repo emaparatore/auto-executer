@@ -33,6 +33,13 @@ let isRequirementCurrentStateEditing = false;
 let isRequirementCurrentStateUpdating = false;
 let isRequirementNotesEditing = false;
 let isRequirementNotesUpdating = false;
+let editingFunctionalRequirementId = null;
+let isFunctionalRequirementUpdating = false;
+let creatingFunctionalRequirement = false;
+let newFunctionalRequirementId = '';
+let creatingFunctionalRequirementStep = 'id';
+let newFunctionalRequirementTitle = '';
+let newFunctionalRequirementDescription = '';
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -713,6 +720,13 @@ async function selectRequirement(id) {
   isRequirementCurrentStateUpdating = false;
   isRequirementNotesEditing = false;
   isRequirementNotesUpdating = false;
+  editingFunctionalRequirementId = null;
+  isFunctionalRequirementUpdating = false;
+  creatingFunctionalRequirement = false;
+  newFunctionalRequirementId = '';
+  creatingFunctionalRequirementStep = 'id';
+  newFunctionalRequirementTitle = '';
+  newFunctionalRequirementDescription = '';
   renderRequirementDetail();
 }
 
@@ -884,7 +898,7 @@ function renderRequirementDetail() {
   overviewChunks.push(requirementNotesSection);
   document.getElementById('overviewContent').innerHTML = `<div class="overview-sections">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
-  document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements');
+  document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements', true);
   document.getElementById('nonFunctionalList').innerHTML = renderRequirementItems(rnf, 'No non-functional requirements');
 
   document.getElementById('architecturalDecisionsList').innerHTML = decisions.length
@@ -983,15 +997,289 @@ function renderRequirementDetail() {
   restoreAcceptanceFocusIfNeeded();
 }
 
-function renderRequirementItems(items, emptyText) {
-  if (!items.length) return `<p class="empty-state">${emptyText}</p>`;
-  return items.map(item => `
-    <div class="task-item">
-      <div class="task-header"><span class="task-id">${escapeHtml(item.id || '-')}</span></div>
-      <div class="task-title">${escapeHtml(item.title || '')}</div>
-      <div class="task-what">${escapeHtml(item.description || '')}</div>
+function renderRequirementItems(items, emptyText, isFunctional = false) {
+  const actions = isFunctional ? `
+    <div class="section-title-row" style="margin-bottom:12px">
+      <div class="section-title">Requisiti funzionali</div>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>+</button>
     </div>
-  `).join('');
+    ${creatingFunctionalRequirement ? `
+      <div class="task-item" style="margin-bottom:12px">
+        <div class="task-header"><span class="task-id">Nuovo requisito funzionale</span></div>
+        <div class="plan-notes-form">
+          ${creatingFunctionalRequirementStep === 'id' ? `
+            <label class="open-question-label" for="new-functional-requirement-id">ID</label>
+            <input id="new-functional-requirement-id" type="text" class="plan-notes-input" value="${escapeHtml(newFunctionalRequirementId)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="proceedCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          ` : `
+            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newFunctionalRequirementId)}</span></div>
+            <label class="open-question-label" for="new-functional-requirement-title">Titolo</label>
+            <input id="new-functional-requirement-title" type="text" class="plan-notes-input" value="${escapeHtml(newFunctionalRequirementTitle)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <label class="open-question-label" for="new-functional-requirement-description">Descrizione</label>
+            <textarea id="new-functional-requirement-description" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(newFunctionalRequirementDescription)}</textarea>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="createFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          `}
+        </div>
+      </div>
+    ` : ''}
+  ` : '';
+  if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
+  return `${actions}${items.map(item => `
+    <div class="task-item">
+      <div class="task-header">
+        <span class="task-id">${escapeHtml(item.id || '-')}</span>
+        ${isFunctional ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="deleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>−</button></span>` : ''}
+      </div>
+      ${isFunctional && editingFunctionalRequirementId === item.id ? `
+        <div class="plan-notes-form">
+          <label class="open-question-label" for="functional-title-${encodeURIComponent(item.id || '')}">Titolo</label>
+          <input id="functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input" value="${escapeHtml(item.title || '')}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+          <label class="open-question-label" for="functional-description-${encodeURIComponent(item.id || '')}">Descrizione</label>
+          <textarea id="functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="saveFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelFunctionalRequirementEditFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
+    </div>
+  `).join('')}`;
+}
+
+function enableCreateFunctionalRequirement() {
+  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  creatingFunctionalRequirement = true;
+  newFunctionalRequirementId = 'RF-';
+  creatingFunctionalRequirementStep = 'id';
+  newFunctionalRequirementTitle = '';
+  newFunctionalRequirementDescription = '';
+  renderRequirementDetail();
+  setTimeout(() => document.getElementById('new-functional-requirement-id')?.focus(), 0);
+}
+
+function enableCreateFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  enableCreateFunctionalRequirement();
+}
+
+function cancelCreateFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  creatingFunctionalRequirement = false;
+  newFunctionalRequirementId = '';
+  creatingFunctionalRequirementStep = 'id';
+  newFunctionalRequirementTitle = '';
+  newFunctionalRequirementDescription = '';
+  renderRequirementDetail();
+}
+
+function proceedCreateFunctionalRequirement() {
+  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  const idEl = document.getElementById('new-functional-requirement-id');
+  const functionalId = String(idEl?.value || '').trim();
+  if (!functionalId) {
+    showToast('Inserisci un ID', 'error');
+    return;
+  }
+  if ((currentRequirement.functionalRequirements || []).some(item => item.id === functionalId)) {
+    showToast('ID gia presente', 'error');
+    return;
+  }
+  newFunctionalRequirementId = functionalId;
+  creatingFunctionalRequirementStep = 'details';
+  renderRequirementDetail();
+  setTimeout(() => document.getElementById('new-functional-requirement-title')?.focus(), 0);
+}
+
+function proceedCreateFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  proceedCreateFunctionalRequirement();
+}
+
+function backCreateFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  const titleEl = document.getElementById('new-functional-requirement-title');
+  const descriptionEl = document.getElementById('new-functional-requirement-description');
+  newFunctionalRequirementTitle = String(titleEl?.value || '').trim();
+  newFunctionalRequirementDescription = String(descriptionEl?.value || '').trim();
+  creatingFunctionalRequirementStep = 'id';
+  renderRequirementDetail();
+  setTimeout(() => document.getElementById('new-functional-requirement-id')?.focus(), 0);
+}
+
+async function createFunctionalRequirement() {
+  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  const requirementId = currentRequirement.document?.id || currentRequirement.id;
+  if (!requirementId) return;
+  const functionalId = String(newFunctionalRequirementId || '').trim();
+  if (!functionalId) {
+    showToast('Inserisci un ID', 'error');
+    return;
+  }
+  if ((currentRequirement.functionalRequirements || []).some(item => item.id === functionalId)) {
+    showToast('ID gia presente', 'error');
+    return;
+  }
+  const titleEl = document.getElementById('new-functional-requirement-title');
+  const descriptionEl = document.getElementById('new-functional-requirement-description');
+  const title = String(titleEl?.value || '').trim();
+  const description = String(descriptionEl?.value || '').trim();
+  if (!title || !description) {
+    showToast('Titolo e descrizione sono obbligatori', 'error');
+    return;
+  }
+  newFunctionalRequirementTitle = title;
+  newFunctionalRequirementDescription = description;
+
+  isFunctionalRequirementUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/functional-requirements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ functionalId, title, description })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to add functional requirement');
+    }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
+    currentRequirement = await updatedRequirementRes.json();
+    creatingFunctionalRequirement = false;
+    newFunctionalRequirementId = '';
+    creatingFunctionalRequirementStep = 'id';
+    newFunctionalRequirementTitle = '';
+    newFunctionalRequirementDescription = '';
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Requisito funzionale aggiunto');
+    setTimeout(() => {
+      const cards = Array.from(document.querySelectorAll('#functionalList .task-item'));
+      const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === functionalId);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow .35s ease, transform .35s ease';
+      card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
+      card.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      }, 1200);
+    }, 0);
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isFunctionalRequirementUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function createFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  createFunctionalRequirement();
+}
+
+function editFunctionalRequirement(functionalId) {
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  editingFunctionalRequirementId = functionalId;
+  renderRequirementDetail();
+}
+
+function cancelFunctionalRequirementEditFromEvent(event) {
+  event.stopPropagation();
+  editingFunctionalRequirementId = null;
+  renderRequirementDetail();
+}
+
+async function saveFunctionalRequirement(functionalId) {
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  const requirementId = currentRequirement.document?.id || currentRequirement.id;
+  if (!requirementId) return;
+  const titleEl = document.getElementById(`functional-title-${encodeURIComponent(functionalId)}`);
+  const descriptionEl = document.getElementById(`functional-description-${encodeURIComponent(functionalId)}`);
+  const title = String(titleEl?.value || '');
+  const description = String(descriptionEl?.value || '');
+
+  isFunctionalRequirementUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/functional-requirements/${encodeURIComponent(functionalId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update functional requirement');
+    }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update');
+    currentRequirement = await updatedRequirementRes.json();
+    editingFunctionalRequirementId = null;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Requisito funzionale aggiornato');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isFunctionalRequirementUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function editFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
+  event.stopPropagation();
+  editFunctionalRequirement(decodeURIComponent(encodedFunctionalId));
+}
+
+function saveFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
+  event.stopPropagation();
+  saveFunctionalRequirement(decodeURIComponent(encodedFunctionalId));
+}
+
+async function deleteFunctionalRequirement(functionalId) {
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  const requirementId = currentRequirement.document?.id || currentRequirement.id;
+  if (!requirementId) return;
+  if (!window.confirm('Confermi la cancellazione del requisito funzionale?')) return;
+
+  isFunctionalRequirementUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/functional-requirements/${encodeURIComponent(functionalId)}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to delete functional requirement');
+    }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete');
+    currentRequirement = await updatedRequirementRes.json();
+    if (editingFunctionalRequirementId === functionalId) editingFunctionalRequirementId = null;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Requisito funzionale eliminato');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isFunctionalRequirementUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function deleteFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
+  event.stopPropagation();
+  deleteFunctionalRequirement(decodeURIComponent(encodedFunctionalId));
 }
 
 function configurePlanTabs(activeTab = 'overview') {

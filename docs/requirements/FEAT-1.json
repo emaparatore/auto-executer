@@ -1,618 +1,614 @@
 {
-    "document":  {
-                     "id":  "FEAT-1",
-                     "title":  "Admin Dashboard",
-                     "status":  "in_progress",
-                     "version":  "1.0",
-                     "language":  "it",
-                     "sourcePath":  "docs/requirements/FEAT-1.md",
-                     "notes":  "Conversione da markdown a JSON per integrazione requirements workflow"
-                 },
-    "overview":  "Area amministrativa riservata per gestione utenti, ruoli, configurazioni e monitoraggio sistema, con autorizzazione RBAC a permessi granulari e bootstrap SuperAdmin da variabili d\u0027ambiente",
-    "functionalRequirements":  [
-                                   {
-                                       "id":  "RF-01",
-                                       "title":  "Seeding dell\u0027Admin iniziale",
-                                       "description":  "Creazione automatica SuperAdmin idempotente dopo migration da variabili SuperAdmin__Email/Password/FirstName/LastName, con MustChangePassword attivo e audit log evento."
-                                   },
-                                   {
-                                       "id":  "RF-02",
-                                       "title":  "Cambio password obbligatorio al primo accesso",
-                                       "description":  "Utente con MustChangePassword viene forzato alla pagina cambio password e non naviga altrove finche non completa; poi flag rimosso."
-                                   },
-                                   {
-                                       "id":  "RF-03",
-                                       "title":  "Dashboard di riepilogo",
-                                       "description":  "Conteggi utenti, registrazioni 7/30 giorni, trend registrazioni, distribuzione ruoli, ultime 5 attivita audit."
-                                   },
-                                   {
-                                       "id":  "RF-04",
-                                       "title":  "Gestione Utenti",
-                                       "description":  "Lista paginata server-side con ricerca/filtri/ordinamento, dettaglio-modifica con ruoli e azioni account, creazione manuale con password temporanea e flag cambio password; protezioni su SuperAdmin e self-delete/self-protection."
-                                   },
-                                   {
-                                       "id":  "RF-05",
-                                       "title":  "Gestione Ruoli",
-                                       "description":  "Lista ruoli con metadata e azioni, dettaglio con matrice permessi per area e conteggio utenti impattati, creazione anche per duplicazione ruolo; SuperAdmin mantiene sempre tutti i permessi."
-                                   },
-                                   {
-                                       "id":  "RF-06",
-                                       "title":  "Log di Audit",
-                                       "description":  "Registro append-only e immutabile per eventi auth/utenti/ruoli/impostazioni/sistema con timestamp, utente, azione, entita, before/after, IP, browser; UI con filtri, dettaglio espandibile ed export CSV."
-                                   },
-                                   {
-                                       "id":  "RF-07",
-                                       "title":  "Impostazioni di Sistema",
-                                       "description":  "Configurazioni runtime (nome app, manutenzione, registrazione, login max, lockout, policy password, conferma email, timeout sessione, invio email), con UI per categoria, audit modifica e cache in-memory invalidata al salvataggio."
-                                   },
-                                   {
-                                       "id":  "RF-08",
-                                       "title":  "Stato del Sistema",
-                                       "description":  "Pagina salute componenti (DB, email, versione, ambiente, uptime, memoria, disco) con indicatori verde/giallo/rosso e pulsante Ricontrolla."
-                                   }
-                               ],
-    "nonFunctionalRequirements":  [
-                                      {
-                                          "id":  "RNF-01",
-                                          "title":  "Sicurezza",
-                                          "description":  "Endpoint admin con auth+permesso, menu sezioni per permessi lettura, conferma azioni distruttive, no auto-promozione utente, rate limiting su endpoint modifica."
-                                      },
-                                      {
-                                          "id":  "RNF-02",
-                                          "title":  "Performance",
-                                          "description":  "Paginazione server-side, cache permessi client/server, cache impostazioni con invalidazione, indici DB su query frequenti."
-                                      },
-                                      {
-                                          "id":  "RNF-03",
-                                          "title":  "Usabilita",
-                                          "description":  "Layout admin con sidebar, ottimizzato desktop e funzionale tablet, toast successo/errore, skeleton/loading vuoti, breadcrumb o titolo pagina visibile."
-                                      },
-                                      {
-                                          "id":  "RNF-04",
-                                          "title":  "Affidabilita",
-                                          "description":  "Audit log append-only, seeding admin idempotente, operazioni critiche loggate con dettaglio before/after."
-                                      },
-                                      {
-                                          "id":  "RNF-05",
-                                          "title":  "Manutenibilita",
-                                          "description":  "Modulo admin isolato e lazy-loaded, permessi in unico punto codice, estensione permessi/impostazioni senza cambi strutturali."
-                                      }
-                                  ],
-    "userStories":  [
-                        {
-                            "id":  "US-001",
-                            "title":  "Primo accesso dell\u0027admin",
-                            "asA":  "proprietario dell\u0027app",
-                            "iWant":  "creazione automatica account SuperAdmin al bootstrap",
-                            "soThat":  "accedere subito alla dashboard",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Creazione SuperAdmin da variabili ambiente se assente",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Skip idempotente se esiste gia",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "MustChangePassword=true sul nuovo utente",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Operazione dopo migration DB",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Evento registrato in audit log",
-                                                           "checked":  true
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-002",
-                            "title":  "Cambio password obbligatorio",
-                            "asA":  "utente con password temporanea",
-                            "iWant":  "essere obbligato a cambiarla al primo accesso",
-                            "soThat":  "account sicuro fin da subito",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Redirect forzato a cambio password con MustChangePassword attivo",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Navigazione bloccata verso altre pagine",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Nuova password conforme policy",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Rimozione flag dopo cambio riuscito",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "API rifiuta richieste diverse da cambio password finche flag attivo",
-                                                           "checked":  true
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-003",
-                            "title":  "Visualizzare gli utenti registrati",
-                            "asA":  "admin con permesso Users.Read",
-                            "iWant":  "vedere lista utenti con info principali",
-                            "soThat":  "avere panoramica utenti",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Tabella paginata server-side con colonne principali",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Ricerca per nome/email",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Filtri combinabili ruolo/stato/periodo",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Ordinamento per colonna",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Senza permesso Users.Read: 403 e sezione nascosta",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-004",
-                            "title":  "Promuovere un utente a un ruolo",
-                            "asA":  "admin con permesso Users.ManageRoles",
-                            "iWant":  "assegnare/rimuovere ruoli",
-                            "soThat":  "delegare responsabilita amministrative",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Gestione ruoli da dettaglio utente",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Voce Admin visibile alla prossima navigazione",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Visibilita sezioni in base ai permessi",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log before/after cambio ruoli",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Non rimovibile ruolo SuperAdmin dal SuperAdmin originale",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-005",
-                            "title":  "Disattivare un utente",
-                            "asA":  "admin con permesso Users.ToggleStatus",
-                            "iWant":  "attivare/disattivare account",
-                            "soThat":  "bloccare accesso senza eliminare dati",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Toggle status dalla lista utenti",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Utente disattivato non puo fare login",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "SuperAdmin originale non disattivabile",
-                                                           "checked":  true
-                                                       },
-                                                       {
-                                                           "text":  "Audit log operazione",
-                                                           "checked":  true
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-006",
-                            "title":  "Creare un utente manualmente",
-                            "asA":  "admin con permesso Users.Create",
-                            "iWant":  "creare account senza registrazione pubblica",
-                            "soThat":  "invitare collaboratori direttamente",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Campi nome/cognome/email/password temporanea con auto-generazione",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Assegnazione ruoli iniziali",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Opzione invio email benvenuto",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "MustChangePassword attivo sul nuovo utente",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Email duplicata ritorna errore validazione",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-007",
-                            "title":  "Eliminare un utente",
-                            "asA":  "admin con permesso Users.Delete",
-                            "iWant":  "eliminare account con conferma esplicita",
-                            "soThat":  "rimuovere account non necessari",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Conferma modale obbligatoria",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Divieto eliminare se stessi",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Divieto eliminare SuperAdmin originale",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log operazione",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Dati utente rimossi dal sistema",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-008",
-                            "title":  "Modificare i dati di un utente",
-                            "asA":  "admin con permesso Users.Update",
-                            "iWant":  "modificare nome, cognome, email",
-                            "soThat":  "aggiornare o correggere dati",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Modifica dati base da dettaglio utente",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Reset password forzato via link email",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Forza cambio password al prossimo accesso",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log with before/after",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-009",
-                            "title":  "Creare un ruolo personalizzato",
-                            "asA":  "admin con permesso Roles.Create",
-                            "iWant":  "creare ruoli personalizzati",
-                            "soThat":  "definire accessi su misura",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Definizione nome e descrizione ruolo",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Selezione permessi da matrice per area",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Select/deselect area con un click",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Duplicazione ruolo esistente",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Validazione nome ruolo duplicato",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-010",
-                            "title":  "Modificare i permessi di un ruolo",
-                            "asA":  "admin con permesso Roles.Update",
-                            "iWant":  "modificare permessi associati",
-                            "soThat":  "adattare livelli accesso nel tempo",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Visualizzazione chiara permessi attivi/non attivi",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Conteggio utenti impattati",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log with before/after",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Ruoli di sistema non eliminabili",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Ruolo SuperAdmin conserva sempre tutti i permessi",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-011",
-                            "title":  "Eliminare un ruolo",
-                            "asA":  "admin con permesso Roles.Delete",
-                            "iWant":  "eliminare un ruolo personalizzato",
-                            "soThat":  "rimuovere livelli non necessari",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Conferma eliminazione obbligatoria",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Ruoli sistema non eliminabili",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Utenti con ruolo lo perdono",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log operazione",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-012",
-                            "title":  "Consultare il registro delle attivita",
-                            "asA":  "admin con permesso AuditLog.Read",
-                            "iWant":  "consultare log cronologico attivita",
-                            "soThat":  "verificare chi ha fatto cosa e quando",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Ordine cronologico inverso",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Filtri per azione, utente, date, ricerca testuale",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Dettaglio espandibile con before/after",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Log non modificabile/cancellabile",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Tabella paginata server-side",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-013",
-                            "title":  "Esportare il registro in CSV",
-                            "asA":  "admin con permesso AuditLog.Export",
-                            "iWant":  "esportare log filtrato in CSV",
-                            "soThat":  "analizzare dati offline o archiviare",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Export rispetta filtri correnti",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "CSV contiene colonne significative",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Nome file significativo tipo audit-log-YYYY-MM-DD.csv",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-014",
-                            "title":  "Modificare le impostazioni a runtime",
-                            "asA":  "admin con permesso Settings.Manage",
-                            "iWant":  "modificare impostazioni senza rideploy",
-                            "soThat":  "reagire rapidamente a esigenze operative",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Impostazioni per categoria con controlli tipo-corretti",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Visualizzazione ultimo modificatore e timestamp",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Salvataggio con conferma",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Effetto immediato con invalidazione cache",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Audit log before/after",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Con Settings.Read sola visualizzazione",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-015",
-                            "title":  "Dashboard di riepilogo",
-                            "asA":  "admin con permesso Dashboard.ViewStats",
-                            "iWant":  "vedere metriche principali a colpo d\u0027occhio",
-                            "soThat":  "capire subito stato applicazione",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Conteggi utenti totali/attivi/disattivati",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Registrazioni 7/30 giorni con trend",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Distribuzione utenti per ruolo",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Widget ultime 5 attivita audit con link",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-016",
-                            "title":  "Controllare lo stato di salute del sistema",
-                            "asA":  "admin con permesso SystemHealth.Read",
-                            "iWant":  "verificare funzionamento componenti",
-                            "soThat":  "intervenire rapidamente in caso di problemi",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Stato DB/email con indicatori verde-giallo-rosso",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Mostra versione, ambiente, uptime, memoria, disco",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Pulsante Ricontrolla",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        },
-                        {
-                            "id":  "US-017",
-                            "title":  "Accesso condizionale all\u0027area admin",
-                            "asA":  "utente con almeno un permesso amministrativo",
-                            "iWant":  "vedere la voce Admin nel menu",
-                            "soThat":  "accedere solo alle funzionalita assegnate",
-                            "acceptanceCriteria":  [
-                                                       {
-                                                           "text":  "Voce Admin visibile solo con almeno un permesso admin",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Sidebar admin mostra solo sezioni autorizzate",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Accesso URL senza permesso: redirect frontend + 403 API",
-                                                           "checked":  false
-                                                       },
-                                                       {
-                                                           "text":  "Permessi inclusi in login response e cache client",
-                                                           "checked":  false
-                                                       }
-                                                   ],
-                            "notes":  null
-                        }
-                    ],
-    "storyDependencies":  [
-                              "US-001 prerequisito generale",
-                              "US-002 dipende da US-001",
-                              "US-017 dipende da sistema permessi ed e prerequisito US frontend admin",
-                              "US-003..US-008 dipendono da US-017",
-                              "US-009..US-011 dipendono da US-017",
-                              "US-012..US-013 dipendono da US-017; infrastruttura logging prerequisito US-001",
-                              "US-014 dipende da US-017",
-                              "US-015 dipende da US-003 e US-012",
-                              "US-016 dipende da US-017"
-                          ],
-    "implementationOrder":  [
-
-                            ],
-    "outOfScope":  [
-
-                   ],
-    "openQuestions":  [
-                          {
-                              "id":  "OQ-1",
-                              "question":  "Eliminazione utenti: soft delete o hard delete?",
-                              "answer":  "Deciso: soft delete.",
-                              "status":  "resolved"
-                          },
-                          {
-                              "id":  "OQ-2",
-                              "question":  "Invalidazione sessioni alla disattivazione utente",
-                              "answer":  "Deciso: immediata via token blacklist con IDistributedCache (in-memory ora, Redis in futuro).",
-                              "status":  "resolved"
-                          },
-                          {
-                              "id":  "OQ-3",
-                              "question":  "Invalidazione sessioni al cambio ruoli",
-                              "answer":  "Deciso: immediata, stesso meccanismo blacklist.",
-                              "status":  "resolved"
-                          },
-                          {
-                              "id":  "OQ-4",
-                              "question":  "CLI per seed-admin prioritaria?",
-                              "answer":  "Deciso: rimandata, variabili d\u0027ambiente sufficienti per v1.",
-                              "status":  "resolved"
-                          },
-                          {
-                              "id":  "OQ-5",
-                              "question":  "Retention audit log",
-                              "answer":  "Deciso: crescita indefinita v1 con paginazione/indici; previsto campo AuditLog.RetentionMonths default 0.",
-                              "status":  "resolved"
-                          },
-                          {
-                              "id":  "OQ-6",
-                              "question":  "Origine valori iniziali impostazioni sistema",
-                              "answer":  "Deciso: hardcoded in classe SystemSettingsDefaults e seed idempotente a bootstrap.",
-                              "status":  "resolved"
-                          }
-                      ],
-    "rawMarkdown":  null,
-    "notes":  "Contesto dominio disponibile in precedenza come oggetto strutturato; usare questo campo per note testuali sintetiche."
+  "document": {
+    "id": "FEAT-1",
+    "title": "Admin Dashboard",
+    "status": "in_progress",
+    "version": "1.0",
+    "language": "it",
+    "sourcePath": "docs/requirements/FEAT-1.md",
+    "notes": "Conversione da markdown a JSON per integrazione requirements workflow"
+  },
+  "overview": "Area amministrativa riservata per gestione utenti, ruoli, configurazioni e monitoraggio sistema, con autorizzazione RBAC a permessi granulari e bootstrap SuperAdmin da variabili d'ambiente",
+  "functionalRequirements": [
+    {
+      "id": "RF-01",
+      "title": "Seeding dell'Admin iniziale",
+      "description": "Creazione automatica SuperAdmin idempotente dopo migration da variabili SuperAdmin__Email/Password/FirstName/LastName, con MustChangePassword attivo e audit log evento."
+    },
+    {
+      "id": "RF-02",
+      "title": "Cambio password obbligatorio al primo accesso",
+      "description": "Utente con MustChangePassword viene forzato alla pagina cambio password e non naviga altrove finche non completa; poi flag rimosso."
+    },
+    {
+      "id": "RF-03",
+      "title": "Dashboard di riepilogo",
+      "description": "Conteggi utenti, registrazioni 7/30 giorni, trend registrazioni, distribuzione ruoli, ultime 5 attivita audit."
+    },
+    {
+      "id": "RF-04",
+      "title": "Gestione Utenti",
+      "description": "Lista paginata server-side con ricerca/filtri/ordinamento, dettaglio-modifica con ruoli e azioni account, creazione manuale con password temporanea e flag cambio password; protezioni su SuperAdmin e self-delete/self-protection."
+    },
+    {
+      "id": "RF-05",
+      "title": "Gestione Ruoli",
+      "description": "Lista ruoli con metadata e azioni, dettaglio con matrice permessi per area e conteggio utenti impattati, creazione anche per duplicazione ruolo; SuperAdmin mantiene sempre tutti i permessi."
+    },
+    {
+      "id": "RF-06",
+      "title": "Log di Audit",
+      "description": "Registro append-only e immutabile per eventi auth/utenti/ruoli/impostazioni/sistema con timestamp, utente, azione, entita, before/after, IP, browser; UI con filtri, dettaglio espandibile ed export CSV."
+    },
+    {
+      "id": "RF-07",
+      "title": "Impostazioni di Sistema",
+      "description": "Configurazioni runtime (nome app, manutenzione, registrazione, login max, lockout, policy password, conferma email, timeout sessione, invio email), con UI per categoria, audit modifica e cache in-memory invalidata al salvataggio."
+    },
+    {
+      "id": "RF-08",
+      "title": "Stato del Sistema",
+      "description": "Pagina salute componenti (DB, email, versione, ambiente, uptime, memoria, disco) con indicatori verde/giallo/rosso e pulsante Ricontrolla."
+    }
+  ],
+  "nonFunctionalRequirements": [
+    {
+      "id": "RNF-01",
+      "title": "Sicurezza",
+      "description": "Endpoint admin con auth+permesso, menu sezioni per permessi lettura, conferma azioni distruttive, no auto-promozione utente, rate limiting su endpoint modifica."
+    },
+    {
+      "id": "RNF-02",
+      "title": "Performance",
+      "description": "Paginazione server-side, cache permessi client/server, cache impostazioni con invalidazione, indici DB su query frequenti."
+    },
+    {
+      "id": "RNF-03",
+      "title": "Usabilita",
+      "description": "Layout admin con sidebar, ottimizzato desktop e funzionale tablet, toast successo/errore, skeleton/loading vuoti, breadcrumb o titolo pagina visibile."
+    },
+    {
+      "id": "RNF-04",
+      "title": "Affidabilita",
+      "description": "Audit log append-only, seeding admin idempotente, operazioni critiche loggate con dettaglio before/after."
+    },
+    {
+      "id": "RNF-05",
+      "title": "Manutenibilita",
+      "description": "Modulo admin isolato e lazy-loaded, permessi in unico punto codice, estensione permessi/impostazioni senza cambi strutturali."
+    }
+  ],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Primo accesso dell'admin",
+      "asA": "proprietario dell'app",
+      "iWant": "creazione automatica account SuperAdmin al bootstrap",
+      "soThat": "accedere subito alla dashboard",
+      "acceptanceCriteria": [
+        {
+          "text": "Creazione SuperAdmin da variabili ambiente se assente",
+          "checked": true
+        },
+        {
+          "text": "Skip idempotente se esiste gia",
+          "checked": true
+        },
+        {
+          "text": "MustChangePassword=true sul nuovo utente",
+          "checked": true
+        },
+        {
+          "text": "Operazione dopo migration DB",
+          "checked": true
+        },
+        {
+          "text": "Evento registrato in audit log",
+          "checked": true
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-002",
+      "title": "Cambio password obbligatorio",
+      "asA": "utente con password temporanea",
+      "iWant": "essere obbligato a cambiarla al primo accesso",
+      "soThat": "account sicuro fin da subito",
+      "acceptanceCriteria": [
+        {
+          "text": "Redirect forzato a cambio password con MustChangePassword attivo",
+          "checked": true
+        },
+        {
+          "text": "Navigazione bloccata verso altre pagine",
+          "checked": true
+        },
+        {
+          "text": "Nuova password conforme policy",
+          "checked": true
+        },
+        {
+          "text": "Rimozione flag dopo cambio riuscito",
+          "checked": true
+        },
+        {
+          "text": "API rifiuta richieste diverse da cambio password finche flag attivo",
+          "checked": true
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-003",
+      "title": "Visualizzare gli utenti registrati",
+      "asA": "admin con permesso Users.Read",
+      "iWant": "vedere lista utenti con info principali",
+      "soThat": "avere panoramica utenti",
+      "acceptanceCriteria": [
+        {
+          "text": "Tabella paginata server-side con colonne principali",
+          "checked": false
+        },
+        {
+          "text": "Ricerca per nome/email",
+          "checked": false
+        },
+        {
+          "text": "Filtri combinabili ruolo/stato/periodo",
+          "checked": false
+        },
+        {
+          "text": "Ordinamento per colonna",
+          "checked": false
+        },
+        {
+          "text": "Senza permesso Users.Read: 403 e sezione nascosta",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-004",
+      "title": "Promuovere un utente a un ruolo",
+      "asA": "admin con permesso Users.ManageRoles",
+      "iWant": "assegnare/rimuovere ruoli",
+      "soThat": "delegare responsabilita amministrative",
+      "acceptanceCriteria": [
+        {
+          "text": "Gestione ruoli da dettaglio utente",
+          "checked": false
+        },
+        {
+          "text": "Voce Admin visibile alla prossima navigazione",
+          "checked": false
+        },
+        {
+          "text": "Visibilita sezioni in base ai permessi",
+          "checked": false
+        },
+        {
+          "text": "Audit log before/after cambio ruoli",
+          "checked": false
+        },
+        {
+          "text": "Non rimovibile ruolo SuperAdmin dal SuperAdmin originale",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-005",
+      "title": "Disattivare un utente",
+      "asA": "admin con permesso Users.ToggleStatus",
+      "iWant": "attivare/disattivare account",
+      "soThat": "bloccare accesso senza eliminare dati",
+      "acceptanceCriteria": [
+        {
+          "text": "Toggle status dalla lista utenti",
+          "checked": true
+        },
+        {
+          "text": "Utente disattivato non puo fare login",
+          "checked": true
+        },
+        {
+          "text": "SuperAdmin originale non disattivabile",
+          "checked": true
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": true
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-006",
+      "title": "Creare un utente manualmente",
+      "asA": "admin con permesso Users.Create",
+      "iWant": "creare account senza registrazione pubblica",
+      "soThat": "invitare collaboratori direttamente",
+      "acceptanceCriteria": [
+        {
+          "text": "Campi nome/cognome/email/password temporanea con auto-generazione",
+          "checked": false
+        },
+        {
+          "text": "Assegnazione ruoli iniziali",
+          "checked": false
+        },
+        {
+          "text": "Opzione invio email benvenuto",
+          "checked": false
+        },
+        {
+          "text": "MustChangePassword attivo sul nuovo utente",
+          "checked": false
+        },
+        {
+          "text": "Email duplicata ritorna errore validazione",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-007",
+      "title": "Eliminare un utente",
+      "asA": "admin con permesso Users.Delete",
+      "iWant": "eliminare account con conferma esplicita",
+      "soThat": "rimuovere account non necessari",
+      "acceptanceCriteria": [
+        {
+          "text": "Conferma modale obbligatoria",
+          "checked": false
+        },
+        {
+          "text": "Divieto eliminare se stessi",
+          "checked": false
+        },
+        {
+          "text": "Divieto eliminare SuperAdmin originale",
+          "checked": false
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": false
+        },
+        {
+          "text": "Dati utente rimossi dal sistema",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-008",
+      "title": "Modificare i dati di un utente",
+      "asA": "admin con permesso Users.Update",
+      "iWant": "modificare nome, cognome, email",
+      "soThat": "aggiornare o correggere dati",
+      "acceptanceCriteria": [
+        {
+          "text": "Modifica dati base da dettaglio utente",
+          "checked": false
+        },
+        {
+          "text": "Reset password forzato via link email",
+          "checked": false
+        },
+        {
+          "text": "Forza cambio password al prossimo accesso",
+          "checked": false
+        },
+        {
+          "text": "Audit log with before/after",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-009",
+      "title": "Creare un ruolo personalizzato",
+      "asA": "admin con permesso Roles.Create",
+      "iWant": "creare ruoli personalizzati",
+      "soThat": "definire accessi su misura",
+      "acceptanceCriteria": [
+        {
+          "text": "Definizione nome e descrizione ruolo",
+          "checked": false
+        },
+        {
+          "text": "Selezione permessi da matrice per area",
+          "checked": false
+        },
+        {
+          "text": "Select/deselect area con un click",
+          "checked": false
+        },
+        {
+          "text": "Duplicazione ruolo esistente",
+          "checked": false
+        },
+        {
+          "text": "Validazione nome ruolo duplicato",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-010",
+      "title": "Modificare i permessi di un ruolo",
+      "asA": "admin con permesso Roles.Update",
+      "iWant": "modificare permessi associati",
+      "soThat": "adattare livelli accesso nel tempo",
+      "acceptanceCriteria": [
+        {
+          "text": "Visualizzazione chiara permessi attivi/non attivi",
+          "checked": false
+        },
+        {
+          "text": "Conteggio utenti impattati",
+          "checked": false
+        },
+        {
+          "text": "Audit log with before/after",
+          "checked": false
+        },
+        {
+          "text": "Ruoli di sistema non eliminabili",
+          "checked": false
+        },
+        {
+          "text": "Ruolo SuperAdmin conserva sempre tutti i permessi",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-011",
+      "title": "Eliminare un ruolo",
+      "asA": "admin con permesso Roles.Delete",
+      "iWant": "eliminare un ruolo personalizzato",
+      "soThat": "rimuovere livelli non necessari",
+      "acceptanceCriteria": [
+        {
+          "text": "Conferma eliminazione obbligatoria",
+          "checked": false
+        },
+        {
+          "text": "Ruoli sistema non eliminabili",
+          "checked": false
+        },
+        {
+          "text": "Utenti con ruolo lo perdono",
+          "checked": false
+        },
+        {
+          "text": "Audit log operazione",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-012",
+      "title": "Consultare il registro delle attivita",
+      "asA": "admin con permesso AuditLog.Read",
+      "iWant": "consultare log cronologico attivita",
+      "soThat": "verificare chi ha fatto cosa e quando",
+      "acceptanceCriteria": [
+        {
+          "text": "Ordine cronologico inverso",
+          "checked": false
+        },
+        {
+          "text": "Filtri per azione, utente, date, ricerca testuale",
+          "checked": false
+        },
+        {
+          "text": "Dettaglio espandibile con before/after",
+          "checked": false
+        },
+        {
+          "text": "Log non modificabile/cancellabile",
+          "checked": false
+        },
+        {
+          "text": "Tabella paginata server-side",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-013",
+      "title": "Esportare il registro in CSV",
+      "asA": "admin con permesso AuditLog.Export",
+      "iWant": "esportare log filtrato in CSV",
+      "soThat": "analizzare dati offline o archiviare",
+      "acceptanceCriteria": [
+        {
+          "text": "Export rispetta filtri correnti",
+          "checked": false
+        },
+        {
+          "text": "CSV contiene colonne significative",
+          "checked": false
+        },
+        {
+          "text": "Nome file significativo tipo audit-log-YYYY-MM-DD.csv",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-014",
+      "title": "Modificare le impostazioni a runtime",
+      "asA": "admin con permesso Settings.Manage",
+      "iWant": "modificare impostazioni senza rideploy",
+      "soThat": "reagire rapidamente a esigenze operative",
+      "acceptanceCriteria": [
+        {
+          "text": "Impostazioni per categoria con controlli tipo-corretti",
+          "checked": false
+        },
+        {
+          "text": "Visualizzazione ultimo modificatore e timestamp",
+          "checked": false
+        },
+        {
+          "text": "Salvataggio con conferma",
+          "checked": false
+        },
+        {
+          "text": "Effetto immediato con invalidazione cache",
+          "checked": false
+        },
+        {
+          "text": "Audit log before/after",
+          "checked": false
+        },
+        {
+          "text": "Con Settings.Read sola visualizzazione",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-015",
+      "title": "Dashboard di riepilogo",
+      "asA": "admin con permesso Dashboard.ViewStats",
+      "iWant": "vedere metriche principali a colpo d'occhio",
+      "soThat": "capire subito stato applicazione",
+      "acceptanceCriteria": [
+        {
+          "text": "Conteggi utenti totali/attivi/disattivati",
+          "checked": false
+        },
+        {
+          "text": "Registrazioni 7/30 giorni con trend",
+          "checked": false
+        },
+        {
+          "text": "Distribuzione utenti per ruolo",
+          "checked": false
+        },
+        {
+          "text": "Widget ultime 5 attivita audit con link",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-016",
+      "title": "Controllare lo stato di salute del sistema",
+      "asA": "admin con permesso SystemHealth.Read",
+      "iWant": "verificare funzionamento componenti",
+      "soThat": "intervenire rapidamente in caso di problemi",
+      "acceptanceCriteria": [
+        {
+          "text": "Stato DB/email con indicatori verde-giallo-rosso",
+          "checked": false
+        },
+        {
+          "text": "Mostra versione, ambiente, uptime, memoria, disco",
+          "checked": false
+        },
+        {
+          "text": "Pulsante Ricontrolla",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-017",
+      "title": "Accesso condizionale all'area admin",
+      "asA": "utente con almeno un permesso amministrativo",
+      "iWant": "vedere la voce Admin nel menu",
+      "soThat": "accedere solo alle funzionalita assegnate",
+      "acceptanceCriteria": [
+        {
+          "text": "Voce Admin visibile solo con almeno un permesso admin",
+          "checked": false
+        },
+        {
+          "text": "Sidebar admin mostra solo sezioni autorizzate",
+          "checked": false
+        },
+        {
+          "text": "Accesso URL senza permesso: redirect frontend + 403 API",
+          "checked": false
+        },
+        {
+          "text": "Permessi inclusi in login response e cache client",
+          "checked": false
+        }
+      ],
+      "notes": null
+    }
+  ],
+  "storyDependencies": [
+    "US-001 prerequisito generale",
+    "US-002 dipende da US-001",
+    "US-017 dipende da sistema permessi ed e prerequisito US frontend admin",
+    "US-003..US-008 dipendono da US-017",
+    "US-009..US-011 dipendono da US-017",
+    "US-012..US-013 dipendono da US-017; infrastruttura logging prerequisito US-001",
+    "US-014 dipende da US-017",
+    "US-015 dipende da US-003 e US-012",
+    "US-016 dipende da US-017"
+  ],
+  "implementationOrder": [],
+  "outOfScope": [],
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Eliminazione utenti: soft delete o hard delete?",
+      "answer": "Deciso: soft delete.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Invalidazione sessioni alla disattivazione utente",
+      "answer": "Deciso: immediata via token blacklist con IDistributedCache (in-memory ora, Redis in futuro).",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-3",
+      "question": "Invalidazione sessioni al cambio ruoli",
+      "answer": "Deciso: immediata, stesso meccanismo blacklist.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-4",
+      "question": "CLI per seed-admin prioritaria?",
+      "answer": "Deciso: rimandata, variabili d'ambiente sufficienti per v1.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-5",
+      "question": "Retention audit log",
+      "answer": "Deciso: crescita indefinita v1 con paginazione/indici; previsto campo AuditLog.RetentionMonths default 0.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-6",
+      "question": "Origine valori iniziali impostazioni sistema",
+      "answer": "Deciso: hardcoded in classe SystemSettingsDefaults e seed idempotente a bootstrap.",
+      "status": "resolved"
+    }
+  ],
+  "rawMarkdown": null,
+  "notes": "Contesto dominio disponibile in precedenza come oggetto strutturato; usare questo campo per note testuali sintetiche."
 }
