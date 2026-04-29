@@ -345,7 +345,7 @@ body.loading .main {
   background: linear-gradient(180deg, rgba(26, 28, 31, 0.95), rgba(22, 24, 27, 0.96));
   border-radius: var(--radius);
   border: 1px solid var(--stroke);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: var(--shadow-soft);
   height: var(--sidebar-list-height, calc(100dvh - 170px));
   max-height: var(--sidebar-list-height, calc(100dvh - 170px));
@@ -368,6 +368,11 @@ body.loading .main {
   overflow-y: scroll;
   overflow-x: hidden;
   scrollbar-gutter: stable;
+  width: calc(100% + 12px);
+  margin-right: -12px;
+  padding-right: 12px;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
@@ -419,7 +424,7 @@ body.loading .main {
 }
 
 #plansList::-webkit-scrollbar-thumb:hover {
-  background: rgba(210, 204, 192, 0.62);
+  background: rgba(137, 143, 154, 0.58);
 }
 
 .plans-list-header .section-switch {
