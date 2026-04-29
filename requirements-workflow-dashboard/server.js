@@ -457,6 +457,81 @@ app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res)
   });
 });
 
+app.post('/api/requirements/:id/stories', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { storyId, title, asA, iWant, soThat, acceptanceCriteria } = req.body || {};
+  if ([storyId, title, asA, iWant, soThat].some(v => typeof v !== 'string')) {
+    return res.status(400).json({ error: 'Invalid payload. storyId, title, asA, iWant, soThat must be strings.' });
+  }
+  const normalizedId = storyId.trim();
+  const normalizedTitle = title.trim();
+  const normalizedAsA = asA.trim();
+  const normalizedIWant = iWant.trim();
+  const normalizedSoThat = soThat.trim();
+  if (!normalizedId || !normalizedTitle || !normalizedAsA || !normalizedIWant || !normalizedSoThat) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.userStories) ? data.userStories : [];
+  if (list.some(item => item.id === normalizedId)) return res.status(409).json({ error: 'Story ID already exists.' });
+  const criteriaInput = Array.isArray(acceptanceCriteria) ? acceptanceCriteria : [];
+  const normalizedCriteria = criteriaInput
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .map(text => ({ text, checked: false }));
+  if (!normalizedCriteria.length) return res.status(400).json({ error: 'At least one acceptance criterion is required.' });
+  const item = { id: normalizedId, title: normalizedTitle, asA: normalizedAsA, iWant: normalizedIWant, soThat: normalizedSoThat, acceptanceCriteria: normalizedCriteria };
+  data.userStories = [...list, item];
+  writeRequirement(filePath, data);
+  res.status(201).json({ ok: true, item });
+});
+
+app.patch('/api/requirements/:id/stories/:storyId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { title, asA, iWant, soThat, acceptanceCriteria } = req.body || {};
+  if ([title, asA, iWant, soThat].some(v => typeof v !== 'string') || !Array.isArray(acceptanceCriteria)) {
+    return res.status(400).json({ error: 'Invalid payload. title, asA, iWant, soThat must be strings and acceptanceCriteria must be array.' });
+  }
+  const normalizedTitle = title.trim();
+  const normalizedAsA = asA.trim();
+  const normalizedIWant = iWant.trim();
+  const normalizedSoThat = soThat.trim();
+  if (!normalizedTitle || !normalizedAsA || !normalizedIWant || !normalizedSoThat) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  const normalizedCriteriaText = acceptanceCriteria.map(value => String(value || '').trim()).filter(Boolean);
+  if (!normalizedCriteriaText.length) return res.status(400).json({ error: 'At least one acceptance criterion is required.' });
+  const { filePath, data } = requirement;
+  const item = (data.userStories || []).find(entry => entry.id === req.params.storyId);
+  if (!item) return res.status(404).json({ error: 'User story not found' });
+  item.title = normalizedTitle;
+  item.asA = normalizedAsA;
+  item.iWant = normalizedIWant;
+  item.soThat = normalizedSoThat;
+  const oldCriteria = Array.isArray(item.acceptanceCriteria) ? item.acceptanceCriteria : [];
+  item.acceptanceCriteria = normalizedCriteriaText.map((text, index) => {
+    const old = oldCriteria[index];
+    if (old && String(old.text || '').trim() === text) return { text, checked: Boolean(old.checked) };
+    return { text, checked: false };
+  });
+  writeRequirement(filePath, data);
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/requirements/:id/stories/:storyId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.userStories) ? data.userStories : [];
+  const nextList = list.filter(entry => entry.id !== req.params.storyId);
+  if (nextList.length === list.length) return res.status(404).json({ error: 'User story not found' });
+  data.userStories = nextList;
+  writeRequirement(filePath, data);
+  res.json({ ok: true });
+});
+
 app.patch('/api/requirements/:id/open-questions/:questionId', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {
