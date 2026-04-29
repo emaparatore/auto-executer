@@ -909,6 +909,58 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   gap: 8px;
 }
 
+.current-state-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(201, 193, 178, 0.2);
+  border-radius: 8px;
+}
+
+.current-state-table th,
+.current-state-table td {
+  min-width: 140px;
+}
+
+.current-state-table th:last-child,
+.current-state-table td:last-child {
+  width: 110px;
+  min-width: 110px;
+}
+
+.current-state-input {
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.current-state-notes-input {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.current-state-row-actions {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.current-state-row-remove {
+  white-space: nowrap;
+}
+
+.current-state-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .current-state-table th,
+  .current-state-table td {
+    min-width: 180px;
+  }
+}
+
 .chips { display: flex; flex-wrap: wrap; gap: 10px; }
 .chip {
   display: inline-flex;

@@ -781,16 +781,41 @@ function renderRequirementDetail() {
 
   const overviewChunks = [overviewSection];
   const currentState = Array.isArray(data.currentState) ? data.currentState : [];
-  const currentStateJson = JSON.stringify(currentState, null, 2);
   const currentStateSection = isRequirementCurrentStateEditing
     ? `
       <div class="section-card">
         <div class="task-dod-title">
           <span>Current State</span>
-          <span class="task-dod-hint">Edit mode attiva (JSON)</span>
+          <span class="task-dod-hint">Edit mode attiva</span>
         </div>
-        <div class="plan-notes-form">
-          <textarea id="requirement-current-state-input" class="plan-notes-input" rows="10" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>${escapeHtml(currentStateJson)}</textarea>
+        <div class="plan-notes-form current-state-form">
+          <div class="current-state-table-wrap">
+            <table class="decisions-table current-state-table">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                  <th class="current-state-actions-col">Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="requirement-current-state-body">
+                ${(currentState.length ? currentState : [{}]).map(row => `
+                  <tr>
+                    <td><input type="text" class="plan-notes-input current-state-input" data-field="area" value="${escapeHtml(row?.area || '')}" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}></td>
+                    <td><input type="text" class="plan-notes-input current-state-input" data-field="status" value="${escapeHtml(row?.status || '')}" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}></td>
+                    <td><textarea class="plan-notes-input current-state-input current-state-notes-input" data-field="notes" rows="2" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>${escapeHtml(row?.notes || '')}</textarea></td>
+                    <td class="current-state-row-actions">
+                      <button type="button" class="open-question-btn is-secondary current-state-row-remove" onclick="removeRequirementCurrentStateRowFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Rimuovi</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="current-state-toolbar">
+            <button type="button" class="open-question-btn is-secondary" onclick="addRequirementCurrentStateRowFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>+ Riga</button>
+          </div>
           <div class="plan-notes-actions">
             <button type="button" class="open-question-btn" onclick="saveRequirementCurrentStateFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Salva</button>
             <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementCurrentStateEditFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Annulla</button>
@@ -804,7 +829,28 @@ function renderRequirementDetail() {
           <div class="section-title">Current State</div>
           <button type="button" class="icon-action-btn${currentState.length ? '' : ' is-add'}" onclick="enableRequirementCurrentStateEditFromEvent(event)" aria-label="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}" title="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}">${currentState.length ? '✎' : '+'}</button>
         </div>
-        ${currentState.map(row => `<div class="story-tasks"><strong>${escapeHtml(row.area)} (${escapeHtml(row.status)})</strong>: ${escapeHtml(row.notes)}</div>`).join('')}
+        ${currentState.length ? `
+          <div class="current-state-table-wrap">
+            <table class="decisions-table current-state-table">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${currentState.map(row => `
+                  <tr>
+                    <td>${escapeHtml(row?.area || '')}</td>
+                    <td>${escapeHtml(row?.status || '')}</td>
+                    <td>${escapeHtml(row?.notes || '')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<p class="empty-state">Nessun current state disponibile</p>'}
       </div>
     `;
   overviewChunks.push(currentStateSection);
@@ -2084,11 +2130,25 @@ function cancelRequirementCurrentStateEditFromEvent(event) {
 
 async function saveRequirementCurrentState() {
   if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
-  const currentStateEl = document.getElementById('requirement-current-state-input');
-  if (!currentStateEl) return;
-  let parsed;
-  try { parsed = JSON.parse(String(currentStateEl.value || '[]')); } catch { showToast('Current State deve essere JSON valido', 'error'); return; }
-  if (!Array.isArray(parsed) || !parsed.every(row => row && typeof row === 'object')) { showToast('Current State deve essere un array di oggetti', 'error'); return; }
+  const rows = Array.from(document.querySelectorAll('#requirement-current-state-body tr'));
+  if (!rows.length) {
+    showToast('Aggiungi almeno una riga per il current state', 'error');
+    return;
+  }
+  const parsed = rows.map(row => {
+    const area = String(row.querySelector('[data-field="area"]')?.value || '').trim();
+    const status = String(row.querySelector('[data-field="status"]')?.value || '').trim();
+    const notes = String(row.querySelector('[data-field="notes"]')?.value || '').trim();
+    return { area, status, notes };
+  }).filter(item => item.area || item.status || item.notes);
+  if (!parsed.length) {
+    showToast('Inserisci almeno una riga compilata', 'error');
+    return;
+  }
+  if (parsed.some(item => !item.area || !item.status || !item.notes)) {
+    showToast('Compila Area, Status e Notes per ogni riga', 'error');
+    return;
+  }
 
   const previousCurrentState = Array.isArray(currentRequirement.currentState) ? currentRequirement.currentState : [];
   currentRequirement.currentState = parsed;
@@ -2115,6 +2175,43 @@ async function saveRequirementCurrentState() {
     isRequirementCurrentStateUpdating = false;
     renderRequirementDetail();
   }
+}
+
+function addRequirementCurrentStateRow() {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  const body = document.getElementById('requirement-current-state-body');
+  if (!body) return;
+  body.insertAdjacentHTML('beforeend', `
+    <tr>
+      <td><input type="text" class="plan-notes-input current-state-input" data-field="area" value=""></td>
+      <td><input type="text" class="plan-notes-input current-state-input" data-field="status" value=""></td>
+      <td><textarea class="plan-notes-input current-state-input current-state-notes-input" data-field="notes" rows="2"></textarea></td>
+      <td class="current-state-row-actions">
+        <button type="button" class="open-question-btn is-secondary current-state-row-remove" onclick="removeRequirementCurrentStateRowFromEvent(event)">Rimuovi</button>
+      </td>
+    </tr>
+  `);
+}
+
+function addRequirementCurrentStateRowFromEvent(event) {
+  event.stopPropagation();
+  addRequirementCurrentStateRow();
+}
+
+function removeRequirementCurrentStateRow(targetRow) {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  const rows = Array.from(document.querySelectorAll('#requirement-current-state-body tr'));
+  if (rows.length <= 1) {
+    showToast('Deve rimanere almeno una riga', 'error');
+    return;
+  }
+  if (!targetRow) return;
+  targetRow.remove();
+}
+
+function removeRequirementCurrentStateRowFromEvent(event) {
+  event.stopPropagation();
+  removeRequirementCurrentStateRow(event.currentTarget?.closest('tr'));
 }
 
 function saveRequirementCurrentStateFromEvent(event) {
