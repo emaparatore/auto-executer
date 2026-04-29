@@ -334,7 +334,7 @@ body.loading .main {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 388px 1fr;
   gap: 0;
   position: relative;
   z-index: 1;
@@ -347,11 +347,12 @@ body.loading .main {
 .sidebar {
   min-height: 0;
   height: 100%;
-  border-right: 1px solid rgba(214, 207, 194, 0.24);
+  border-right: 1px solid rgba(214, 207, 194, 0.36);
   background:
     linear-gradient(180deg, rgba(20, 21, 24, 0.96), rgba(16, 18, 21, 0.98)),
     radial-gradient(900px 600px at -30% 0%, rgba(158, 151, 140, 0.12), transparent 68%);
-  box-shadow: 14px 0 30px rgba(4, 6, 7, 0.35);
+  box-shadow: 16px 0 38px rgba(4, 6, 7, 0.42);
+  padding: 14px 12px 14px 0;
 }
 
 .plans-list {
@@ -372,8 +373,8 @@ body.loading .main {
   display: flex;
   align-items: stretch;
   flex: 0 0 auto;
-  border-top-left-radius: var(--radius);
-  border-top-right-radius: var(--radius);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   overflow: hidden;
 }
 
@@ -468,11 +469,11 @@ body.loading .main {
 }
 
 .plans-list-header .section-switch-tab:first-child {
-  border-top-left-radius: var(--radius);
+  border-top-left-radius: 0;
 }
 
 .plans-list-header .section-switch-tab:last-child {
-  border-top-right-radius: var(--radius);
+  border-top-right-radius: 0;
 }
 
 .switch-icon {
@@ -493,8 +494,8 @@ body.loading .main {
 
 .plans-list-header .section-switch-tab.active {
   color: #e5e2db;
-  background: rgba(67, 72, 77, 0.24);
-  border-bottom-color: var(--brand);
+  background: rgba(75, 80, 86, 0.2);
+  border-bottom-color: rgba(218, 211, 199, 0.72);
 }
 
 .switch-count {
@@ -509,7 +510,7 @@ body.loading .main {
 .plan-item {
   position: relative;
   z-index: 0;
-  padding: 14px 16px;
+  padding: 15px 16px;
   border-bottom: 0;
   cursor: pointer;
   transition: all 0.2s;
@@ -529,22 +530,22 @@ body.loading .main {
 
 .plan-item:hover::before {
   opacity: 1;
-  background: rgba(128, 130, 134, 0.16);
+  background: rgba(128, 130, 134, 0.1);
 }
 
 .plan-item.active {
   background: transparent;
-  border-left: 3px solid var(--brand);
+  border-left: 2px solid rgba(223, 216, 204, 0.92);
 }
 
 .plan-item.active::before {
   opacity: 1;
-  background: rgba(142, 140, 135, 0.22);
+  background: rgba(142, 140, 135, 0.14);
 }
 
 .plan-item.active:hover::before {
   opacity: 1;
-  background: rgba(142, 140, 135, 0.22);
+  background: rgba(142, 140, 135, 0.14);
 }
 
 .plan-item::after {
@@ -568,7 +569,7 @@ body.loading .main {
   justify-content: center;
   min-height: var(--badge-height);
   padding: 0 10px;
-  border-radius: var(--badge-radius);
+  border-radius: 9px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.15px;
@@ -591,8 +592,9 @@ body.loading .main {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
-  border-left: 1px solid rgba(255, 255, 255, 0.04);
-  padding: 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.42), inset 14px 0 18px rgba(7, 9, 11, 0.18);
+  padding: 24px;
 }
 
 .detail-view {
@@ -1549,7 +1551,7 @@ details.summary-block { margin-top: 10px; }
 }
 
 @media (max-width: 1100px) {
-  .main { grid-template-columns: 300px 1fr; }
+  .main { grid-template-columns: 320px 1fr; }
 }
 
 @media (max-width: 900px) {
@@ -1562,6 +1564,7 @@ details.summary-block { margin-top: 10px; }
     position: static;
     border-right: 0;
     box-shadow: none;
+    padding: 0;
   }
   .plans-list {
     height: auto;
