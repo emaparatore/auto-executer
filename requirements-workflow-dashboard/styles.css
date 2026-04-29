@@ -921,6 +921,35 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   min-width: 140px;
 }
 
+.current-state-table {
+  table-layout: auto;
+}
+
+.current-state-table th {
+  font-size: 12px;
+  letter-spacing: 0.8px;
+}
+
+.current-state-table td {
+  padding: 14px 12px;
+  line-height: 1.65;
+}
+
+.current-state-table th:nth-child(1),
+.current-state-table td:nth-child(1) {
+  width: 28%;
+}
+
+.current-state-table th:nth-child(2),
+.current-state-table td:nth-child(2) {
+  width: 18%;
+}
+
+.current-state-table th:nth-child(3),
+.current-state-table td:nth-child(3) {
+  width: 54%;
+}
+
 .current-state-table th:last-child,
 .current-state-table td:last-child {
   width: 110px;
@@ -936,8 +965,25 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
 }
 
 .current-state-notes-input {
-  min-height: 64px;
+  min-height: 84px;
   resize: vertical;
+}
+
+.current-state-table tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.current-state-table tbody tr:hover {
+  background: rgba(92, 98, 106, 0.2);
+}
+
+.current-state-table td:nth-child(2) {
+  color: #f0eadf;
+  font-weight: 600;
+}
+
+.current-state-table td:nth-child(3) {
+  color: #efe9de;
 }
 
 .current-state-row-actions {
@@ -958,6 +1004,15 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   .current-state-table th,
   .current-state-table td {
     min-width: 180px;
+  }
+
+  .current-state-table th:nth-child(1),
+  .current-state-table td:nth-child(1),
+  .current-state-table th:nth-child(2),
+  .current-state-table td:nth-child(2),
+  .current-state-table th:nth-child(3),
+  .current-state-table td:nth-child(3) {
+    width: auto;
   }
 }
 
