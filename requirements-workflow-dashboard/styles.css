@@ -692,7 +692,7 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   border: 1px solid rgba(214, 207, 194, 0.3);
   display: none;
   box-shadow: 0 26px 56px rgba(0, 0, 0, 0.42);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .detail-view.show { display: block; animation: fadeIn 0.45s ease; }
@@ -713,9 +713,13 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
 
 .tabs {
   display: flex;
+  position: sticky;
+  top: -24px;
+  z-index: 30;
   border-bottom: 1px solid var(--stroke);
   padding: 0 24px;
-  background: rgba(39, 42, 46, 0.72);
+  background: #23272d;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
