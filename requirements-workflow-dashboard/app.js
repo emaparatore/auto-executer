@@ -40,6 +40,8 @@ let newFunctionalRequirementId = '';
 let creatingFunctionalRequirementStep = 'id';
 let newFunctionalRequirementTitle = '';
 let newFunctionalRequirementDescription = '';
+let deletingFunctionalRequirementId = null;
+let deleteModalReturnFocusEl = null;
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -727,6 +729,7 @@ async function selectRequirement(id) {
   creatingFunctionalRequirementStep = 'id';
   newFunctionalRequirementTitle = '';
   newFunctionalRequirementDescription = '';
+  deletingFunctionalRequirementId = null;
   renderRequirementDetail();
 }
 
@@ -1009,7 +1012,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
         <div class="plan-notes-form">
           ${creatingFunctionalRequirementStep === 'id' ? `
             <label class="open-question-label" for="new-functional-requirement-id">ID</label>
-            <input id="new-functional-requirement-id" type="text" class="plan-notes-input" value="${escapeHtml(newFunctionalRequirementId)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newFunctionalRequirementId)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions">
               <button type="button" class="open-question-btn" onclick="proceedCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Avanti</button>
               <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
@@ -1017,7 +1020,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
           ` : `
             <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newFunctionalRequirementId)}</span></div>
             <label class="open-question-label" for="new-functional-requirement-title">Titolo</label>
-            <input id="new-functional-requirement-title" type="text" class="plan-notes-input" value="${escapeHtml(newFunctionalRequirementTitle)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newFunctionalRequirementTitle)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
             <label class="open-question-label" for="new-functional-requirement-description">Descrizione</label>
             <textarea id="new-functional-requirement-description" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(newFunctionalRequirementDescription)}</textarea>
             <div class="plan-notes-actions">
@@ -1035,12 +1038,12 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
     <div class="task-item">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
-        ${isFunctional ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="deleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>−</button></span>` : ''}
+        ${isFunctional ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
       </div>
       ${isFunctional && editingFunctionalRequirementId === item.id ? `
         <div class="plan-notes-form">
           <label class="open-question-label" for="functional-title-${encodeURIComponent(item.id || '')}">Titolo</label>
-          <input id="functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input" value="${escapeHtml(item.title || '')}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+          <input id="functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
           <label class="open-question-label" for="functional-description-${encodeURIComponent(item.id || '')}">Descrizione</label>
           <textarea id="functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
           <div class="plan-notes-actions">
@@ -1050,7 +1053,24 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
         </div>
       ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
     </div>
-  `).join('')}`;
+  `).join('')}${isFunctional ? renderDeleteFunctionalRequirementModal() : ''}`;
+}
+
+function renderDeleteFunctionalRequirementModal() {
+  if (!deletingFunctionalRequirementId) return '';
+  return `
+    <div class="confirm-modal-overlay" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)">
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-functional-title" aria-describedby="delete-functional-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeleteFunctionalRequirementModalKeydown(event)">
+        <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)">×</button>
+        <div class="confirm-modal-title" id="delete-functional-title">Conferma eliminazione</div>
+        <div class="confirm-modal-text" id="delete-functional-text">Vuoi eliminare il requisito funzionale <strong>${escapeHtml(deletingFunctionalRequirementId)}</strong>?</div>
+        <div class="plan-notes-actions confirm-modal-actions">
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function enableCreateFunctionalRequirement() {
@@ -1061,7 +1081,13 @@ function enableCreateFunctionalRequirement() {
   newFunctionalRequirementTitle = '';
   newFunctionalRequirementDescription = '';
   renderRequirementDetail();
-  setTimeout(() => document.getElementById('new-functional-requirement-id')?.focus(), 0);
+  setTimeout(() => {
+    const idInput = document.getElementById('new-functional-requirement-id');
+    if (!idInput) return;
+    idInput.focus();
+    const cursor = idInput.value.length;
+    idInput.setSelectionRange(cursor, cursor);
+  }, 0);
 }
 
 function enableCreateFunctionalRequirementFromEvent(event) {
@@ -1111,7 +1137,13 @@ function backCreateFunctionalRequirementFromEvent(event) {
   newFunctionalRequirementDescription = String(descriptionEl?.value || '').trim();
   creatingFunctionalRequirementStep = 'id';
   renderRequirementDetail();
-  setTimeout(() => document.getElementById('new-functional-requirement-id')?.focus(), 0);
+  setTimeout(() => {
+    const idInput = document.getElementById('new-functional-requirement-id');
+    if (!idInput) return;
+    idInput.focus();
+    const cursor = idInput.value.length;
+    idInput.setSelectionRange(cursor, cursor);
+  }, 0);
 }
 
 async function createFunctionalRequirement() {
@@ -1251,7 +1283,6 @@ async function deleteFunctionalRequirement(functionalId) {
   if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
-  if (!window.confirm('Confermi la cancellazione del requisito funzionale?')) return;
 
   isFunctionalRequirementUpdating = true;
   renderRequirementDetail();
@@ -1280,6 +1311,74 @@ async function deleteFunctionalRequirement(functionalId) {
 function deleteFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
   event.stopPropagation();
   deleteFunctionalRequirement(decodeURIComponent(encodedFunctionalId));
+}
+
+function requestDeleteFunctionalRequirement(functionalId) {
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  deleteModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  deletingFunctionalRequirementId = functionalId;
+  renderRequirementDetail();
+  setTimeout(() => {
+    const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]');
+    const dialog = document.querySelector('.confirm-modal');
+    if (cancelBtn instanceof HTMLElement) {
+      cancelBtn.focus();
+      return;
+    }
+    if (dialog instanceof HTMLElement) dialog.focus();
+  }, 0);
+}
+
+function requestDeleteFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
+  event.stopPropagation();
+  requestDeleteFunctionalRequirement(decodeURIComponent(encodedFunctionalId));
+}
+
+function closeDeleteFunctionalRequirementModal() {
+  if (isFunctionalRequirementUpdating) return;
+  deletingFunctionalRequirementId = null;
+  renderRequirementDetail();
+  if (deleteModalReturnFocusEl && typeof deleteModalReturnFocusEl.focus === 'function') {
+    setTimeout(() => deleteModalReturnFocusEl?.focus(), 0);
+  }
+  deleteModalReturnFocusEl = null;
+}
+
+function closeDeleteFunctionalRequirementModalFromEvent(event) {
+  event.stopPropagation();
+  closeDeleteFunctionalRequirementModal();
+}
+
+function confirmDeleteFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  const functionalId = deletingFunctionalRequirementId;
+  if (!functionalId) return;
+  deletingFunctionalRequirementId = null;
+  deleteFunctionalRequirement(functionalId);
+}
+
+function handleDeleteFunctionalRequirementModalKeydown(event) {
+  if (!deletingFunctionalRequirementId) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeDeleteFunctionalRequirementModal();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])'));
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+    return;
+  }
+  if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function configurePlanTabs(activeTab = 'overview') {
