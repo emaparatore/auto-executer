@@ -532,6 +532,33 @@ app.delete('/api/requirements/:id/stories/:storyId', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/requirements/:id/open-questions', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { id, question, answer, status } = req.body || {};
+  if (typeof id !== 'string' || typeof question !== 'string' || typeof answer !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "id", "question" and "answer" must be strings.' });
+  }
+  if (!validateStatus(status, OPEN_QUESTION_STATUSES)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${OPEN_QUESTION_STATUSES.join(', ')}` });
+  }
+  const normalizedId = id.trim();
+  const normalizedQuestion = question.trim();
+  const normalizedAnswer = answer.trim();
+  if (!normalizedId || !normalizedQuestion) {
+    return res.status(400).json({ error: '"id" and "question" are required.' });
+  }
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.openQuestions) ? data.openQuestions : [];
+  if (list.some(item => item.id === normalizedId)) {
+    return res.status(409).json({ error: 'Open question ID already exists' });
+  }
+  const item = { id: normalizedId, question: normalizedQuestion, answer: normalizedAnswer, status };
+  data.openQuestions = [...list, item];
+  writeRequirement(filePath, data);
+  res.status(201).json({ ok: true, item });
+});
+
 app.patch('/api/requirements/:id/open-questions/:questionId', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {
@@ -563,6 +590,18 @@ app.patch('/api/requirements/:id/open-questions/:questionId', (req, res) => {
     answer: question.answer,
     status: question.status
   });
+});
+
+app.delete('/api/requirements/:id/open-questions/:questionId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.openQuestions) ? data.openQuestions : [];
+  const nextList = list.filter(item => item.id !== req.params.questionId);
+  if (nextList.length === list.length) return res.status(404).json({ error: 'Open question not found' });
+  data.openQuestions = nextList;
+  writeRequirement(filePath, data);
+  res.json({ ok: true });
 });
 
 app.patch('/api/plans/:id/notes', (req, res) => {

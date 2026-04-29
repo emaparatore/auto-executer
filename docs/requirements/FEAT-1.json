@@ -556,6 +556,31 @@
         }
       ],
       "notes": null
+    },
+    {
+      "id": "US-123",
+      "title": "dfasdf",
+      "asA": "fdsafdsfa",
+      "iWant": "dfahsdfah",
+      "soThat": "dfhsadfasdfasd",
+      "acceptanceCriteria": [
+        {
+          "text": "dfsfdasfsa",
+          "checked": false
+        },
+        {
+          "text": "dfdsfasdfsdfadfasdfa",
+          "checked": false
+        },
+        {
+          "text": "fdsafhdjbfsadfa",
+          "checked": false
+        },
+        {
+          "text": "dfasihdfoahsdofasdfa",
+          "checked": false
+        }
+      ]
     }
   ],
   "storyDependencies": [

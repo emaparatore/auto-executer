@@ -27,6 +27,13 @@ let editingTaskField = null;
 let isTaskFieldUpdating = false;
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
+let creatingOpenQuestion = false;
+let creatingOpenQuestionStep = 'id';
+let newOpenQuestionId = '';
+let newOpenQuestionQuestion = '';
+let newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+let newOpenQuestionStatus = 'open';
+let deletingOpenQuestionId = null;
 let isRequirementOverviewEditing = false;
 let isRequirementOverviewUpdating = false;
 let isRequirementCurrentStateEditing = false;
@@ -760,6 +767,13 @@ async function selectRequirement(id) {
   creatingStoryStep = 'id';
   newStoryId = '';
   deletingStoryId = null;
+  creatingOpenQuestion = false;
+  creatingOpenQuestionStep = 'id';
+  newOpenQuestionId = '';
+  newOpenQuestionQuestion = '';
+  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  newOpenQuestionStatus = 'open';
+  deletingOpenQuestionId = null;
   renderRequirementDetail();
 }
 
@@ -986,7 +1000,23 @@ function renderRequirementDetail() {
     `).join('')
     : '<p class="empty-state">No user stories</p>'}${renderDeleteStoryModal()}`;
 
-  document.getElementById('openQuestionsList').innerHTML = openQuestions.length
+  document.getElementById('openQuestionsList').innerHTML = `<div class="section-title-row" style="margin-bottom:12px"><div class="section-title">Open questions</div><button type="button" class="icon-action-btn is-add" onclick="enableOpenQuestionCreateFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingOpenQuestion ? `
+      <div class="task-item" style="margin-bottom:12px">
+        <div class="task-header"><span class="task-id">Nuova open question</span></div>
+        <div class="plan-notes-form">
+          ${creatingOpenQuestionStep === 'id' ? `
+            <label class="open-question-label" for="new-open-question-id">ID</label>
+            <input id="new-open-question-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionId)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
+          ` : `
+            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newOpenQuestionId)}</span></div>
+            <label class="open-question-label" for="new-open-question-question">Question</label>
+            <input id="new-open-question-question" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionQuestion)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="createOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Salva</button><button type="button" class="open-question-btn is-secondary" onclick="backCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Indietro</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
+          `}
+        </div>
+      </div>
+    ` : ''}${openQuestions.length
     ? openQuestions.map(q => `
       <div
         class="task-item open-question-item${editingOpenQuestionId === q.id ? ' is-editing' : ''}${isOpenQuestionUpdating ? ' is-busy' : ''}"
@@ -998,7 +1028,10 @@ function renderRequirementDetail() {
         onkeydown="handleOpenQuestionCardKeydown(event, '${encodeURIComponent(q.id || '')}')">
         <div class="task-header">
           <span class="task-id">${escapeHtml(q.id || '-')}</span>
-          <span class="plan-item-status status-${q.status === 'resolved' ? 'completed' : 'pending'}">${q.status === 'resolved' ? 'Resolved' : 'Open'}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            ${editingOpenQuestionId !== q.id ? `<button type="button" class="icon-action-btn" onclick="requestDeleteOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" aria-label="Elimina open question" title="Elimina open question" ${isOpenQuestionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>` : ''}
+            <span class="plan-item-status status-${q.status === 'resolved' ? 'completed' : 'pending'}">${q.status === 'resolved' ? 'Resolved' : 'Open'}</span>
+          </span>
         </div>
         <div class="task-title">${escapeHtml(q.question || '')}</div>
         ${editingOpenQuestionId === q.id ? `
@@ -1025,7 +1058,7 @@ function renderRequirementDetail() {
         ` : `<div class="task-what">${escapeHtml(q.answer || '')}</div>`}
       </div>
     `).join('')
-    : '<p class="empty-state">No open questions</p>';
+    : '<p class="empty-state">No open questions</p>'}${renderDeleteOpenQuestionModal()}`;
 
   restoreAcceptanceFocusIfNeeded();
 }
@@ -2899,6 +2932,147 @@ function saveOpenQuestionByEncodedIds(event, encodedRequirementId, encodedQuesti
   const requirementId = decodeURIComponent(encodedRequirementId);
   const questionId = decodeURIComponent(encodedQuestionId);
   saveOpenQuestion(requirementId, questionId);
+}
+
+function enableOpenQuestionCreateFromEvent(event) {
+  event.stopPropagation();
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  creatingOpenQuestion = true;
+  creatingOpenQuestionStep = 'id';
+  newOpenQuestionId = 'OQ-';
+  newOpenQuestionQuestion = '';
+  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  newOpenQuestionStatus = 'open';
+  editingOpenQuestionId = null;
+  renderRequirementDetail();
+  requestAnimationFrame(() => {
+    const input = document.getElementById('new-open-question-id');
+    if (!input) return;
+    input.focus();
+    const length = input.value.length;
+    input.setSelectionRange(length, length);
+  });
+}
+
+function proceedCreateOpenQuestionFromEvent(event) {
+  event.stopPropagation();
+  if (!creatingOpenQuestion || isOpenQuestionUpdating) return;
+  const input = document.getElementById('new-open-question-id');
+  const id = String(input?.value || '').trim();
+  if (!id) return showToast('ID open question obbligatorio', 'error');
+  if ((currentRequirement?.openQuestions || []).some(item => String(item?.id || '') === id)) return showToast('ID open question gia presente', 'error');
+  newOpenQuestionId = id;
+  creatingOpenQuestionStep = 'details';
+  renderRequirementDetail();
+}
+
+function backCreateOpenQuestionFromEvent(event) {
+  event.stopPropagation();
+  if (!creatingOpenQuestion || isOpenQuestionUpdating) return;
+  const questionEl = document.getElementById('new-open-question-question');
+  newOpenQuestionQuestion = String(questionEl?.value || '').trim();
+  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  newOpenQuestionStatus = 'open';
+  creatingOpenQuestionStep = 'id';
+  renderRequirementDetail();
+}
+
+function cancelCreateOpenQuestionFromEvent(event) {
+  event.stopPropagation();
+  if (isOpenQuestionUpdating) return;
+  creatingOpenQuestion = false;
+  creatingOpenQuestionStep = 'id';
+  newOpenQuestionId = '';
+  newOpenQuestionQuestion = '';
+  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  newOpenQuestionStatus = 'open';
+  renderRequirementDetail();
+}
+
+async function createOpenQuestionFromEvent(event) {
+  event.stopPropagation();
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  const requirementId = currentRequirement.document?.id;
+  if (!requirementId) return;
+  const question = String(document.getElementById('new-open-question-question')?.value || '').trim();
+  const answer = 'Non definito nel documento; richiesta conferma.';
+  const status = 'open';
+  if (!newOpenQuestionId) return showToast('ID open question obbligatorio', 'error');
+  if ((currentRequirement?.openQuestions || []).some(item => String(item?.id || '') === newOpenQuestionId)) return showToast('ID open question gia presente', 'error');
+  if (!question) return showToast('Question obbligatoria', 'error');
+  isOpenQuestionUpdating = true;
+  renderRequirementDetail();
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/open-questions`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: newOpenQuestionId, question, answer, status })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to create open question'); }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question create');
+    currentRequirement = await updatedRequirementRes.json();
+    creatingOpenQuestion = false;
+    creatingOpenQuestionStep = 'id';
+    newOpenQuestionId = '';
+    newOpenQuestionQuestion = '';
+    newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+    newOpenQuestionStatus = 'open';
+    renderRequirementDetail();
+    showToast('Open question creata');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isOpenQuestionUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function requestDeleteOpenQuestionByEncodedIds(event, encodedRequirementId, encodedQuestionId) {
+  event.stopPropagation();
+  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  const requirementId = decodeURIComponent(encodedRequirementId);
+  const questionId = decodeURIComponent(encodedQuestionId);
+  if (!requirementId || !questionId) return;
+  deletingOpenQuestionId = questionId;
+  deleteModalReturnFocusEl = event.currentTarget || null;
+  renderRequirementDetail();
+}
+
+function closeDeleteOpenQuestionModalFromEvent(event) {
+  event.stopPropagation();
+  deletingOpenQuestionId = null;
+  renderRequirementDetail();
+  if (deleteModalReturnFocusEl && typeof deleteModalReturnFocusEl.focus === 'function') deleteModalReturnFocusEl.focus();
+}
+
+async function confirmDeleteOpenQuestionFromEvent(event) {
+  event.stopPropagation();
+  if (!currentRequirement || !deletingOpenQuestionId || isOpenQuestionUpdating) return;
+  const requirementId = currentRequirement.document?.id;
+  const questionId = deletingOpenQuestionId;
+  if (!requirementId) return;
+  isOpenQuestionUpdating = true;
+  renderRequirementDetail();
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/open-questions/${encodeURIComponent(questionId)}`, { method: 'DELETE' });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete open question'); }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question delete');
+    currentRequirement = await updatedRequirementRes.json();
+    deletingOpenQuestionId = null;
+    editingOpenQuestionId = null;
+    renderRequirementDetail();
+    showToast('Open question eliminata');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isOpenQuestionUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function renderDeleteOpenQuestionModal() {
+  if (!deletingOpenQuestionId) return '';
+  return `<div class="confirm-modal-overlay" onclick="closeDeleteOpenQuestionModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteOpenQuestionModalFromEvent(event)">x</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la open question <strong>${escapeHtml(deletingOpenQuestionId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteOpenQuestionFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteOpenQuestionModalFromEvent(event)">Annulla</button></div></div></div>`;
 }
 
 function ensureToastEl() {
