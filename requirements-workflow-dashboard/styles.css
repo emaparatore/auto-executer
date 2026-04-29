@@ -580,6 +580,13 @@ body.loading .main {
   padding: 24px;
 }
 
+.content > .welcome,
+.content > .detail-view {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
 .detail-view {
   background:
     linear-gradient(180deg, rgba(25, 28, 31, 0.95), rgba(20, 22, 25, 0.96)),
@@ -640,7 +647,7 @@ body.loading .main {
 
 .tab-content { padding: 24px; display: none; }
 .tab-content.show { display: block; }
-.tab-content > * { max-width: 980px; }
+.tab-content > * { max-width: 980px; width: 100%; margin-inline: auto; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .stat-card {
