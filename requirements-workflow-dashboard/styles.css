@@ -494,9 +494,57 @@ body.loading .main {
   color: rgba(224, 219, 209, 0.9);
 }
 
-.plan-item { padding: 14px 16px; border-bottom: 1px solid rgba(201, 193, 178, 0.14); cursor: pointer; transition: all 0.2s; }
-.plan-item:hover { background: rgba(128, 130, 134, 0.16); }
-.plan-item.active { background: rgba(142, 140, 135, 0.22); border-left: 3px solid var(--brand); }
+.plan-item {
+  position: relative;
+  z-index: 0;
+  padding: 14px 16px;
+  border-bottom: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.plan-item::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: -12px;
+  bottom: -1px;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.plan-item:hover::before {
+  opacity: 1;
+  background: rgba(128, 130, 134, 0.16);
+}
+
+.plan-item.active {
+  background: transparent;
+  border-left: 3px solid var(--brand);
+}
+
+.plan-item.active::before {
+  opacity: 1;
+  background: rgba(142, 140, 135, 0.22);
+}
+
+.plan-item.active:hover::before {
+  opacity: 1;
+  background: rgba(142, 140, 135, 0.22);
+}
+
+.plan-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: -12px;
+  bottom: 0;
+  height: 1px;
+  background: rgba(201, 193, 178, 0.14);
+  pointer-events: none;
+}
 .plan-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
 .plan-item-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #cecac1; }
 .plan-item-status,
