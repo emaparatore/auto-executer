@@ -825,7 +825,7 @@ function renderRequirementDetail() {
     `
     : `
       <div class="section-card">
-        <div class="section-title-row">
+        <div class="section-title-row current-state-title-row">
           <div class="section-title">Current State</div>
           <button type="button" class="icon-action-btn${currentState.length ? '' : ' is-add'}" onclick="enableRequirementCurrentStateEditFromEvent(event)" aria-label="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}" title="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}">${currentState.length ? '✎' : '+'}</button>
         </div>

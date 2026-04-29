@@ -909,6 +909,11 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   gap: 8px;
 }
 
+.current-state-title-row {
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
 .current-state-table-wrap {
   width: 100%;
   overflow-x: auto;
