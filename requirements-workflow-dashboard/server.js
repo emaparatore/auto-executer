@@ -365,6 +365,61 @@ app.delete('/api/requirements/:id/functional-requirements/:functionalId', (req, 
   res.json({ ok: true });
 });
 
+app.post('/api/requirements/:id/non-functional-requirements', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { nonFunctionalId, title, description } = req.body || {};
+  if (typeof nonFunctionalId !== 'string' || typeof title !== 'string' || typeof description !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "nonFunctionalId", "title" and "description" must be strings.' });
+  }
+  const normalizedId = nonFunctionalId.trim();
+  const normalizedTitle = title.trim();
+  const normalizedDescription = description.trim();
+  if (!normalizedId || !normalizedTitle || !normalizedDescription) {
+    return res.status(400).json({ error: 'nonFunctionalId, title and description are required.' });
+  }
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.nonFunctionalRequirements) ? data.nonFunctionalRequirements : [];
+  if (list.some(item => item.id === normalizedId)) return res.status(409).json({ error: 'Non-functional requirement ID already exists.' });
+  const newRequirement = { id: normalizedId, title: normalizedTitle, description: normalizedDescription };
+  data.nonFunctionalRequirements = [...list, newRequirement];
+  writeRequirement(filePath, data);
+  res.status(201).json({ ok: true, item: newRequirement });
+});
+
+app.patch('/api/requirements/:id/non-functional-requirements/:nonFunctionalId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { title, description } = req.body || {};
+  if (typeof title !== 'string' || typeof description !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "title" and "description" must be strings.' });
+  }
+  const normalizedTitle = title.trim();
+  const normalizedDescription = description.trim();
+  if (!normalizedTitle || !normalizedDescription) {
+    return res.status(400).json({ error: 'Title and description are required.' });
+  }
+  const { filePath, data } = requirement;
+  const item = (data.nonFunctionalRequirements || []).find(entry => entry.id === req.params.nonFunctionalId);
+  if (!item) return res.status(404).json({ error: 'Non-functional requirement not found' });
+  item.title = normalizedTitle;
+  item.description = normalizedDescription;
+  writeRequirement(filePath, data);
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/requirements/:id/non-functional-requirements/:nonFunctionalId', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
+  const { filePath, data } = requirement;
+  const list = Array.isArray(data.nonFunctionalRequirements) ? data.nonFunctionalRequirements : [];
+  const nextList = list.filter(entry => entry.id !== req.params.nonFunctionalId);
+  if (nextList.length === list.length) return res.status(404).json({ error: 'Non-functional requirement not found' });
+  data.nonFunctionalRequirements = nextList;
+  writeRequirement(filePath, data);
+  res.json({ ok: true });
+});
+
 app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {

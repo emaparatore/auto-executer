@@ -42,6 +42,15 @@ let newFunctionalRequirementTitle = '';
 let newFunctionalRequirementDescription = '';
 let deletingFunctionalRequirementId = null;
 let deleteModalReturnFocusEl = null;
+let editingNonFunctionalRequirementId = null;
+let isNonFunctionalRequirementUpdating = false;
+let creatingNonFunctionalRequirement = false;
+let newNonFunctionalRequirementId = '';
+let creatingNonFunctionalRequirementStep = 'id';
+let newNonFunctionalRequirementTitle = '';
+let newNonFunctionalRequirementDescription = '';
+let deletingNonFunctionalRequirementId = null;
+let deleteNonFunctionalModalReturnFocusEl = null;
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -731,6 +740,14 @@ async function selectRequirement(id) {
   newFunctionalRequirementTitle = '';
   newFunctionalRequirementDescription = '';
   deletingFunctionalRequirementId = null;
+  editingNonFunctionalRequirementId = null;
+  isNonFunctionalRequirementUpdating = false;
+  creatingNonFunctionalRequirement = false;
+  newNonFunctionalRequirementId = '';
+  creatingNonFunctionalRequirementStep = 'id';
+  newNonFunctionalRequirementTitle = '';
+  newNonFunctionalRequirementDescription = '';
+  deletingNonFunctionalRequirementId = null;
   renderRequirementDetail();
 }
 
@@ -903,7 +920,7 @@ function renderRequirementDetail() {
   document.getElementById('overviewContent').innerHTML = `<div class="overview-sections">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
   document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements', true);
-  document.getElementById('nonFunctionalList').innerHTML = renderRequirementItems(rnf, 'No non-functional requirements');
+  document.getElementById('nonFunctionalList').innerHTML = renderNonFunctionalRequirementItems(rnf, 'No non-functional requirements');
 
   document.getElementById('architecturalDecisionsList').innerHTML = decisions.length
     ? decisions.map(item => `
@@ -1381,6 +1398,92 @@ function handleDeleteFunctionalRequirementModalKeydown(event) {
     first.focus();
   }
 }
+
+function renderNonFunctionalRequirementItems(items, emptyText) {
+  const actions = `
+    <div class="section-title-row" style="margin-bottom:12px">
+      <div class="section-title">Requisiti non funzionali</div>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreateNonFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito non funzionale" title="Aggiungi requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
+    </div>
+    ${creatingNonFunctionalRequirement ? `
+      <div class="task-item" style="margin-bottom:12px">
+        <div class="task-header"><span class="task-id">Nuovo requisito non funzionale</span></div>
+        <div class="plan-notes-form">
+          ${creatingNonFunctionalRequirementStep === 'id' ? `
+            <label class="open-question-label" for="new-non-functional-requirement-id">ID</label>
+            <input id="new-non-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newNonFunctionalRequirementId)}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="proceedCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          ` : `
+            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newNonFunctionalRequirementId)}</span></div>
+            <label class="open-question-label" for="new-non-functional-requirement-title">Titolo</label>
+            <input id="new-non-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newNonFunctionalRequirementTitle)}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <label class="open-question-label" for="new-non-functional-requirement-description">Descrizione</label>
+            <textarea id="new-non-functional-requirement-description" class="plan-notes-input" rows="3" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(newNonFunctionalRequirementDescription)}</textarea>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="createNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          `}
+        </div>
+      </div>
+    ` : ''}
+  `;
+  if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
+  return `${actions}${items.map(item => `
+    <div class="task-item">
+      <div class="task-header">
+        <span class="task-id">${escapeHtml(item.id || '-')}</span>
+        <span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>
+      </div>
+      ${editingNonFunctionalRequirementId === item.id ? `
+        <div class="plan-notes-form">
+          <label class="open-question-label" for="non-functional-title-${encodeURIComponent(item.id || '')}">Titolo</label>
+          <input id="non-functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+          <label class="open-question-label" for="non-functional-description-${encodeURIComponent(item.id || '')}">Descrizione</label>
+          <textarea id="non-functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="saveNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelNonFunctionalRequirementEditFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
+    </div>
+  `).join('')}${renderDeleteNonFunctionalRequirementModal()}`;
+}
+
+function renderDeleteNonFunctionalRequirementModal() {
+  if (!deletingNonFunctionalRequirementId) return '';
+  return `
+    <div class="confirm-modal-overlay" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)">
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-non-functional-title" aria-describedby="delete-non-functional-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeleteNonFunctionalRequirementModalKeydown(event)">
+        <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)">×</button>
+        <div class="confirm-modal-title" id="delete-non-functional-title">Conferma eliminazione</div>
+        <div class="confirm-modal-text" id="delete-non-functional-text">Vuoi eliminare il requisito non funzionale <strong>${escapeHtml(deletingNonFunctionalRequirementId)}</strong>?</div>
+        <div class="plan-notes-actions confirm-modal-actions">
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function enableCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); creatingNonFunctionalRequirement = true; newNonFunctionalRequirementId = 'RNF-'; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
+function cancelCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); creatingNonFunctionalRequirement = false; newNonFunctionalRequirementId = ''; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; renderRequirementDetail(); }
+function proceedCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const idEl = document.getElementById('new-non-functional-requirement-id'); const nonFunctionalId = String(idEl?.value || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); newNonFunctionalRequirementId = nonFunctionalId; creatingNonFunctionalRequirementStep = 'details'; renderRequirementDetail(); setTimeout(() => document.getElementById('new-non-functional-requirement-title')?.focus(), 0); }
+function backCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const titleEl = document.getElementById('new-non-functional-requirement-title'); const descriptionEl = document.getElementById('new-non-functional-requirement-description'); newNonFunctionalRequirementTitle = String(titleEl?.value || '').trim(); newNonFunctionalRequirementDescription = String(descriptionEl?.value || '').trim(); creatingNonFunctionalRequirementStep = 'id'; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
+async function createNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const nonFunctionalId = String(newNonFunctionalRequirementId || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); const title = String(document.getElementById('new-non-functional-requirement-title')?.value || '').trim(); const description = String(document.getElementById('new-non-functional-requirement-description')?.value || '').trim(); if (!title || !description) return showToast('Titolo e descrizione sono obbligatori', 'error'); isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nonFunctionalId, title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create'); currentRequirement = await updatedRequirementRes.json(); creatingNonFunctionalRequirement = false; newNonFunctionalRequirementId = ''; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active'); renderRequirementDetail(); showToast('Requisito non funzionale aggiunto'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
+function editNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; editingNonFunctionalRequirementId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); }
+function cancelNonFunctionalRequirementEditFromEvent(event) { event.stopPropagation(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); }
+async function saveNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); const nonFunctionalId = decodeURIComponent(encodedNonFunctionalId); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const title = String(document.getElementById(`non-functional-title-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); const description = String(document.getElementById(`non-functional-description-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update'); currentRequirement = await updatedRequirementRes.json(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale aggiornato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
+function requestDeleteNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; deleteNonFunctionalModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; deletingNonFunctionalRequirementId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPropagation(); if (isNonFunctionalRequirementUpdating) return; deletingNonFunctionalRequirementId = null; renderRequirementDetail(); if (deleteNonFunctionalModalReturnFocusEl && typeof deleteNonFunctionalModalReturnFocusEl.focus === 'function') setTimeout(() => deleteNonFunctionalModalReturnFocusEl?.focus(), 0); deleteNonFunctionalModalReturnFocusEl = null; }
+async function confirmDeleteNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); const nonFunctionalId = deletingNonFunctionalRequirementId; if (!nonFunctionalId || !currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; deletingNonFunctionalRequirementId = null; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete'); currentRequirement = await updatedRequirementRes.json(); if (editingNonFunctionalRequirementId === nonFunctionalId) editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale eliminato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
+function handleDeleteNonFunctionalRequirementModalKeydown(event) { if (!deletingNonFunctionalRequirementId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeleteNonFunctionalRequirementModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
 function configurePlanTabs(activeTab = 'overview') {
   toggleTab('overview', true);
