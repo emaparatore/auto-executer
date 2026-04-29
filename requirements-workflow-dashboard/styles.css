@@ -38,7 +38,8 @@
 
 html {
   background: #171718;
-  overflow-y: scroll;
+  height: 100%;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(121, 126, 135, 0.48) transparent;
 }
@@ -86,13 +87,16 @@ html::-webkit-scrollbar-button:decrement {
 body {
   font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
   color: var(--ink);
-  min-height: 100vh;
+  height: 100dvh;
   line-height: 1.65;
   background:
     radial-gradient(1100px 600px at 8% -5%, rgba(158, 151, 140, 0.11), transparent 65%),
     radial-gradient(900px 550px at 95% 0%, rgba(123, 128, 133, 0.1), transparent 64%),
     linear-gradient(160deg, #141516 0%, #1f2022 56%, #18191b 100%);
   position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 body.loading {
@@ -201,8 +205,7 @@ body.loading .main {
   background: linear-gradient(180deg, rgba(24, 25, 27, 0.93), rgba(24, 25, 27, 0.8));
   border-bottom: 1px solid var(--stroke);
   padding: 16px 24px;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   backdrop-filter: blur(6px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
@@ -337,9 +340,16 @@ body.loading .main {
   gap: 24px;
   position: relative;
   z-index: 1;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
-.sidebar { position: sticky; top: 86px; height: fit-content; }
+.sidebar {
+  min-height: 0;
+  height: 100%;
+}
 
 .plans-list {
   background: linear-gradient(180deg, rgba(26, 28, 31, 0.95), rgba(22, 24, 27, 0.96));
@@ -347,9 +357,9 @@ body.loading .main {
   border: 1px solid var(--stroke);
   overflow: hidden;
   box-shadow: var(--shadow-soft);
-  height: var(--sidebar-list-height, calc(100dvh - 170px));
-  max-height: var(--sidebar-list-height, calc(100dvh - 170px));
-  min-height: 280px;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -573,7 +583,13 @@ body.loading .main {
 .plan-item-title { font-size: 14px; color: #e4dfd6; line-height: 1.5; }
 .plan-item-meta { margin-top: 8px; display: flex; gap: 12px; font-size: 11px; color: var(--ink-dim); }
 
-.content { min-height: 500px; }
+.content {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
 
 .detail-view {
   background:
@@ -1533,7 +1549,11 @@ details.summary-block { margin-top: 10px; }
 }
 
 @media (max-width: 900px) {
-  .main { grid-template-columns: 1fr; }
+  .main {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
   .sidebar { position: static; }
   .plans-list {
     height: auto;
