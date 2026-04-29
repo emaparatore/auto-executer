@@ -352,50 +352,29 @@ body.loading .main {
     linear-gradient(180deg, rgba(20, 21, 24, 0.96), rgba(16, 18, 21, 0.98)),
     radial-gradient(900px 600px at -30% 0%, rgba(158, 151, 140, 0.12), transparent 68%);
   box-shadow: 16px 0 38px rgba(4, 6, 7, 0.42);
-  padding: 14px 0;
+  padding: 18px 0;
 }
 
 .plans-list {
   background: transparent;
   border-radius: 0;
   border: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   height: 100%;
   max-height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(150, 156, 166, 0.62) transparent;
 }
 
-.plans-list::-webkit-scrollbar {
-  width: 12px;
-}
-
-.plans-list::-webkit-scrollbar-track {
-  background: transparent;
-  border-left: 0;
-}
-
+.plans-list::-webkit-scrollbar,
+.plans-list::-webkit-scrollbar-track,
 .plans-list::-webkit-scrollbar-thumb {
-  background: rgba(150, 156, 166, 0.52);
-  border: 3px solid transparent;
-  background-clip: padding-box;
-  border-radius: 6px;
-  min-height: 40px;
-  transition: background-color 0.18s ease;
-}
-
-.plans-list:hover::-webkit-scrollbar-thumb,
-.plans-list:focus-within::-webkit-scrollbar-thumb {
-  background: rgba(170, 176, 186, 0.72);
+  display: none;
 }
 
 .plans-list-header {
-  padding: 0;
+  padding: 0 0 6px;
   border-bottom: 1px solid var(--stroke);
   display: flex;
   align-items: stretch;
@@ -410,27 +389,41 @@ body.loading .main {
 }
 
 #plansList {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: 100%;
   margin-right: 0;
   padding-right: 0;
   border-bottom-left-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 156, 166, 0.62) transparent;
 }
 
-#plansList::-webkit-scrollbar,
-#plansList::-webkit-scrollbar-track,
-#plansList::-webkit-scrollbar-thumb,
-#plansList::-webkit-scrollbar-button,
-#plansList::-webkit-scrollbar-button:single-button,
-#plansList::-webkit-scrollbar-button:double-button,
-#plansList::-webkit-scrollbar-button:start,
-#plansList::-webkit-scrollbar-button:end,
-#plansList::-webkit-scrollbar-button:increment,
-#plansList::-webkit-scrollbar-button:decrement {
-  display: none;
+#plansList::-webkit-scrollbar {
+  width: 12px;
+}
+
+#plansList::-webkit-scrollbar-track {
+  background: transparent;
+  border-left: 0;
+}
+
+#plansList::-webkit-scrollbar-thumb {
+  background: rgba(150, 156, 166, 0.52);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+  min-height: 40px;
+  transition: background-color 0.18s ease;
+}
+
+#plansList:hover::-webkit-scrollbar-thumb,
+#plansList:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(170, 176, 186, 0.72);
 }
 
 .plans-list-header .section-switch {
@@ -445,8 +438,8 @@ body.loading .main {
 .plans-list-header .section-switch-tab {
   flex: 1;
   justify-content: center;
-  min-height: 44px;
-  padding: 12px 16px;
+  min-height: 48px;
+  padding: 13px 18px;
   font-size: 14px;
   font-weight: 600;
   color: #c8c1b5;
@@ -500,7 +493,7 @@ body.loading .main {
 .plan-item {
   position: relative;
   z-index: 0;
-  padding: 15px 16px;
+  padding: 18px 18px 16px;
   border-bottom: 0;
   cursor: pointer;
   transition: all 0.2s;
@@ -548,7 +541,7 @@ body.loading .main {
   background: rgba(201, 193, 178, 0.14);
   pointer-events: none;
 }
-.plan-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.plan-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
 .plan-item-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #cecac1; }
 .plan-item-status,
 .story-status,
@@ -574,7 +567,7 @@ body.loading .main {
 .status-skipped { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
 .status-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
 .plan-item-title { font-size: 14px; color: #e4dfd6; line-height: 1.5; }
-.plan-item-meta { margin-top: 8px; display: flex; gap: 12px; font-size: 11px; color: var(--ink-dim); }
+.plan-item-meta { margin-top: 12px; display: flex; gap: 14px; font-size: 11px; color: var(--ink-dim); }
 
 .content {
   min-height: 0;
