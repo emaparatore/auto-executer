@@ -842,23 +842,24 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   margin-left: auto;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
-  border: 1px solid rgba(214, 207, 194, 0.34);
-  background: rgba(49, 53, 59, 0.72);
-  color: #f2eee4;
-  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(242, 238, 228, 0.84);
+  font-size: 15px;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
 .icon-action-btn:hover {
-  border-color: rgba(214, 207, 194, 0.54);
-  background: rgba(63, 67, 73, 0.82);
+  border-color: rgba(214, 207, 194, 0.34);
+  background: rgba(63, 67, 73, 0.34);
+  color: #f3eee3;
 }
 
 .icon-action-btn:focus-visible {
@@ -867,15 +868,21 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
 }
 
 .icon-action-btn.is-add {
-  border-color: rgba(157, 211, 176, 0.5);
-  background: rgba(65, 107, 81, 0.78);
-  color: #eef9f2;
-  font-size: 16px;
+  border-color: transparent;
+  background: transparent;
+  color: rgba(242, 238, 228, 0.84);
+  font-size: 15px;
 }
 
 .icon-action-btn.is-add:hover {
-  border-color: rgba(157, 211, 176, 0.7);
-  background: rgba(73, 120, 90, 0.88);
+  border-color: rgba(214, 207, 194, 0.34);
+  background: rgba(63, 67, 73, 0.34);
+  color: #f3eee3;
+}
+
+.icon-action-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .section-body { font-size: 15px; color: #ece6db; line-height: 1.8; white-space: pre-wrap; max-width: 82ch; }

@@ -6,7 +6,7 @@
   "targetArchitecture": null,
   "status": "pending",
   "created": "2026-04-24",
-  "lastUpdated": "2026-04-29T13:47:42.792Z",
+  "lastUpdated": "2026-04-29T21:24:09.004Z",
   "lastUpdatedNote": "T-01, T-02 completed. CLI infrastructure and task discovery logic implemented.",
   "notes": null,
   "phases": [
@@ -161,23 +161,23 @@
       "definitionOfDone": [
         {
           "description": "Project initialized with TypeScript",
-          "completed": true
+          "completed": false
         },
         {
           "description": "CLI accepts plan-*.json path argument",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script validates JSON against schema.json",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script exits with clear error if JSON is invalid or missing",
-          "completed": true
+          "completed": false
         },
         {
           "description": "Script prints plan title and task count on success",
-          "completed": true
+          "completed": false
         }
       ],
       "decision": null,

@@ -52,6 +52,7 @@ let sectionStatusCatalog = {
 };
 
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
+const ADD_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 const STATUS_SORT_ORDER = ['pending', 'draft', 'in_progress', 'in_review', 'approved', 'implemented', 'completed', 'skipped', 'cancelled'];
@@ -374,7 +375,7 @@ function renderPlanDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Phases</div>
-          <button type="button" class="icon-action-btn${phases.length ? '' : ' is-add'}" onclick="enablePlanPhasesEditFromEvent(event)" aria-label="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}" title="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}">${phases.length ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${phases.length ? '' : ' is-add'}" onclick="enablePlanPhasesEditFromEvent(event)" aria-label="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}" title="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}">${phases.length ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${phasesChips || ''}
       </div>
@@ -402,7 +403,7 @@ function renderPlanDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Objective</div>
-          <button type="button" class="icon-action-btn${currentObjective ? '' : ' is-add'}" onclick="enablePlanObjectiveEditFromEvent(event)" aria-label="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}" title="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}">${currentObjective ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${currentObjective ? '' : ' is-add'}" onclick="enablePlanObjectiveEditFromEvent(event)" aria-label="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}" title="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}">${currentObjective ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${currentObjective ? `<div class="section-body">${escapeHtml(currentObjective)}</div>` : ''}
       </div>
@@ -427,7 +428,7 @@ function renderPlanDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Notes</div>
-          <button type="button" class="icon-action-btn${currentNotes ? '' : ' is-add'}" onclick="enablePlanNotesEditFromEvent(event)" aria-label="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}" title="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}">${currentNotes ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${currentNotes ? '' : ' is-add'}" onclick="enablePlanNotesEditFromEvent(event)" aria-label="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}" title="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}">${currentNotes ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${currentNotes ? `<div class="section-body">${escapeHtml(currentNotes)}</div>` : ''}
       </div>
@@ -512,7 +513,7 @@ function renderPlanDetail() {
         : `
           <div class="task-title-row">
             ${titleValue ? `<div class="task-title">${escapeHtml(titleValue)}</div>` : ''}
-            <button type="button" class="icon-action-btn${titleValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'title')" aria-label="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}" title="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}">${titleValue ? '✎' : '+'}</button>
+            <button type="button" class="icon-action-btn${titleValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'title')" aria-label="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}" title="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}">${titleValue ? '✎' : ADD_ICON_SVG}</button>
           </div>
         `}
       ${isTaskFieldEditing(t.id, 'whatToDo')
@@ -527,7 +528,7 @@ function renderPlanDetail() {
           </div>
         `
         : `
-          <div class="task-notes-title-row"><strong>What to do</strong><button type="button" class="icon-action-btn${whatToDoValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'whatToDo')" aria-label="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}" title="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}">${whatToDoValue ? '✎' : '+'}</button></div>
+          <div class="task-notes-title-row"><strong>What to do</strong><button type="button" class="icon-action-btn${whatToDoValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'whatToDo')" aria-label="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}" title="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}">${whatToDoValue ? '✎' : ADD_ICON_SVG}</button></div>
           ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : ''}
         `}
 
@@ -559,7 +560,7 @@ function renderPlanDetail() {
                   </div>
                 </div>
               `
-              : `${phaseValue ? `<code>${escapeHtml(phaseValue)}</code>` : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')">${phaseValue ? '✎' : '+'}</button>`}
+              : `${phaseValue ? `<code>${escapeHtml(phaseValue)}</code>` : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')">${phaseValue ? '✎' : ADD_ICON_SVG}</button>`}
           </div>
         </div>
         <div class="task-meta-row">
@@ -575,7 +576,7 @@ function renderPlanDetail() {
                   </div>
                 </div>
               `
-              : `${dependsOnValue.length ? dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${dependsOnValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'dependsOn')">${dependsOnValue.length ? '✎' : '+'}</button>`}
+              : `${dependsOnValue.length ? dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${dependsOnValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'dependsOn')">${dependsOnValue.length ? '✎' : ADD_ICON_SVG}</button>`}
           </div>
         </div>
         <div class="task-meta-row">
@@ -591,7 +592,7 @@ function renderPlanDetail() {
                   </div>
                 </div>
               `
-              : `${filesValue.length ? filesValue.map(f => `<code>${escapeHtml(f)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${filesValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'files')">${filesValue.length ? '✎' : '+'}</button>`}
+              : `${filesValue.length ? filesValue.map(f => `<code>${escapeHtml(f)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${filesValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'files')">${filesValue.length ? '✎' : ADD_ICON_SVG}</button>`}
           </div>
         </div>
         <div class="task-meta-row">
@@ -607,7 +608,7 @@ function renderPlanDetail() {
                   </div>
                 </div>
               `
-              : `${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${t.endpoints?.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'endpoints')">${t.endpoints?.length ? '✎' : '+'}</button>`}
+              : `${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${t.endpoints?.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'endpoints')">${t.endpoints?.length ? '✎' : ADD_ICON_SVG}</button>`}
           </div>
         </div>
       </div>
@@ -664,7 +665,7 @@ function renderPlanDetail() {
         ` : `
           <div class="task-notes-title-row">
             <strong>Implementation Notes</strong>
-            <button type="button" class="icon-action-btn${t.implementationNotes ? '' : ' is-add'}" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}" title="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}">${t.implementationNotes ? '✎' : '+'}</button>
+            <button type="button" class="icon-action-btn${t.implementationNotes ? '' : ' is-add'}" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}" title="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}">${t.implementationNotes ? '✎' : ADD_ICON_SVG}</button>
           </div>
           ${t.implementationNotes ? `<div class="task-notes">${escapeHtml(t.implementationNotes)}</div>` : ''}
         `}
@@ -685,7 +686,7 @@ function renderPlanDetail() {
         ` : `
           <div class="task-notes-title-row">
             <strong>Task Notes</strong>
-            <button type="button" class="icon-action-btn${t.notes ? '' : ' is-add'}" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}" title="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}">${t.notes ? '✎' : '+'}</button>
+            <button type="button" class="icon-action-btn${t.notes ? '' : ' is-add'}" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}" title="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}">${t.notes ? '✎' : ADD_ICON_SVG}</button>
           </div>
           ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
         `}
@@ -790,7 +791,7 @@ function renderRequirementDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Overview</div>
-          <button type="button" class="icon-action-btn${currentOverview ? '' : ' is-add'}" onclick="enableRequirementOverviewEditFromEvent(event)" aria-label="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}" title="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}">${currentOverview ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${currentOverview ? '' : ' is-add'}" onclick="enableRequirementOverviewEditFromEvent(event)" aria-label="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}" title="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}">${currentOverview ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${currentOverview ? `<div class="section-body">${escapeHtml(currentOverview)}</div>` : ''}
       </div>
@@ -844,7 +845,7 @@ function renderRequirementDetail() {
       <div class="section-card">
         <div class="section-title-row current-state-title-row">
           <div class="section-title">Current State</div>
-          <button type="button" class="icon-action-btn${currentState.length ? '' : ' is-add'}" onclick="enableRequirementCurrentStateEditFromEvent(event)" aria-label="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}" title="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}">${currentState.length ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${currentState.length ? '' : ' is-add'}" onclick="enableRequirementCurrentStateEditFromEvent(event)" aria-label="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}" title="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}">${currentState.length ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${currentState.length ? `
           <div class="current-state-table-wrap">
@@ -893,7 +894,7 @@ function renderRequirementDetail() {
       <div class="section-card">
         <div class="section-title-row">
           <div class="section-title">Notes</div>
-          <button type="button" class="icon-action-btn${hasRequirementNotes ? '' : ' is-add'}" onclick="enableRequirementNotesEditFromEvent(event)" aria-label="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}" title="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}">${hasRequirementNotes ? '✎' : '+'}</button>
+          <button type="button" class="icon-action-btn${hasRequirementNotes ? '' : ' is-add'}" onclick="enableRequirementNotesEditFromEvent(event)" aria-label="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}" title="${hasRequirementNotes ? 'Modifica notes requirement' : 'Aggiungi notes requirement'}">${hasRequirementNotes ? '✎' : ADD_ICON_SVG}</button>
         </div>
         ${hasRequirementNotes ? `<div class="section-body">${escapeHtml(requirementNotes)}</div>` : ''}
       </div>
@@ -1004,7 +1005,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
   const actions = isFunctional ? `
     <div class="section-title-row" style="margin-bottom:12px">
       <div class="section-title">Requisiti funzionali</div>
-      <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>+</button>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
     ${creatingFunctionalRequirement ? `
       <div class="task-item" style="margin-bottom:12px">
