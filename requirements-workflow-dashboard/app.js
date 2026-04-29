@@ -27,10 +27,19 @@ let editingTaskField = null;
 let isTaskFieldUpdating = false;
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
+let sectionStatusFilters = {
+  plans: new Set(),
+  requirements: new Set()
+};
+let sectionStatusCatalog = {
+  plans: new Set(),
+  requirements: new Set()
+};
 
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
+const STATUS_SORT_ORDER = ['pending', 'draft', 'in_progress', 'in_review', 'approved', 'implemented', 'completed', 'skipped', 'cancelled'];
 
 const WELCOME_PLAN_ICON = `
   <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -108,7 +117,15 @@ function renderPlansList() {
   document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
   document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
 
-  container.innerHTML = plans.map(plan => `
+  renderStatusFilters();
+  const filteredPlans = getFilteredItems('plans');
+
+  if (!filteredPlans.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px">No plans match the selected status filters.</div>';
+    return;
+  }
+
+  container.innerHTML = filteredPlans.map(plan => `
     <div class="plan-item" data-id="${escapeHtml(plan.id)}" onclick="selectPlanByEncodedId('${encodeURIComponent(plan.id)}')">
       <div class="plan-item-header">
         <span class="plan-item-id">${escapeHtml(plan.id)}</span>
@@ -128,7 +145,15 @@ function renderRequirementsList() {
   document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
   document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
 
-  container.innerHTML = requirements.map(req => `
+  renderStatusFilters();
+  const filteredRequirements = getFilteredItems('requirements');
+
+  if (!filteredRequirements.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px">No requirements match the selected status filters.</div>';
+    return;
+  }
+
+  container.innerHTML = filteredRequirements.map(req => `
     <div class="plan-item" data-id="${escapeHtml(req.id)}" onclick="selectRequirementByEncodedId('${encodeURIComponent(req.id)}')">
       <div class="plan-item-header">
         <span class="plan-item-id">${escapeHtml(req.id)}</span>
@@ -141,6 +166,73 @@ function renderRequirementsList() {
         <span>${req.storiesCount || 0} US</span>
       </div>
     </div>
+  `).join('');
+}
+
+function getItemStatus(item, section) {
+  if (section === 'requirements') {
+    return String(item?.status || 'pending').trim().toLowerCase();
+  }
+  return String(item?.status || 'pending').trim().toLowerCase();
+}
+
+function getStatusesForSection(section) {
+  const source = section === 'requirements' ? requirements : plans;
+  const statuses = Array.from(new Set(source.map(item => getItemStatus(item, section)).filter(Boolean)));
+  const orderMap = new Map(STATUS_SORT_ORDER.map((status, index) => [status, index]));
+
+  return statuses.sort((a, b) => {
+    const aRank = orderMap.has(a) ? orderMap.get(a) : Number.MAX_SAFE_INTEGER;
+    const bRank = orderMap.has(b) ? orderMap.get(b) : Number.MAX_SAFE_INTEGER;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.localeCompare(b);
+  });
+}
+
+function syncSectionFilterState(section, statuses) {
+  const current = sectionStatusFilters[section] || new Set();
+  const catalog = sectionStatusCatalog[section] || new Set();
+  if (!current.size) {
+    sectionStatusFilters[section] = new Set(statuses);
+    sectionStatusCatalog[section] = new Set(statuses);
+    return;
+  }
+
+  const next = new Set(Array.from(current).filter(status => statuses.includes(status)));
+  statuses.forEach(status => {
+    if (!catalog.has(status)) next.add(status);
+  });
+
+  sectionStatusCatalog[section] = new Set(statuses);
+  sectionStatusFilters[section] = next;
+}
+
+function getFilteredItems(section) {
+  const source = section === 'requirements' ? requirements : plans;
+  const enabledStatuses = sectionStatusFilters[section] || new Set();
+  return source.filter(item => enabledStatuses.has(getItemStatus(item, section)));
+}
+
+function renderStatusFilters() {
+  const filtersRoot = document.getElementById('statusFilters');
+  if (!filtersRoot) return;
+
+  const statuses = getStatusesForSection(currentSection);
+  syncSectionFilterState(currentSection, statuses);
+
+  if (!statuses.length) {
+    filtersRoot.innerHTML = '';
+    filtersRoot.classList.add('is-empty');
+    return;
+  }
+
+  const activeSet = sectionStatusFilters[currentSection] || new Set();
+  filtersRoot.classList.remove('is-empty');
+  filtersRoot.innerHTML = statuses.map(status => `
+    <label class="status-filter-option" title="${escapeHtml(formatStatus(status))}">
+      <input type="checkbox" data-status="${escapeHtml(status)}" ${activeSet.has(status) ? 'checked' : ''}>
+      <span>${escapeHtml(formatStatus(status))}</span>
+    </label>
   `).join('');
 }
 
@@ -857,6 +949,7 @@ function setSection(section) {
     document.getElementById('welcomeText').textContent = 'Choose a plan from the sidebar to view its details, stories, and tasks.';
     document.getElementById('searchInput').placeholder = 'Search plans, stories, tasks...';
     configurePlanTabs();
+    renderStatusFilters();
     renderPlansList();
   } else {
     welcomeIcon.innerHTML = WELCOME_REQUIREMENT_ICON;
@@ -866,6 +959,7 @@ function setSection(section) {
     document.getElementById('welcomeText').textContent = 'Choose a requirement from the sidebar to view its details.';
     document.getElementById('searchInput').placeholder = 'Search requirements, RF, RNF, stories...';
     configureRequirementTabs(true);
+    renderStatusFilters();
     renderRequirementsList();
   }
 }
@@ -2071,6 +2165,7 @@ const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
 const sidebarToggle = document.getElementById('sidebarToggle');
 const plansListElement = document.getElementById('plansList');
+const statusFiltersElement = document.getElementById('statusFilters');
 
 searchInput.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
@@ -2095,6 +2190,28 @@ plansListElement?.addEventListener('click', event => {
     selectRequirement(id);
   } else {
     selectPlan(id);
+  }
+});
+
+statusFiltersElement?.addEventListener('change', event => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+
+  const status = String(target.dataset.status || '').trim();
+  if (!status) return;
+
+  const currentSet = sectionStatusFilters[currentSection] || new Set();
+  if (target.checked) {
+    currentSet.add(status);
+  } else {
+    currentSet.delete(status);
+  }
+  sectionStatusFilters[currentSection] = currentSet;
+
+  if (currentSection === 'requirements') {
+    renderRequirementsList();
+  } else {
+    renderPlansList();
   }
 });
 

@@ -548,6 +548,45 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   color: rgba(224, 219, 209, 0.9);
 }
 
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(201, 193, 178, 0.16);
+  background: rgba(25, 27, 30, 0.92);
+}
+
+.status-filters.is-empty {
+  display: none;
+}
+
+.status-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid rgba(201, 193, 178, 0.22);
+  border-radius: 999px;
+  color: #d7d1c5;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.status-filter-option:hover {
+  background: rgba(98, 102, 109, 0.2);
+  border-color: rgba(213, 206, 193, 0.32);
+}
+
+.status-filter-option input {
+  accent-color: #bcb4a7;
+  width: 13px;
+  height: 13px;
+}
+
 .plan-item {
   position: relative;
   z-index: 0;
