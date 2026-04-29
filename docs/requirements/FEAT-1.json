@@ -76,6 +76,16 @@
       "id": "RNF-05",
       "title": "Manutenibilita",
       "description": "Modulo admin isolato e lazy-loaded, permessi in unico punto codice, estensione permessi/impostazioni senza cambi strutturali."
+    },
+    {
+      "id": "RNF-011",
+      "title": "dfdfasdfa",
+      "description": "oooooooooooooooooooo"
+    },
+    {
+      "id": "RNF-23232",
+      "title": "fdsafds",
+      "description": "fdsafdssssssssssssssss"
     }
   ],
   "userStories": [
@@ -579,6 +589,56 @@
         {
           "text": "dfasihdfoahsdofasdfa",
           "checked": false
+        }
+      ]
+    },
+    {
+      "id": "US-34343",
+      "title": "fdsafdsaf",
+      "asA": "fdsfasdfasd",
+      "iWant": "fdsafdsfasdf",
+      "soThat": "fdsfasdfasfdaf",
+      "acceptanceCriteria": [
+        {
+          "text": "fdsafdas fdsafd dsfa dsfasdfadfsa",
+          "checked": false
+        },
+        {
+          "text": "fdsf dfsadf fdasf sdafsddddddddddddddd",
+          "checked": false
+        },
+        {
+          "text": "fdsafdddddddddddddddddddddds",
+          "checked": false
+        },
+        {
+          "text": "fasdfadfsdfadsfaaaaaa",
+          "checked": false
+        },
+        {
+          "text": "fdsafdasfsd",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "US-33333",
+      "title": "fdsafsd",
+      "asA": "fdsafsdaf",
+      "iWant": "fdsafdsafadf",
+      "soThat": "dsafsdafdsfasdfadfsadfasddfsadfasd sodif oid fasoid oifsj sdoifja oidj f osidf aod fa",
+      "acceptanceCriteria": [
+        {
+          "text": "dfsdfdsofsdoafj",
+          "checked": true
+        },
+        {
+          "text": "fdsafdass sdf sdfa",
+          "checked": true
+        },
+        {
+          "text": "fdsa fdsa sdfa",
+          "checked": true
         }
       ]
     }

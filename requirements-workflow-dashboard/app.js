@@ -1521,7 +1521,62 @@ function enableCreateNonFunctionalRequirementFromEvent(event) { event.stopPropag
 function cancelCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); creatingNonFunctionalRequirement = false; newNonFunctionalRequirementId = ''; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; renderRequirementDetail(); }
 function proceedCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const idEl = document.getElementById('new-non-functional-requirement-id'); const nonFunctionalId = String(idEl?.value || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); newNonFunctionalRequirementId = nonFunctionalId; creatingNonFunctionalRequirementStep = 'details'; renderRequirementDetail(); setTimeout(() => document.getElementById('new-non-functional-requirement-title')?.focus(), 0); }
 function backCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const titleEl = document.getElementById('new-non-functional-requirement-title'); const descriptionEl = document.getElementById('new-non-functional-requirement-description'); newNonFunctionalRequirementTitle = String(titleEl?.value || '').trim(); newNonFunctionalRequirementDescription = String(descriptionEl?.value || '').trim(); creatingNonFunctionalRequirementStep = 'id'; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
-async function createNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const nonFunctionalId = String(newNonFunctionalRequirementId || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); const title = String(document.getElementById('new-non-functional-requirement-title')?.value || '').trim(); const description = String(document.getElementById('new-non-functional-requirement-description')?.value || '').trim(); if (!title || !description) return showToast('Titolo e descrizione sono obbligatori', 'error'); isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nonFunctionalId, title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create'); currentRequirement = await updatedRequirementRes.json(); creatingNonFunctionalRequirement = false; newNonFunctionalRequirementId = ''; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active'); renderRequirementDetail(); showToast('Requisito non funzionale aggiunto'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
+async function createNonFunctionalRequirementFromEvent(event) {
+  event.stopPropagation();
+  if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return;
+  const requirementId = currentRequirement.document?.id || currentRequirement.id;
+  if (!requirementId) return;
+  const nonFunctionalId = String(newNonFunctionalRequirementId || '').trim();
+  if (!nonFunctionalId) return showToast('Inserisci un ID', 'error');
+  if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error');
+  const title = String(document.getElementById('new-non-functional-requirement-title')?.value || '').trim();
+  const description = String(document.getElementById('new-non-functional-requirement-description')?.value || '').trim();
+  if (!title || !description) return showToast('Titolo e descrizione sono obbligatori', 'error');
+
+  isNonFunctionalRequirementUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nonFunctionalId, title, description })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to add non-functional requirement');
+    }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
+    currentRequirement = await updatedRequirementRes.json();
+    creatingNonFunctionalRequirement = false;
+    newNonFunctionalRequirementId = '';
+    creatingNonFunctionalRequirementStep = 'id';
+    newNonFunctionalRequirementTitle = '';
+    newNonFunctionalRequirementDescription = '';
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Requisito non funzionale aggiunto');
+    setTimeout(() => {
+      const cards = Array.from(document.querySelectorAll('#nonFunctionalList .task-item'));
+      const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === nonFunctionalId);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow .35s ease, transform .35s ease';
+      card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
+      card.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      }, 1200);
+    }, 0);
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    isNonFunctionalRequirementUpdating = false;
+    renderRequirementDetail();
+  }
+}
 function editNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; editingNonFunctionalRequirementId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); }
 function cancelNonFunctionalRequirementEditFromEvent(event) { event.stopPropagation(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); }
 async function saveNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); const nonFunctionalId = decodeURIComponent(encodedNonFunctionalId); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const title = String(document.getElementById(`non-functional-title-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); const description = String(document.getElementById(`non-functional-description-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update'); currentRequirement = await updatedRequirementRes.json(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale aggiornato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
@@ -1540,7 +1595,53 @@ function cancelStoryEditFromEvent(event) { event.stopPropagation(); editingStory
 function addStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const id = decodeURIComponent(encodedStoryId); const container = document.getElementById(`story-criteria-${encodeURIComponent(id)}`); if (!container) return; container.insertAdjacentHTML('beforeend', `<div style="display:flex;gap:8px;margin-bottom:8px"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(id)}" value="" style="flex:1"><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(id)}')">Rimuovi</button></div>`); }
 function removeStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const row = event.currentTarget?.closest('div'); const container = document.getElementById(`story-criteria-${encodedStoryId}`); if (!row || !container) return; const rows = container.querySelectorAll('[data-criterion-input]'); if (rows.length <= 1) return showToast('Deve rimanere almeno un criterio', 'error'); row.remove(); }
 async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); editingStoryId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
-async function createStoryFromEvent(event) { event.stopPropagation(); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { storyId: newStoryId, title: String(document.getElementById('story-title-new')?.value || ''), asA: String(document.getElementById('story-asa-new')?.value || ''), iWant: String(document.getElementById('story-iwant-new')?.value || ''), soThat: String(document.getElementById('story-sothat-new')?.value || '') }; const criteria = Array.from(document.querySelectorAll('#story-criteria-new [data-criterion-input]')).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to create story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); creatingStory = false; creatingStoryStep = 'id'; newStoryId = ''; showToast('User story aggiunta'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
+async function createStoryFromEvent(event) {
+  event.stopPropagation();
+  const requirementId = currentRequirement.document?.id || currentRequirement.id;
+  if (!requirementId) return;
+  const createdStoryId = String(newStoryId || '').trim();
+  const payload = {
+    storyId: newStoryId,
+    title: String(document.getElementById('story-title-new')?.value || ''),
+    asA: String(document.getElementById('story-asa-new')?.value || ''),
+    iWant: String(document.getElementById('story-iwant-new')?.value || ''),
+    soThat: String(document.getElementById('story-sothat-new')?.value || '')
+  };
+  const criteria = Array.from(document.querySelectorAll('#story-criteria-new [data-criterion-input]')).map(el => String(el.value || '').trim()).filter(Boolean);
+  if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error');
+  payload.acceptanceCriteria = criteria;
+  isStoryUpdating = true;
+  renderRequirementDetail();
+  try {
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to create story'); }
+    const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' });
+    await loadRequirements();
+    currentRequirement = await updated.json();
+    creatingStory = false;
+    creatingStoryStep = 'id';
+    newStoryId = '';
+    showToast('User story aggiunta');
+    setTimeout(() => {
+      const cards = Array.from(document.querySelectorAll('#userStoriesRequirementsList .task-item'));
+      const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === createdStoryId);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow .35s ease, transform .35s ease';
+      card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
+      card.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      }, 1200);
+    }, 0);
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    isStoryUpdating = false;
+    renderRequirementDetail();
+  }
+}
 function requestDeleteStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); deletingStoryId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
 function renderDeleteStoryModal() { if (!deletingStoryId) return ''; return `<div class="confirm-modal-overlay" onclick="closeDeleteStoryModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteStoryModalFromEvent(event)">×</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la user story <strong>${escapeHtml(deletingStoryId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteStoryFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteStoryModalFromEvent(event)">Annulla</button></div></div></div>`; }
 function closeDeleteStoryModalFromEvent(event) { event.stopPropagation(); deletingStoryId = null; renderRequirementDetail(); }
@@ -2994,6 +3095,7 @@ async function createOpenQuestionFromEvent(event) {
   if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
   const requirementId = currentRequirement.document?.id;
   if (!requirementId) return;
+  const createdOpenQuestionId = String(newOpenQuestionId || '').trim();
   const question = String(document.getElementById('new-open-question-question')?.value || '').trim();
   const answer = 'Non definito nel documento; richiesta conferma.';
   const status = 'open';
@@ -3018,6 +3120,19 @@ async function createOpenQuestionFromEvent(event) {
     newOpenQuestionStatus = 'open';
     renderRequirementDetail();
     showToast('Open question creata');
+    setTimeout(() => {
+      const cards = Array.from(document.querySelectorAll('#openQuestionsList .task-item'));
+      const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === createdOpenQuestionId);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow .35s ease, transform .35s ease';
+      card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
+      card.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      }, 1200);
+    }, 0);
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
