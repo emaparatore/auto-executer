@@ -345,7 +345,7 @@ body.loading .main {
   background: linear-gradient(180deg, rgba(26, 28, 31, 0.95), rgba(22, 24, 27, 0.96));
   border-radius: var(--radius);
   border: 1px solid var(--stroke);
-  overflow: visible;
+  overflow: hidden;
   box-shadow: var(--shadow-soft);
   height: var(--sidebar-list-height, calc(100dvh - 170px));
   max-height: var(--sidebar-list-height, calc(100dvh - 170px));
@@ -360,6 +360,9 @@ body.loading .main {
   display: flex;
   align-items: stretch;
   flex: 0 0 auto;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  overflow: hidden;
 }
 
 #plansList {
@@ -450,6 +453,14 @@ body.loading .main {
   border-bottom: 2px solid transparent;
   border-radius: 0;
   margin-bottom: -1px;
+}
+
+.plans-list-header .section-switch-tab:first-child {
+  border-top-left-radius: var(--radius);
+}
+
+.plans-list-header .section-switch-tab:last-child {
+  border-top-right-radius: var(--radius);
 }
 
 .switch-icon {
