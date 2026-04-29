@@ -352,7 +352,7 @@ body.loading .main {
     linear-gradient(180deg, rgba(20, 21, 24, 0.96), rgba(16, 18, 21, 0.98)),
     radial-gradient(900px 600px at -30% 0%, rgba(158, 151, 140, 0.12), transparent 68%);
   box-shadow: 16px 0 38px rgba(4, 6, 7, 0.42);
-  padding: 18px 0;
+  padding: 18px 12px;
 }
 
 .plans-list {
@@ -493,7 +493,7 @@ body.loading .main {
 .plan-item {
   position: relative;
   z-index: 0;
-  padding: 18px 18px 16px;
+  padding: 18px 20px 16px;
   border-bottom: 0;
   cursor: pointer;
   transition: all 0.2s;
@@ -1547,7 +1547,7 @@ details.summary-block { margin-top: 10px; }
     position: static;
     border-right: 0;
     box-shadow: none;
-    padding: 0;
+    padding: 0 10px;
   }
   .plans-list {
     height: auto;
