@@ -146,7 +146,6 @@ function renderRequirementsList() {
 
 async function selectPlan(id) {
   if (currentSection !== 'plans') return;
-  closeSidebarOnMobile();
   document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 
@@ -602,7 +601,6 @@ function renderPlanDetail() {
 
 async function selectRequirement(id) {
   if (currentSection !== 'requirements') return;
-  closeSidebarOnMobile();
   document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 
@@ -2029,36 +2027,30 @@ function escapeHtml(str) {
     .replaceAll("'", '&#39;');
 }
 
-function isMobileViewport() {
-  return window.matchMedia('(max-width: 900px)').matches;
-}
+function setDesktopSidebarCollapsed(collapsed) {
+  const shouldCollapse = Boolean(collapsed);
+  document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
 
-function setMobileSidebarOpen(open) {
-  const shouldOpen = Boolean(open && isMobileViewport());
-  document.body.classList.toggle('sidebar-open', shouldOpen);
   const toggleButton = document.getElementById('sidebarToggle');
   const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebarBackdrop');
+  const sidebarContent = sidebar?.querySelector('.plans-list');
+
   if (toggleButton) {
-    toggleButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-    toggleButton.setAttribute('aria-label', shouldOpen ? 'Chiudi sidebar' : 'Apri sidebar');
+    toggleButton.setAttribute('aria-expanded', shouldCollapse ? 'false' : 'true');
+    toggleButton.setAttribute('aria-label', shouldCollapse ? 'Apri sidebar' : 'Chiudi sidebar');
   }
+
   if (sidebar) {
-    sidebar.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+    sidebar.setAttribute('aria-hidden', 'false');
   }
-  if (backdrop) {
-    backdrop.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+
+  if (sidebarContent) {
+    sidebarContent.setAttribute('aria-hidden', shouldCollapse ? 'true' : 'false');
   }
 }
 
-function closeSidebarOnMobile() {
-  if (!isMobileViewport()) return;
-  setMobileSidebarOpen(false);
-}
-
-function toggleSidebarOnMobile() {
-  if (!isMobileViewport()) return;
-  setMobileSidebarOpen(!document.body.classList.contains('sidebar-open'));
+function toggleSidebar() {
+  setDesktopSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
 }
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -2091,7 +2083,7 @@ searchInput.addEventListener('input', e => {
 });
 
 sidebarToggle?.addEventListener('click', () => {
-  toggleSidebarOnMobile();
+  toggleSidebar();
 });
 
 plansListElement?.addEventListener('click', event => {
@@ -2118,7 +2110,7 @@ document.addEventListener('click', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeSidebarOnMobile();
+    setDesktopSidebarCollapsed(true);
   }
 });
 
@@ -2176,10 +2168,9 @@ Promise.all([loadPlans(), loadRequirements()])
     updateSidebarHeight();
     window.addEventListener('resize', updateSidebarHeight);
     window.addEventListener('resize', () => {
-      if (!isMobileViewport()) {
-        setMobileSidebarOpen(false);
-      }
+      setDesktopSidebarCollapsed(document.body.classList.contains('sidebar-collapsed'));
     });
+    setDesktopSidebarCollapsed(false);
     setSection('plans');
   })
   .catch(error => {
