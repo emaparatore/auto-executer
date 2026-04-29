@@ -8,7 +8,7 @@
     "sourcePath": "docs/requirements/FEAT-1.md",
     "notes": "Conversione da markdown a JSON per integrazione requirements workflow"
   },
-  "overview": "Area amministrativa riservata per gestione utenti, ruoli, configurazioni e monitoraggio sistema, con autorizzazione RBAC a permessi granulari e bootstrap SuperAdmin da variabili d'ambiente.",
+  "overview": "Area amministrativa riservata per gestione utenti, ruoli, configurazioni e monitoraggio sistema, con autorizzazione RBAC a permessi granulari e bootstrap SuperAdmin da variabili d'ambiente",
   "domainContext": {
     "permissionsModel": {
       "description": "Permesso atomico Risorsa.Azione; Ruolo come insieme permessi; Utente con 0..n ruoli e permessi effettivi come unione.",

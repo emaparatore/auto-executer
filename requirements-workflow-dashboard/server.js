@@ -219,6 +219,72 @@ app.get('/api/requirements/:id', (req, res) => {
   res.json(requirement.data);
 });
 
+app.patch('/api/requirements/:id/overview', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ error: 'Requirement not found' });
+  }
+
+  const { overview } = req.body || {};
+  if (typeof overview !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "overview" must be a string.' });
+  }
+
+  const { filePath, data } = requirement;
+  data.overview = overview.trim();
+  writeRequirement(filePath, data);
+
+  res.json({
+    ok: true,
+    requirementId: data.document?.id || req.params.id,
+    overview: data.overview
+  });
+});
+
+app.patch('/api/requirements/:id/current-state', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ error: 'Requirement not found' });
+  }
+
+  const { currentState } = req.body || {};
+  if (!Array.isArray(currentState) || !currentState.every(row => row && typeof row === 'object')) {
+    return res.status(400).json({ error: 'Invalid payload. "currentState" must be an array of objects.' });
+  }
+
+  const { filePath, data } = requirement;
+  data.currentState = currentState;
+  writeRequirement(filePath, data);
+
+  res.json({
+    ok: true,
+    requirementId: data.document?.id || req.params.id,
+    currentState: data.currentState
+  });
+});
+
+app.patch('/api/requirements/:id/domain-context', (req, res) => {
+  const requirement = readRequirementById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ error: 'Requirement not found' });
+  }
+
+  const { domainContext } = req.body || {};
+  if (!domainContext || typeof domainContext !== 'object' || Array.isArray(domainContext)) {
+    return res.status(400).json({ error: 'Invalid payload. "domainContext" must be an object.' });
+  }
+
+  const { filePath, data } = requirement;
+  data.domainContext = domainContext;
+  writeRequirement(filePath, data);
+
+  res.json({
+    ok: true,
+    requirementId: data.document?.id || req.params.id,
+    domainContext: data.domainContext
+  });
+});
+
 app.patch('/api/requirements/:id/stories/:storyId/acceptance/:index', (req, res) => {
   const requirement = readRequirementById(req.params.id);
   if (!requirement) {

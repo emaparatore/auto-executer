@@ -27,6 +27,12 @@ let editingTaskField = null;
 let isTaskFieldUpdating = false;
 let editingOpenQuestionId = null;
 let isOpenQuestionUpdating = false;
+let isRequirementOverviewEditing = false;
+let isRequirementOverviewUpdating = false;
+let isRequirementCurrentStateEditing = false;
+let isRequirementCurrentStateUpdating = false;
+let isRequirementDomainContextEditing = false;
+let isRequirementDomainContextUpdating = false;
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -701,6 +707,12 @@ async function selectRequirement(id) {
   editingAcceptanceStoryId = null;
   acceptanceFocusTarget = null;
   editingOpenQuestionId = null;
+  isRequirementOverviewEditing = false;
+  isRequirementOverviewUpdating = false;
+  isRequirementCurrentStateEditing = false;
+  isRequirementCurrentStateUpdating = false;
+  isRequirementDomainContextEditing = false;
+  isRequirementDomainContextUpdating = false;
   renderRequirementDetail();
 }
 
@@ -740,16 +752,92 @@ function renderRequirementDetail() {
     <div class="stat-card stat-tasks-done"><div class="stat-value">${stories.length}</div><div class="stat-label">User Stories</div></div>
   `;
 
-  const overviewChunks = [];
-  if (data.overview) {
-    overviewChunks.push(`<div class="section-card"><div class="section-title">Overview</div><div class="section-body">${escapeHtml(data.overview)}</div></div>`);
-  }
-  if (Array.isArray(data.currentState) && data.currentState.length) {
-    overviewChunks.push(`<div class="section-card"><div class="section-title">Current State</div>${data.currentState.map(row => `<div class="story-tasks"><strong>${escapeHtml(row.area)} (${escapeHtml(row.status)})</strong>: ${escapeHtml(row.notes)}</div>`).join('')}</div>`);
-  }
-  if (data.domainContext) {
-    overviewChunks.push(`<div class="section-card"><div class="section-title">Domain Context</div><div class="section-body">${escapeHtml(JSON.stringify(data.domainContext, null, 2))}</div></div>`);
-  }
+  const currentOverview = typeof data.overview === 'string' ? data.overview : '';
+  const overviewSection = isRequirementOverviewEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Overview</span>
+          <span class="task-dod-hint">Edit mode attiva</span>
+        </div>
+        <div class="plan-notes-form">
+          <textarea id="requirement-overview-input" class="plan-notes-input" rows="6" ${isRequirementOverviewUpdating ? 'disabled' : ''}>${escapeHtml(currentOverview)}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="saveRequirementOverviewFromEvent(event)" ${isRequirementOverviewUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementOverviewEditFromEvent(event)" ${isRequirementOverviewUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Overview</div>
+          <button type="button" class="icon-action-btn${currentOverview ? '' : ' is-add'}" onclick="enableRequirementOverviewEditFromEvent(event)" aria-label="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}" title="${currentOverview ? 'Modifica overview requirement' : 'Aggiungi overview requirement'}">${currentOverview ? '✎' : '+'}</button>
+        </div>
+        ${currentOverview ? `<div class="section-body">${escapeHtml(currentOverview)}</div>` : ''}
+      </div>
+    `;
+
+  const overviewChunks = [overviewSection];
+  const currentState = Array.isArray(data.currentState) ? data.currentState : [];
+  const currentStateJson = JSON.stringify(currentState, null, 2);
+  const currentStateSection = isRequirementCurrentStateEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Current State</span>
+          <span class="task-dod-hint">Edit mode attiva (JSON)</span>
+        </div>
+        <div class="plan-notes-form">
+          <textarea id="requirement-current-state-input" class="plan-notes-input" rows="10" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>${escapeHtml(currentStateJson)}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="saveRequirementCurrentStateFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementCurrentStateEditFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Current State</div>
+          <button type="button" class="icon-action-btn${currentState.length ? '' : ' is-add'}" onclick="enableRequirementCurrentStateEditFromEvent(event)" aria-label="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}" title="${currentState.length ? 'Modifica current state requirement' : 'Aggiungi current state requirement'}">${currentState.length ? '✎' : '+'}</button>
+        </div>
+        ${currentState.map(row => `<div class="story-tasks"><strong>${escapeHtml(row.area)} (${escapeHtml(row.status)})</strong>: ${escapeHtml(row.notes)}</div>`).join('')}
+      </div>
+    `;
+  overviewChunks.push(currentStateSection);
+
+  const domainContext = data.domainContext && typeof data.domainContext === 'object' ? data.domainContext : {};
+  const domainContextJson = JSON.stringify(domainContext, null, 2);
+  const hasDomainContext = Object.keys(domainContext).length > 0;
+  const domainContextSection = isRequirementDomainContextEditing
+    ? `
+      <div class="section-card">
+        <div class="task-dod-title">
+          <span>Domain Context</span>
+          <span class="task-dod-hint">Edit mode attiva (JSON)</span>
+        </div>
+        <div class="plan-notes-form">
+          <textarea id="requirement-domain-context-input" class="plan-notes-input" rows="10" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>${escapeHtml(domainContextJson)}</textarea>
+          <div class="plan-notes-actions">
+            <button type="button" class="open-question-btn" onclick="saveRequirementDomainContextFromEvent(event)" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementDomainContextEditFromEvent(event)" ${isRequirementDomainContextUpdating ? 'disabled' : ''}>Annulla</button>
+          </div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="section-card">
+        <div class="section-title-row">
+          <div class="section-title">Domain Context</div>
+          <button type="button" class="icon-action-btn${hasDomainContext ? '' : ' is-add'}" onclick="enableRequirementDomainContextEditFromEvent(event)" aria-label="${hasDomainContext ? 'Modifica domain context requirement' : 'Aggiungi domain context requirement'}" title="${hasDomainContext ? 'Modifica domain context requirement' : 'Aggiungi domain context requirement'}">${hasDomainContext ? '✎' : '+'}</button>
+        </div>
+        ${hasDomainContext ? `<div class="section-body">${escapeHtml(domainContextJson)}</div>` : ''}
+      </div>
+    `;
+  overviewChunks.push(domainContextSection);
   document.getElementById('overviewContent').innerHTML = `<div class="overview-sections">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
   document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements');
@@ -938,6 +1026,12 @@ function setSection(section) {
   openTaskNotesIds = new Set();
   editingTaskField = null;
   isTaskFieldUpdating = false;
+  isRequirementOverviewEditing = false;
+  isRequirementOverviewUpdating = false;
+  isRequirementCurrentStateEditing = false;
+  isRequirementCurrentStateUpdating = false;
+  isRequirementDomainContextEditing = false;
+  isRequirementDomainContextUpdating = false;
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
 
@@ -1886,6 +1980,214 @@ function handleAcceptanceItemKeydown(event) {
   items[nextIndex]?.focus();
 }
 
+function enableRequirementOverviewEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementOverviewUpdating) return;
+  if (isRequirementOverviewEditing) return;
+  isRequirementOverviewEditing = true;
+  renderRequirementDetail();
+}
+
+function enableRequirementOverviewEditFromEvent(event) {
+  event.stopPropagation();
+  enableRequirementOverviewEdit();
+}
+
+function cancelRequirementOverviewEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementOverviewUpdating) return;
+  if (!isRequirementOverviewEditing) return;
+  isRequirementOverviewEditing = false;
+  renderRequirementDetail();
+}
+
+function cancelRequirementOverviewEditFromEvent(event) {
+  event.stopPropagation();
+  cancelRequirementOverviewEdit();
+}
+
+async function saveRequirementOverview() {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementOverviewEditing || isRequirementOverviewUpdating) return;
+  const overviewEl = document.getElementById('requirement-overview-input');
+  if (!overviewEl) return;
+
+  const overview = String(overviewEl.value || '');
+  const previousOverview = typeof currentRequirement.overview === 'string' ? currentRequirement.overview : '';
+
+  currentRequirement.overview = overview;
+  isRequirementOverviewUpdating = true;
+  renderRequirementDetail();
+
+  try {
+    const requirementId = currentRequirement.document?.id || currentRequirement.id;
+    if (!requirementId) throw new Error('Requirement ID non trovato');
+
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/overview`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ overview })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Unable to update requirement overview');
+    }
+
+    const [updatedRequirementRes] = await Promise.all([
+      fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }),
+      loadRequirements()
+    ]);
+
+    if (!updatedRequirementRes.ok) {
+      throw new Error('Unable to refresh requirement after overview update');
+    }
+
+    currentRequirement = await updatedRequirementRes.json();
+    isRequirementOverviewEditing = false;
+    document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
+    renderRequirementDetail();
+    showToast('Overview requirement salvata');
+  } catch (error) {
+    currentRequirement.overview = previousOverview;
+    renderRequirementDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isRequirementOverviewUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function saveRequirementOverviewFromEvent(event) {
+  event.stopPropagation();
+  saveRequirementOverview();
+}
+
+function enableRequirementCurrentStateEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementCurrentStateUpdating) return;
+  if (isRequirementCurrentStateEditing) return;
+  isRequirementCurrentStateEditing = true;
+  renderRequirementDetail();
+}
+
+function enableRequirementCurrentStateEditFromEvent(event) {
+  event.stopPropagation();
+  enableRequirementCurrentStateEdit();
+}
+
+function cancelRequirementCurrentStateEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementCurrentStateUpdating) return;
+  if (!isRequirementCurrentStateEditing) return;
+  isRequirementCurrentStateEditing = false;
+  renderRequirementDetail();
+}
+
+function cancelRequirementCurrentStateEditFromEvent(event) {
+  event.stopPropagation();
+  cancelRequirementCurrentStateEdit();
+}
+
+async function saveRequirementCurrentState() {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  const currentStateEl = document.getElementById('requirement-current-state-input');
+  if (!currentStateEl) return;
+  let parsed;
+  try { parsed = JSON.parse(String(currentStateEl.value || '[]')); } catch { showToast('Current State deve essere JSON valido', 'error'); return; }
+  if (!Array.isArray(parsed) || !parsed.every(row => row && typeof row === 'object')) { showToast('Current State deve essere un array di oggetti', 'error'); return; }
+
+  const previousCurrentState = Array.isArray(currentRequirement.currentState) ? currentRequirement.currentState : [];
+  currentRequirement.currentState = parsed;
+  isRequirementCurrentStateUpdating = true;
+  renderRequirementDetail();
+  try {
+    const requirementId = currentRequirement.document?.id || currentRequirement.id;
+    if (!requirementId) throw new Error('Requirement ID non trovato');
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/current-state`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentState: parsed })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update requirement current state'); }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after current state update');
+    currentRequirement = await updatedRequirementRes.json();
+    isRequirementCurrentStateEditing = false;
+    renderRequirementDetail();
+    showToast('Current state requirement salvato');
+  } catch (error) {
+    currentRequirement.currentState = previousCurrentState;
+    renderRequirementDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isRequirementCurrentStateUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function saveRequirementCurrentStateFromEvent(event) {
+  event.stopPropagation();
+  saveRequirementCurrentState();
+}
+
+function enableRequirementDomainContextEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementDomainContextUpdating) return;
+  if (isRequirementDomainContextEditing) return;
+  isRequirementDomainContextEditing = true;
+  renderRequirementDetail();
+}
+
+function enableRequirementDomainContextEditFromEvent(event) {
+  event.stopPropagation();
+  enableRequirementDomainContextEdit();
+}
+
+function cancelRequirementDomainContextEdit() {
+  if (!currentRequirement || currentSection !== 'requirements' || isRequirementDomainContextUpdating) return;
+  if (!isRequirementDomainContextEditing) return;
+  isRequirementDomainContextEditing = false;
+  renderRequirementDetail();
+}
+
+function cancelRequirementDomainContextEditFromEvent(event) {
+  event.stopPropagation();
+  cancelRequirementDomainContextEdit();
+}
+
+async function saveRequirementDomainContext() {
+  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementDomainContextEditing || isRequirementDomainContextUpdating) return;
+  const domainContextEl = document.getElementById('requirement-domain-context-input');
+  if (!domainContextEl) return;
+  let parsed;
+  try { parsed = JSON.parse(String(domainContextEl.value || '{}')); } catch { showToast('Domain Context deve essere JSON valido', 'error'); return; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) { showToast('Domain Context deve essere un oggetto JSON', 'error'); return; }
+
+  const previousDomainContext = currentRequirement.domainContext && typeof currentRequirement.domainContext === 'object' ? currentRequirement.domainContext : {};
+  currentRequirement.domainContext = parsed;
+  isRequirementDomainContextUpdating = true;
+  renderRequirementDetail();
+  try {
+    const requirementId = currentRequirement.document?.id || currentRequirement.id;
+    if (!requirementId) throw new Error('Requirement ID non trovato');
+    const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/domain-context`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainContext: parsed })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update requirement domain context'); }
+    const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
+    if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after domain context update');
+    currentRequirement = await updatedRequirementRes.json();
+    isRequirementDomainContextEditing = false;
+    renderRequirementDetail();
+    showToast('Domain context requirement salvato');
+  } catch (error) {
+    currentRequirement.domainContext = previousDomainContext;
+    renderRequirementDetail();
+    showToast(error.message, 'error');
+  } finally {
+    isRequirementDomainContextUpdating = false;
+    renderRequirementDetail();
+  }
+}
+
+function saveRequirementDomainContextFromEvent(event) {
+  event.stopPropagation();
+  saveRequirementDomainContext();
+}
+
 function enableOpenQuestionEdit(questionId) {
   if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
   if (!questionId) return;
@@ -2275,6 +2577,15 @@ window.enableOpenQuestionEditByEncodedId = enableOpenQuestionEditByEncodedId;
 window.cancelOpenQuestionEditFromEvent = cancelOpenQuestionEditFromEvent;
 window.handleOpenQuestionCardKeydown = handleOpenQuestionCardKeydown;
 window.saveOpenQuestionByEncodedIds = saveOpenQuestionByEncodedIds;
+window.enableRequirementOverviewEditFromEvent = enableRequirementOverviewEditFromEvent;
+window.cancelRequirementOverviewEditFromEvent = cancelRequirementOverviewEditFromEvent;
+window.saveRequirementOverviewFromEvent = saveRequirementOverviewFromEvent;
+window.enableRequirementCurrentStateEditFromEvent = enableRequirementCurrentStateEditFromEvent;
+window.cancelRequirementCurrentStateEditFromEvent = cancelRequirementCurrentStateEditFromEvent;
+window.saveRequirementCurrentStateFromEvent = saveRequirementCurrentStateFromEvent;
+window.enableRequirementDomainContextEditFromEvent = enableRequirementDomainContextEditFromEvent;
+window.cancelRequirementDomainContextEditFromEvent = cancelRequirementDomainContextEditFromEvent;
+window.saveRequirementDomainContextFromEvent = saveRequirementDomainContextFromEvent;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');
