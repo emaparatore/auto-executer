@@ -480,10 +480,10 @@ function renderPlanDetail() {
 
   document.getElementById('overviewContent').innerHTML = `
     <div class="overview-sections reading-flow">
-      ${planObjectiveSection}
-      ${p.targetArchitecture ? `<div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div>` : ''}
-      ${planPhasesSection}
-      ${planNotesSection}
+      <div id="anchor-overview-objective">${planObjectiveSection}</div>
+      ${p.targetArchitecture ? `<div id="anchor-overview-architecture"><div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div></div>` : ''}
+      <div id="anchor-overview-phases">${planPhasesSection}</div>
+      <div id="anchor-overview-notes">${planNotesSection}</div>
     </div>
   `;
 
@@ -491,7 +491,7 @@ function renderPlanDetail() {
     const storyStatus = normalizeStoryStatus(s.status);
     const taskList = Array.isArray(s.tasks) ? s.tasks.join(', ') : String(s.tasks || '');
     return `
-      <div class="story-item">
+      <div class="story-item" id="anchor-story-${escapeHtml(s.id)}">
         <div class="story-header">
           <span class="story-id">${escapeHtml(s.id)}</span>
           <span class="story-status status-${storyStatus}">${formatStatus(storyStatus)}</span>
@@ -520,7 +520,7 @@ function renderPlanDetail() {
       .join('');
 
     return `
-    <div class="task-item">
+    <div class="task-item" id="anchor-task-${escapeHtml(t.id)}">
       <div class="task-header">
         <span class="task-id">${escapeHtml(t.id)}</span>
         <div class="task-meta">
@@ -735,6 +735,7 @@ function renderPlanDetail() {
   document.getElementById('decisionsList').innerHTML = renderPlanDecisionItems(Array.isArray(p.decisions) ? p.decisions : []);
 
   restoreTaskDodFocusIfNeeded();
+  buildRightNav();
 }
 
 async function selectRequirement(id) {
@@ -854,7 +855,7 @@ function renderRequirementDetail() {
       </div>
     `;
 
-  const overviewChunks = [overviewSection];
+  const overviewChunks = [`<div id="anchor-overview-overview">${overviewSection}</div>`];
   const currentState = Array.isArray(data.currentState) ? data.currentState : [];
   const currentStateSection = isRequirementCurrentStateEditing
     ? `
@@ -928,7 +929,7 @@ function renderRequirementDetail() {
         ` : '<p class="empty-state">Nessun current state disponibile</p>'}
       </div>
     `;
-  overviewChunks.push(currentStateSection);
+  overviewChunks.push(`<div id="anchor-overview-currentstate">${currentStateSection}</div>`);
 
   const requirementNotes = typeof data.notes === 'string' ? data.notes : '';
   const hasRequirementNotes = requirementNotes.trim().length > 0;
@@ -956,7 +957,7 @@ function renderRequirementDetail() {
         ${hasRequirementNotes ? `<div class="section-body">${escapeHtml(requirementNotes)}</div>` : ''}
       </div>
     `;
-  overviewChunks.push(requirementNotesSection);
+  overviewChunks.push(`<div id="anchor-overview-notes">${requirementNotesSection}</div>`);
   document.getElementById('overviewContent').innerHTML = `<div class="overview-sections reading-flow">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
   document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements', true);
@@ -964,7 +965,7 @@ function renderRequirementDetail() {
 
   document.getElementById('architecturalDecisionsList').innerHTML = decisions.length
     ? decisions.map(item => `
-      <div class="task-item">
+      <div class="task-item" id="anchor-archdec-${escapeHtml(item.id || '')}">
         <div class="task-header"><span class="task-id">${escapeHtml(item.id || '-')}</span></div>
         <div class="task-title">${escapeHtml(item.title || item.id || 'Decision')}</div>
         <div class="task-what">${escapeHtml(item.decision || '')}</div>
@@ -975,7 +976,7 @@ function renderRequirementDetail() {
 
   document.getElementById('userStoriesRequirementsList').innerHTML = `${renderStoryCreateBox()}${stories.length
     ? stories.map(story => `
-      <div class="task-item">
+      <div class="task-item" id="anchor-userstory-${escapeHtml(story.id)}">
         <div class="task-header"><span class="task-id">${escapeHtml(story.id)}</span>${editingStoryId !== story.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="enableStoryEditByEncodedId(event, '${encodeURIComponent(story.id)}')">✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteStoryByEncodedId(event, '${encodeURIComponent(story.id)}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}</div>
         ${editingStoryId === story.id ? renderStoryEditForm(story) : `<div class="task-title">${escapeHtml(story.title || '')}</div>
         <div class="task-context-row"><span class="task-context-label">As a</span><span class="task-context-values">${escapeHtml(story.asA || '')}</span></div>
@@ -1033,6 +1034,7 @@ function renderRequirementDetail() {
     ` : ''}${openQuestions.length
     ? openQuestions.map(q => `
       <div
+        id="anchor-openq-${escapeHtml(q.id || '')}"
         class="task-item open-question-item${editingOpenQuestionId === q.id ? ' is-editing' : ''}${isOpenQuestionUpdating ? ' is-busy' : ''}"
         role="button"
         tabindex="0"
@@ -1075,6 +1077,7 @@ function renderRequirementDetail() {
     : '<p class="empty-state">No open questions</p>'}${renderDeleteOpenQuestionModal()}`;
 
   restoreAcceptanceFocusIfNeeded();
+  buildRightNav();
 }
 
 function renderRequirementItems(items, emptyText, isFunctional = false) {
@@ -1112,7 +1115,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
   ` : '';
   if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
   return `${actions}<div class="reading-flow">${items.map(item => `
-    <div class="task-item">
+    <div class="task-item" id="anchor-func-${escapeHtml(item.id || '')}">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
         ${isFunctional && editingFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
@@ -1493,7 +1496,7 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
   `;
   if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
   return `${actions}<div class="reading-flow">${items.map(item => `
-    <div class="task-item">
+    <div class="task-item" id="anchor-nonfunc-${escapeHtml(item.id || '')}">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
         ${editingNonFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
@@ -1551,7 +1554,7 @@ function renderPlanDecisionItems(items) {
   return `${actions}<div class="reading-flow decisions-reading-flow">${items.map(item => {
     const itemId = item.id || item.decision || '';
     return `
-      <div class="task-item">
+      <div class="task-item" id="anchor-decision-${escapeHtml(itemId)}">
         <div class="task-header">
           <span class="task-id">${escapeHtml(itemId || '-')}</span>
           ${editingPlanDecisionId !== itemId ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editPlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Modifica decision" title="Modifica decision" ${isPlanDecisionUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeletePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Elimina decision" title="Elimina decision" ${isPlanDecisionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
@@ -3569,6 +3572,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById(`tab-${tab.dataset.tab}`).classList.add('show');
     const contentEl = document.querySelector('.content');
     contentEl?.scrollTo({ top: 0, behavior: 'smooth' });
+    buildRightNav();
   });
 });
 
@@ -3699,6 +3703,93 @@ window.saveRequirementCurrentStateFromEvent = saveRequirementCurrentStateFromEve
 window.enableRequirementNotesEditFromEvent = enableRequirementNotesEditFromEvent;
 window.cancelRequirementNotesEditFromEvent = cancelRequirementNotesEditFromEvent;
 window.saveRequirementNotesFromEvent = saveRequirementNotesFromEvent;
+
+const RIGHT_NAV_TAB_CONFIG = {
+  tasks:                  { prefix: 'anchor-task-',      labelKey: 'id',    titleKey: 'title',    statusKey: 'status' },
+  stories:                { prefix: 'anchor-story-',     labelKey: 'id',    titleKey: 'description' },
+  decisions:              { prefix: 'anchor-decision-',  labelKey: 'id',    titleKey: 'description' },
+  functional:             { prefix: 'anchor-func-',      labelKey: 'id',    titleKey: 'title' },
+  'non-functional':       { prefix: 'anchor-nonfunc-',   labelKey: 'id',    titleKey: 'title' },
+  'architectural-decisions': { prefix: 'anchor-archdec-', labelKey: 'id',   titleKey: 'title' },
+  'user-stories':         { prefix: 'anchor-userstory-', labelKey: 'id',    titleKey: 'title' },
+  'open-questions':       { prefix: 'anchor-openq-',     labelKey: 'id',    titleKey: 'question' },
+};
+
+function buildRightNav() {
+  const navList = document.getElementById('rightNavList');
+  const rightNav = document.getElementById('rightNav');
+  if (!navList || !rightNav) return;
+
+  const detailView = document.getElementById('detailView');
+  if (!detailView || !detailView.classList.contains('show')) {
+    rightNav.classList.remove('visible');
+    return;
+  }
+
+  const activeTabName = document.querySelector('.tab.active')?.dataset.tab || 'overview';
+  const items = [];
+
+  if (activeTabName === 'overview') {
+    const container = document.getElementById('tab-overview');
+    if (container) {
+      container.querySelectorAll('[id^="anchor-overview-"]').forEach(el => {
+        const titleEl = el.querySelector('.section-title');
+        const label = titleEl ? titleEl.textContent.trim() : el.id.replace('anchor-overview-', '');
+        items.push({ id: el.id, label, statusClass: '' });
+      });
+    }
+  } else {
+    const config = RIGHT_NAV_TAB_CONFIG[activeTabName];
+    if (!config) {
+      rightNav.classList.remove('visible');
+      return;
+    }
+    const container = document.getElementById(`tab-${activeTabName}`);
+    if (container) {
+      container.querySelectorAll(`[id^="${config.prefix}"]`).forEach(el => {
+        const idSpan = el.querySelector('.task-id, .story-id');
+        const label = idSpan ? idSpan.textContent.trim() : el.id.slice(config.prefix.length);
+        const statusEl = el.querySelector('[class*="status-"]');
+        let statusClass = '';
+        if (statusEl) {
+          const match = [...statusEl.classList].find(c => c.startsWith('status-') && c !== 'status-');
+          if (match) statusClass = match;
+        }
+        items.push({ id: el.id, label, statusClass });
+      });
+    }
+  }
+
+  if (items.length === 0) {
+    navList.innerHTML = '<li class="right-nav-empty">— empty —</li>';
+  } else {
+    navList.innerHTML = items.map(item => `
+      <li class="right-nav-item">
+        <a class="right-nav-link" href="#${item.id}" onclick="rightNavScrollTo(event,'${item.id}')">
+          <span class="right-nav-id">${escapeHtml(item.label)}</span>
+          ${item.statusClass ? `<span class="right-nav-dot ${item.statusClass}"></span>` : ''}
+        </a>
+      </li>
+    `).join('');
+  }
+  rightNav.classList.add('visible');
+}
+
+function rightNavScrollTo(event, anchorId) {
+  event.preventDefault();
+  const target = document.getElementById(anchorId);
+  const content = document.querySelector('.content');
+  if (!target || !content) return;
+  const contentRect = content.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const offset = targetRect.top - contentRect.top + content.scrollTop - 80;
+  content.scrollTo({ top: offset, behavior: 'smooth' });
+
+  document.querySelectorAll('.right-nav-link').forEach(l => l.classList.remove('active'));
+  document.querySelector(`.right-nav-link[href="#${anchorId}"]`)?.classList.add('active');
+}
+
+window.rightNavScrollTo = rightNavScrollTo;
 
 function hideBootLoader() {
   document.body.classList.remove('loading');

@@ -74,6 +74,11 @@
     </aside>
     
     <div class="content">
+      <nav class="right-nav" id="rightNav" aria-label="Navigazione rapida">
+        <div class="right-nav-label">On this page</div>
+        <ul class="right-nav-list" id="rightNavList"></ul>
+      </nav>
+      <div class="content-main">
         <div class="welcome" id="welcome">
           <div class="welcome-icon" id="welcomeIcon" aria-hidden="true">
             <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,8 +90,7 @@
           <div class="welcome-title" id="welcomeTitle">Select a plan</div>
           <div class="welcome-text" id="welcomeText">Choose a plan from the sidebar to view its details, stories, and tasks.</div>
         </div>
-      
-      <div class="detail-view" id="detailView">
+        <div class="detail-view" id="detailView">
         <div class="detail-header">
           <div class="detail-title-row">
             <div>
@@ -160,8 +164,9 @@
         <div class="tab-content" id="tab-open-questions">
           <div class="tasks-list" id="openQuestionsList"></div>
         </div>
-      </div>
-    </div>
+        </div><!-- .detail-view -->
+      </div><!-- .content-main -->
+    </div><!-- .content -->
   </main>
   
   <script src="/app.js"></script>
