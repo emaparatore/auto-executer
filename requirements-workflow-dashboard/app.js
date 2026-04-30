@@ -1883,6 +1883,7 @@ function setSection(section) {
   isRequirementNotesUpdating = false;
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
+  buildRightNav();
 
   if (section === 'plans') {
     welcomeIcon.innerHTML = WELCOME_PLAN_ICON;
