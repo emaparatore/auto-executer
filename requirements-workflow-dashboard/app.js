@@ -159,7 +159,7 @@ function renderPlansList() {
   const filteredPlans = getFilteredItems('plans');
 
   if (!filteredPlans.length) {
-    container.innerHTML = '<div class="empty-state" style="padding:16px">No plans match the selected status filters.</div>';
+    container.innerHTML = '<div class="empty-state empty-state-padded">No plans match the selected status filters.</div>';
     return;
   }
 
@@ -187,7 +187,7 @@ function renderRequirementsList() {
   const filteredRequirements = getFilteredItems('requirements');
 
   if (!filteredRequirements.length) {
-    container.innerHTML = '<div class="empty-state" style="padding:16px">No requirements match the selected status filters.</div>';
+    container.innerHTML = '<div class="empty-state empty-state-padded">No requirements match the selected status filters.</div>';
     return;
   }
 
@@ -458,7 +458,7 @@ function renderPlanDetail() {
     `;
 
   document.getElementById('overviewContent').innerHTML = `
-    <div class="overview-sections">
+    <div class="overview-sections reading-flow">
       ${planObjectiveSection}
       ${p.targetArchitecture ? `<div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div>` : ''}
       ${planPhasesSection}
@@ -725,7 +725,7 @@ function renderPlanDetail() {
       <td>${escapeHtml(d.rationale || d.motivation || '')}</td>
       <td>${escapeHtml(d.date || '')}</td>
     </tr>
-  `).join('') || '<tr><td colspan="4" class="empty-state" style="text-align:center">No decisions recorded</td></tr>';
+  `).join('') || '<tr><td colspan="4" class="empty-state empty-state-centered">No decisions recorded</td></tr>';
 
   restoreTaskDodFocusIfNeeded();
 }
@@ -950,7 +950,7 @@ function renderRequirementDetail() {
       </div>
     `;
   overviewChunks.push(requirementNotesSection);
-  document.getElementById('overviewContent').innerHTML = `<div class="overview-sections">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
+  document.getElementById('overviewContent').innerHTML = `<div class="overview-sections reading-flow">${overviewChunks.join('') || '<p class="empty-state">No overview content</p>'}</div>`;
 
   document.getElementById('functionalList').innerHTML = renderRequirementItems(rf, 'No functional requirements', true);
   document.getElementById('nonFunctionalList').innerHTML = renderNonFunctionalRequirementItems(rnf, 'No non-functional requirements');
@@ -969,7 +969,7 @@ function renderRequirementDetail() {
   document.getElementById('userStoriesRequirementsList').innerHTML = `${renderStoryCreateBox()}${stories.length
     ? stories.map(story => `
       <div class="task-item">
-        <div class="task-header"><span class="task-id">${escapeHtml(story.id)}</span>${editingStoryId !== story.id ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="enableStoryEditByEncodedId(event, '${encodeURIComponent(story.id)}')">✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteStoryByEncodedId(event, '${encodeURIComponent(story.id)}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}</div>
+        <div class="task-header"><span class="task-id">${escapeHtml(story.id)}</span>${editingStoryId !== story.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="enableStoryEditByEncodedId(event, '${encodeURIComponent(story.id)}')">✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteStoryByEncodedId(event, '${encodeURIComponent(story.id)}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}</div>
         ${editingStoryId === story.id ? renderStoryEditForm(story) : `<div class="task-title">${escapeHtml(story.title || '')}</div>
         <div class="task-context-row"><span class="task-context-label">As a</span><span class="task-context-values">${escapeHtml(story.asA || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">I want</span><span class="task-context-values">${escapeHtml(story.iWant || '')}</span></div>
@@ -1007,8 +1007,8 @@ function renderRequirementDetail() {
     `).join('')
     : '<p class="empty-state">No user stories</p>'}${renderDeleteStoryModal()}`;
 
-  document.getElementById('openQuestionsList').innerHTML = `<div class="section-title-row" style="margin-bottom:12px"><div class="section-title">Open questions</div><button type="button" class="icon-action-btn is-add" onclick="enableOpenQuestionCreateFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingOpenQuestion ? `
-      <div class="task-item" style="margin-bottom:12px">
+  document.getElementById('openQuestionsList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Open questions</div><button type="button" class="icon-action-btn is-add" onclick="enableOpenQuestionCreateFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingOpenQuestion ? `
+      <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuova open question</span></div>
         <div class="plan-notes-form">
           ${creatingOpenQuestionStep === 'id' ? `
@@ -1016,7 +1016,7 @@ function renderRequirementDetail() {
             <input id="new-open-question-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionId)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
           ` : `
-            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newOpenQuestionId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newOpenQuestionId)}</span></div>
             <label class="open-question-label" for="new-open-question-question">Question</label>
             <input id="new-open-question-question" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionQuestion)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="createOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Salva</button><button type="button" class="open-question-btn is-secondary" onclick="backCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Indietro</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
@@ -1035,7 +1035,7 @@ function renderRequirementDetail() {
         onkeydown="handleOpenQuestionCardKeydown(event, '${encodeURIComponent(q.id || '')}')">
         <div class="task-header">
           <span class="task-id">${escapeHtml(q.id || '-')}</span>
-          <span style="display:flex;align-items:center;gap:6px">
+          <span class="inline-actions">
             ${editingOpenQuestionId !== q.id ? `<button type="button" class="icon-action-btn" onclick="requestDeleteOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" aria-label="Elimina open question" title="Elimina open question" ${isOpenQuestionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>` : ''}
             <span class="plan-item-status status-${q.status === 'resolved' ? 'completed' : 'pending'}">${q.status === 'resolved' ? 'Resolved' : 'Open'}</span>
           </span>
@@ -1072,12 +1072,12 @@ function renderRequirementDetail() {
 
 function renderRequirementItems(items, emptyText, isFunctional = false) {
   const actions = isFunctional ? `
-    <div class="section-title-row" style="margin-bottom:12px">
+    <div class="section-title-row compact">
       <div class="section-title">Requisiti funzionali</div>
       <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
     ${creatingFunctionalRequirement ? `
-      <div class="task-item" style="margin-bottom:12px">
+      <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuovo requisito funzionale</span></div>
         <div class="plan-notes-form">
           ${creatingFunctionalRequirementStep === 'id' ? `
@@ -1088,7 +1088,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
               <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           ` : `
-            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newFunctionalRequirementId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newFunctionalRequirementId)}</span></div>
             <label class="open-question-label" for="new-functional-requirement-title">Titolo</label>
             <input id="new-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newFunctionalRequirementTitle)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
             <label class="open-question-label" for="new-functional-requirement-description">Descrizione</label>
@@ -1104,11 +1104,11 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
     ` : ''}
   ` : '';
   if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
-  return `${actions}${items.map(item => `
+  return `${actions}<div class="reading-flow">${items.map(item => `
     <div class="task-item">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
-        ${isFunctional && editingFunctionalRequirementId !== item.id ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+        ${isFunctional && editingFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
       </div>
       ${isFunctional && editingFunctionalRequirementId === item.id ? `
         <div class="plan-notes-form">
@@ -1123,7 +1123,7 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
         </div>
       ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
     </div>
-  `).join('')}${isFunctional ? renderDeleteFunctionalRequirementModal() : ''}`;
+  `).join('')}</div>${isFunctional ? renderDeleteFunctionalRequirementModal() : ''}`;
 }
 
 function renderDeleteFunctionalRequirementModal() {
@@ -1453,12 +1453,12 @@ function handleDeleteFunctionalRequirementModalKeydown(event) {
 
 function renderNonFunctionalRequirementItems(items, emptyText) {
   const actions = `
-    <div class="section-title-row" style="margin-bottom:12px">
+    <div class="section-title-row compact">
       <div class="section-title">Requisiti non funzionali</div>
       <button type="button" class="icon-action-btn is-add" onclick="enableCreateNonFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito non funzionale" title="Aggiungi requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
     ${creatingNonFunctionalRequirement ? `
-      <div class="task-item" style="margin-bottom:12px">
+      <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuovo requisito non funzionale</span></div>
         <div class="plan-notes-form">
           ${creatingNonFunctionalRequirementStep === 'id' ? `
@@ -1469,7 +1469,7 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
               <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           ` : `
-            <div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newNonFunctionalRequirementId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newNonFunctionalRequirementId)}</span></div>
             <label class="open-question-label" for="new-non-functional-requirement-title">Titolo</label>
             <input id="new-non-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newNonFunctionalRequirementTitle)}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
             <label class="open-question-label" for="new-non-functional-requirement-description">Descrizione</label>
@@ -1485,11 +1485,11 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
     ` : ''}
   `;
   if (!items.length) return `${actions}<p class="empty-state">${emptyText}</p>`;
-  return `${actions}${items.map(item => `
+  return `${actions}<div class="reading-flow">${items.map(item => `
     <div class="task-item">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
-        ${editingNonFunctionalRequirementId !== item.id ? `<span style="display:flex;gap:8px"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+        ${editingNonFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
       </div>
       ${editingNonFunctionalRequirementId === item.id ? `
         <div class="plan-notes-form">
@@ -1504,7 +1504,7 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
         </div>
       ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
     </div>
-  `).join('')}${renderDeleteNonFunctionalRequirementModal()}`;
+  `).join('')}</div>${renderDeleteNonFunctionalRequirementModal()}`;
 }
 
 function renderDeleteNonFunctionalRequirementModal() {
@@ -1592,14 +1592,60 @@ function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPr
 async function confirmDeleteNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); const nonFunctionalId = deletingNonFunctionalRequirementId; if (!nonFunctionalId || !currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; deletingNonFunctionalRequirementId = null; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete'); currentRequirement = await updatedRequirementRes.json(); if (editingNonFunctionalRequirementId === nonFunctionalId) editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale eliminato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
 function handleDeleteNonFunctionalRequirementModalKeydown(event) { if (!deletingNonFunctionalRequirementId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeleteNonFunctionalRequirementModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
-function renderStoryEditForm(story) { const criteria = Array.isArray(story.acceptanceCriteria) ? story.acceptanceCriteria : []; return `<div class="plan-notes-form"><label class="open-question-label" for="story-title-${encodeURIComponent(story.id)}">Titolo</label><input id="story-title-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.title || '')}" ${isStoryUpdating ? 'disabled' : ''}><label class="open-question-label" for="story-asa-${encodeURIComponent(story.id)}">As a</label><input id="story-asa-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.asA || '')}" ${isStoryUpdating ? 'disabled' : ''}><label class="open-question-label" for="story-iwant-${encodeURIComponent(story.id)}">I want</label><input id="story-iwant-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.iWant || '')}" ${isStoryUpdating ? 'disabled' : ''}><label class="open-question-label" for="story-sothat-${encodeURIComponent(story.id)}">So that</label><input id="story-sothat-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.soThat || '')}" ${isStoryUpdating ? 'disabled' : ''}><div class="task-dod-title" style="margin-top:8px"><span>Acceptance Criteria</span></div><div id="story-criteria-${encodeURIComponent(story.id)}">${(criteria.length ? criteria : [{ text: '' }]).map(c => `<div style="display:flex;gap:8px;margin-bottom:8px"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(story.id)}" value="${escapeHtml(c?.text || '')}" ${isStoryUpdating ? 'disabled' : ''} style="flex:1"><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>Rimuovi</button></div>`).join('')}</div><button type="button" class="open-question-btn is-secondary" onclick="addStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>+ Criterio</button><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="saveStoryByEncodedId(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>Salva</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryEditFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div></div>`; }
-function renderStoryCreateBox() { return `<div class="section-title-row" style="margin-bottom:12px"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingStory ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${creatingStoryStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newStoryId)}" ${isStoryUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header" style="padding:0"><span class="task-id">ID: ${escapeHtml(newStoryId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div style="height:20px"></div>` : ''}`; }
+function renderStoryEditForm(story) {
+  const criteria = Array.isArray(story.acceptanceCriteria) ? story.acceptanceCriteria : [];
+  const criteriaRows = (criteria.length ? criteria : [{ text: '' }]).map(c => `
+    <div class="criterion-row">
+      <input
+        type="text"
+        class="plan-notes-input compact-input"
+        data-criterion-input="${encodeURIComponent(story.id)}"
+        value="${escapeHtml(c?.text || '')}"
+        ${isStoryUpdating ? 'disabled' : ''}>
+      <button
+        type="button"
+        class="open-question-btn is-secondary"
+        onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')"
+        ${isStoryUpdating ? 'disabled' : ''}>Rimuovi</button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="plan-notes-form">
+      <label class="open-question-label" for="story-title-${encodeURIComponent(story.id)}">Titolo</label>
+      <input id="story-title-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.title || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <label class="open-question-label" for="story-asa-${encodeURIComponent(story.id)}">As a</label>
+      <input id="story-asa-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.asA || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <label class="open-question-label" for="story-iwant-${encodeURIComponent(story.id)}">I want</label>
+      <input id="story-iwant-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.iWant || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <label class="open-question-label" for="story-sothat-${encodeURIComponent(story.id)}">So that</label>
+      <input id="story-sothat-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.soThat || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <div class="task-dod-title"><span>Acceptance Criteria</span></div>
+      <div id="story-criteria-${encodeURIComponent(story.id)}">${criteriaRows}</div>
+      <button type="button" class="open-question-btn is-secondary" onclick="addStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>+ Criterio</button>
+      <div class="plan-notes-actions">
+        <button type="button" class="open-question-btn" onclick="saveStoryByEncodedId(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>Salva</button>
+        <button type="button" class="open-question-btn is-secondary" onclick="cancelStoryEditFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderStoryCreateBox() {
+  return `<div class="section-title-row compact"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingStory ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${creatingStoryStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newStoryId)}" ${isStoryUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newStoryId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div class="spacer-20"></div>` : ''}`;
+}
 function enableStoryCreateFromEvent(event) { event.stopPropagation(); creatingStory = true; creatingStoryStep = 'id'; newStoryId = 'US-'; renderRequirementDetail(); setTimeout(() => { const el = document.getElementById('new-story-id'); if (!el) return; el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 0); }
 function cancelStoryCreateFromEvent(event) { event.stopPropagation(); creatingStory = false; creatingStoryStep = 'id'; newStoryId = ''; renderRequirementDetail(); }
 function proceedStoryCreateFromEvent(event) { event.stopPropagation(); const id = String(document.getElementById('new-story-id')?.value || '').trim(); if (!id) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.userStories || []).some(s => s.id === id)) return showToast('ID gia presente', 'error'); newStoryId = id; creatingStoryStep = 'details'; renderRequirementDetail(); }
 function enableStoryEditByEncodedId(event, encodedStoryId) { event.stopPropagation(); editingStoryId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
 function cancelStoryEditFromEvent(event) { event.stopPropagation(); editingStoryId = null; renderRequirementDetail(); }
-function addStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const id = decodeURIComponent(encodedStoryId); const container = document.getElementById(`story-criteria-${encodeURIComponent(id)}`); if (!container) return; container.insertAdjacentHTML('beforeend', `<div style="display:flex;gap:8px;margin-bottom:8px"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(id)}" value="" style="flex:1"><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(id)}')">Rimuovi</button></div>`); }
+function addStoryCriterionFromEvent(event, encodedStoryId) {
+  event.stopPropagation();
+  const id = decodeURIComponent(encodedStoryId);
+  const container = document.getElementById(`story-criteria-${encodeURIComponent(id)}`);
+  if (!container) return;
+  container.insertAdjacentHTML('beforeend', `<div class="criterion-row"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(id)}" value=""><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(id)}')">Rimuovi</button></div>`);
+}
 function removeStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const row = event.currentTarget?.closest('div'); const container = document.getElementById(`story-criteria-${encodedStoryId}`); if (!row || !container) return; const rows = container.querySelectorAll('[data-criterion-input]'); if (rows.length <= 1) return showToast('Deve rimanere almeno un criterio', 'error'); row.remove(); }
 async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); editingStoryId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
 async function createStoryFromEvent(event) {
@@ -3278,7 +3324,7 @@ async function runSearch(query) {
   const results = await res.json();
 
   if (results.length === 0) {
-    searchResults.innerHTML = '<div class="empty-state" style="padding:16px">No results found</div>';
+    searchResults.innerHTML = '<div class="empty-state empty-state-padded">No results found</div>';
     searchResults.classList.add('show');
     return;
   }
@@ -3384,7 +3430,7 @@ searchInput.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
   searchDebounceTimer = setTimeout(() => {
     runSearch(e.target.value).catch(error => {
-      searchResults.innerHTML = `<div class="error-state" style="padding:16px">${escapeHtml(error.message)}</div>`;
+      searchResults.innerHTML = `<div class="error-state empty-state-padded">${escapeHtml(error.message)}</div>`;
       searchResults.classList.add('show');
     });
   }, 200);
