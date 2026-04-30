@@ -3756,7 +3756,12 @@ function buildRightNav() {
           const match = [...statusEl.classList].find(c => c.startsWith('status-') && c !== 'status-');
           if (match) statusClass = match;
         }
-        items.push({ id: el.id, label, statusClass });
+        let title = '';
+        if (config.titleKey) {
+          const titleEl = el.querySelector('.task-title, .story-title');
+          title = titleEl ? titleEl.textContent.trim() : '';
+        }
+        items.push({ id: el.id, label, statusClass, title });
       });
     }
   }
@@ -3767,8 +3772,11 @@ function buildRightNav() {
     navList.innerHTML = items.map(item => `
       <li class="right-nav-item">
         <a class="right-nav-link" href="#${item.id}" onclick="rightNavScrollTo(event,'${item.id}')">
-          <span class="right-nav-id">${escapeHtml(item.label)}</span>
-          ${item.statusClass ? `<span class="right-nav-dot ${item.statusClass}"></span>` : ''}
+          <span class="right-nav-id-row">
+            <span class="right-nav-id">${escapeHtml(item.label)}</span>
+            ${item.statusClass ? `<span class="right-nav-dot ${item.statusClass}"></span>` : ''}
+          </span>
+          ${item.title ? `<span class="right-nav-title">${escapeHtml(item.title)}</span>` : ''}
         </a>
       </li>
     `).join('');

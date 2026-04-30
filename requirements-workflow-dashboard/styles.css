@@ -2283,7 +2283,7 @@ body {
   top: 0;
   align-self: flex-start;
   flex-shrink: 0;
-  width: 152px;
+  width: 300px;
   margin-left: 0;
   background: transparent;
   max-height: 80vh;
@@ -2319,17 +2319,40 @@ body {
 
 .right-nav-link {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 14px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 14px;
   text-decoration: none;
-  color: #7a7570;
+  color: #c2bab2;
   font-size: 11px;
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 500;
   border-left: 2px solid transparent;
   transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.right-nav-id-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+}
+
+.right-nav-title {
+  font-size: 10.5px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: #9b9089;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+  transition: color 0.12s;
+}
+
+.right-nav-link:hover .right-nav-title,
+.right-nav-link.active .right-nav-title {
+  color: inherit;
 }
 
 .right-nav-link:hover {
