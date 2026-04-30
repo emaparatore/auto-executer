@@ -58,6 +58,15 @@ let newNonFunctionalRequirementTitle = '';
 let newNonFunctionalRequirementDescription = '';
 let deletingNonFunctionalRequirementId = null;
 let deleteNonFunctionalModalReturnFocusEl = null;
+let editingPlanDecisionId = null;
+let isPlanDecisionUpdating = false;
+let creatingPlanDecision = false;
+let creatingPlanDecisionStep = 'id';
+let newPlanDecisionId = '';
+let newPlanDecisionDescription = '';
+let newPlanDecisionRationale = '';
+let deletingPlanDecisionId = null;
+let deletePlanDecisionModalReturnFocusEl = null;
 let editingStoryId = null;
 let isStoryUpdating = false;
 let creatingStory = false;
@@ -111,6 +120,10 @@ function updateSidebarHeight() {
 
 function isTaskFieldEditing(taskId, field) {
   return editingTaskField?.taskId === taskId && editingTaskField?.field === field;
+}
+
+function getCurrentDateIso() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function buildPhasesForEditor(plan) {
@@ -297,6 +310,14 @@ async function selectPlan(id) {
   openTaskNotesIds = new Set();
   editingTaskField = null;
   isTaskFieldUpdating = false;
+  editingPlanDecisionId = null;
+  isPlanDecisionUpdating = false;
+  creatingPlanDecision = false;
+  creatingPlanDecisionStep = 'id';
+  newPlanDecisionId = '';
+  newPlanDecisionDescription = '';
+  newPlanDecisionRationale = '';
+  deletingPlanDecisionId = null;
   renderPlanDetail();
   scrollWorkspaceToTop();
 }
@@ -718,14 +739,7 @@ function renderPlanDetail() {
   `;
   }).join('') || '<p class="empty-state">No tasks defined</p>';
 
-  document.getElementById('decisionsList').innerHTML = p.decisions?.map(d => `
-    <tr>
-      <td>${escapeHtml(d.id || d.decision || '')}</td>
-      <td>${escapeHtml(d.description || d.choice || '')}</td>
-      <td>${escapeHtml(d.rationale || d.motivation || '')}</td>
-      <td>${escapeHtml(d.date || '')}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="4" class="empty-state empty-state-centered">No decisions recorded</td></tr>';
+  document.getElementById('decisionsList').innerHTML = renderPlanDecisionItems(Array.isArray(p.decisions) ? p.decisions : []);
 
   restoreTaskDodFocusIfNeeded();
 }
@@ -1506,6 +1520,95 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
     </div>
   `).join('')}</div>${renderDeleteNonFunctionalRequirementModal()}`;
 }
+
+function renderPlanDecisionItems(items) {
+  const actions = `
+    <div class="section-title-row compact">
+      <div class="section-title">Decisions</div>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreatePlanDecisionFromEvent(event)" aria-label="Aggiungi decision" title="Aggiungi decision" ${isPlanDecisionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
+    </div>
+    ${creatingPlanDecision ? `
+      <div class="task-item compact">
+        <div class="task-header"><span class="task-id">Nuova decision</span></div>
+        <div class="plan-notes-form">
+          ${creatingPlanDecisionStep === 'id' ? `
+            <label class="open-question-label" for="new-plan-decision-id">ID</label>
+            <input id="new-plan-decision-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newPlanDecisionId)}" ${isPlanDecisionUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="proceedCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          ` : `
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newPlanDecisionId)}</span></div>
+            <label class="open-question-label" for="new-plan-decision-description">Description / Choice</label>
+            <textarea id="new-plan-decision-description" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(newPlanDecisionDescription)}</textarea>
+            <label class="open-question-label" for="new-plan-decision-rationale">Rationale</label>
+            <textarea id="new-plan-decision-rationale" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(newPlanDecisionRationale)}</textarea>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="createPlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          `}
+        </div>
+      </div>
+    ` : ''}
+  `;
+  if (!items.length) return `${actions}<p class="empty-state">No decisions recorded</p>${renderDeletePlanDecisionModal()}`;
+  return `${actions}<div class="reading-flow decisions-reading-flow">${items.map(item => {
+    const itemId = item.id || item.decision || '';
+    return `
+      <div class="task-item">
+        <div class="task-header">
+          <span class="task-id">${escapeHtml(itemId || '-')}</span>
+          ${editingPlanDecisionId !== itemId ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editPlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Modifica decision" title="Modifica decision" ${isPlanDecisionUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeletePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Elimina decision" title="Elimina decision" ${isPlanDecisionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+        </div>
+        ${editingPlanDecisionId === itemId ? `
+          <div class="plan-notes-form">
+            <label class="open-question-label" for="plan-decision-description-${encodeURIComponent(itemId)}">Description / Choice</label>
+            <textarea id="plan-decision-description-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(item.description || item.choice || '')}</textarea>
+            <label class="open-question-label" for="plan-decision-rationale-${encodeURIComponent(itemId)}">Rationale</label>
+            <textarea id="plan-decision-rationale-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(item.rationale || item.motivation || '')}</textarea>
+            <div class="plan-notes-actions">
+              <button type="button" class="open-question-btn" onclick="savePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" ${isPlanDecisionUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanDecisionEditFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+            </div>
+          </div>
+        ` : `<div class="task-title">${escapeHtml(item.description || item.choice || '')}</div><div class="task-what">${escapeHtml(item.rationale || item.motivation || '')}</div>${item.date ? `<div class="task-notes"><strong>Date:</strong> ${escapeHtml(item.date)}</div>` : ''}`}
+      </div>
+    `;
+  }).join('')}</div>${renderDeletePlanDecisionModal()}`;
+}
+
+function renderDeletePlanDecisionModal() {
+  if (!deletingPlanDecisionId) return '';
+  return `
+    <div class="confirm-modal-overlay" onclick="closeDeletePlanDecisionModalFromEvent(event)">
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-plan-decision-title" aria-describedby="delete-plan-decision-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeletePlanDecisionModalKeydown(event)">
+        <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeletePlanDecisionModalFromEvent(event)">×</button>
+        <div class="confirm-modal-title" id="delete-plan-decision-title">Conferma eliminazione</div>
+        <div class="confirm-modal-text" id="delete-plan-decision-text">Vuoi eliminare la decision <strong>${escapeHtml(deletingPlanDecisionId)}</strong>?</div>
+        <div class="plan-notes-actions confirm-modal-actions">
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeletePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeletePlanDecisionModalFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function enableCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; creatingPlanDecision = true; creatingPlanDecisionStep = 'id'; newPlanDecisionId = 'DEC-'; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); setTimeout(() => { const input = document.getElementById('new-plan-decision-id'); if (!input) return; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0); }
+function cancelCreatePlanDecisionFromEvent(event) { event.stopPropagation(); creatingPlanDecision = false; creatingPlanDecisionStep = 'id'; newPlanDecisionId = ''; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); }
+function proceedCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = String(document.getElementById('new-plan-decision-id')?.value || '').trim(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if ((currentPlan.decisions || []).some(item => (item.id || item.decision) === decisionId)) return showToast('ID gia presente', 'error'); newPlanDecisionId = decisionId; creatingPlanDecisionStep = 'details'; renderPlanDetail(); setTimeout(() => document.getElementById('new-plan-decision-description')?.focus(), 0); }
+function backCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; newPlanDecisionDescription = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); newPlanDecisionRationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); creatingPlanDecisionStep = 'id'; renderPlanDetail(); }
+async function createPlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const planId = currentPlan.id; if (!planId) return; const decisionId = String(newPlanDecisionId || '').trim(); const description = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); const rationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); const date = getCurrentDateIso(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if (!description || !rationale) return showToast('Descrizione e rationale sono obbligatori', 'error'); isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decisionId, description, rationale, date }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after create'); currentPlan = await updatedPlanRes.json(); creatingPlanDecision = false; creatingPlanDecisionStep = 'id'; newPlanDecisionId = ''; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); showToast('Decision aggiunta'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
+function editPlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; editingPlanDecisionId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); }
+function cancelPlanDecisionEditFromEvent(event) { event.stopPropagation(); editingPlanDecisionId = null; renderPlanDetail(); }
+async function savePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = decodeURIComponent(encodedDecisionId); const planId = currentPlan.id; if (!planId || !decisionId) return; const description = String(document.getElementById(`plan-decision-description-${encodeURIComponent(decisionId)}`)?.value || ''); const rationale = String(document.getElementById(`plan-decision-rationale-${encodeURIComponent(decisionId)}`)?.value || ''); isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, rationale }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update'); currentPlan = await updatedPlanRes.json(); editingPlanDecisionId = null; renderPlanDetail(); showToast('Decision aggiornata'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
+function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; deletePlanDecisionModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; deletingPlanDecisionId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (isPlanDecisionUpdating) return; deletingPlanDecisionId = null; renderPlanDetail(); if (deletePlanDecisionModalReturnFocusEl && typeof deletePlanDecisionModalReturnFocusEl.focus === 'function') setTimeout(() => deletePlanDecisionModalReturnFocusEl?.focus(), 0); deletePlanDecisionModalReturnFocusEl = null; }
+async function confirmDeletePlanDecisionFromEvent(event) { event.stopPropagation(); if (!deletingPlanDecisionId || !currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = deletingPlanDecisionId; deletingPlanDecisionId = null; const planId = currentPlan.id; if (!planId) return; isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete'); currentPlan = await updatedPlanRes.json(); if (editingPlanDecisionId === decisionId) editingPlanDecisionId = null; renderPlanDetail(); showToast('Decision eliminata'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
+function handleDeletePlanDecisionModalKeydown(event) { if (!deletingPlanDecisionId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeletePlanDecisionModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
 function renderDeleteNonFunctionalRequirementModal() {
   if (!deletingNonFunctionalRequirementId) return '';

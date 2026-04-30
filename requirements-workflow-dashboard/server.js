@@ -187,6 +187,85 @@ app.get('/api/plans/:id', (req, res) => {
   res.json(plan.data);
 });
 
+app.post('/api/plans/:id/decisions', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { decisionId, description, rationale } = req.body || {};
+  if (typeof decisionId !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "decisionId" must be a string.' });
+  }
+
+  const normalizedId = decisionId.trim();
+  const normalizedDescription = String(description || '').trim();
+  const normalizedRationale = String(rationale || '').trim();
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (!normalizedId) return res.status(400).json({ error: 'decisionId is required.' });
+  if (!normalizedDescription || !normalizedRationale) {
+    return res.status(400).json({ error: 'Description and rationale are required.' });
+  }
+
+  const { filePath, data } = plan;
+  const decisions = Array.isArray(data.decisions) ? data.decisions : [];
+  if (decisions.some(item => (item.id || item.decision) === normalizedId)) {
+    return res.status(409).json({ error: 'Decision ID already exists.' });
+  }
+
+  const newDecision = {
+    id: normalizedId,
+    description: normalizedDescription,
+    rationale: normalizedRationale,
+    date: today
+  };
+
+  data.decisions = [...decisions, newDecision];
+  writePlan(filePath, data);
+  res.status(201).json({ ok: true, item: newDecision });
+});
+
+app.patch('/api/plans/:id/decisions/:decisionId', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { description, rationale } = req.body || {};
+  if (typeof description !== 'string' || typeof rationale !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload. "description" and "rationale" must be strings.' });
+  }
+
+  const normalizedDescription = description.trim();
+  const normalizedRationale = rationale.trim();
+  if (!normalizedDescription || !normalizedRationale) {
+    return res.status(400).json({ error: 'Description and rationale are required.' });
+  }
+
+  const { filePath, data } = plan;
+  const item = (data.decisions || []).find(entry => (entry.id || entry.decision) === req.params.decisionId);
+  if (!item) return res.status(404).json({ error: 'Decision not found' });
+
+  item.description = normalizedDescription;
+  item.rationale = normalizedRationale;
+
+  writePlan(filePath, data);
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/plans/:id/decisions/:decisionId', (req, res) => {
+  const plan = readPlanById(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  const { filePath, data } = plan;
+  const decisions = Array.isArray(data.decisions) ? data.decisions : [];
+  const nextDecisions = decisions.filter(entry => (entry.id || entry.decision) !== req.params.decisionId);
+  if (nextDecisions.length === decisions.length) {
+    return res.status(404).json({ error: 'Decision not found' });
+  }
+
+  data.decisions = nextDecisions;
+  writePlan(filePath, data);
+  res.json({ ok: true });
+});
+
 app.get('/api/requirements', (req, res) => {
   const files = getRequirementsFiles();
   const requirements = files.map(file => {

@@ -1149,8 +1149,8 @@ details.summary-block > summary { cursor: pointer; font-size: 11px; color: #d1cd
 details.summary-block { margin-top: 8px; }
 
 .stories-list { display: flex; flex-direction: column; gap: 8px; }
-.story-item { padding: 11px 12px; border: 1px solid rgba(201, 193, 178, 0.2); border-radius: 8px; cursor: pointer; transition: all 0.18s; background: rgba(33, 35, 39, 0.66); }
-.story-item:hover { border-color: rgba(154, 151, 143, 0.5); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25); transform: translateY(-1px); }
+.story-item { padding: 11px 12px; border: 1px solid rgba(214, 207, 194, 0.2); border-radius: 8px; cursor: pointer; transition: all 0.18s; background: #272b31; }
+.story-item:hover { border-color: rgba(178, 170, 156, 0.5); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25); transform: translateY(-1px); }
 .story-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .story-id { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 12px; color: #cbc6bb; }
 .story-description { font-size: 13px; color: #e8e1d5; line-height: 1.56; }
@@ -2075,7 +2075,8 @@ body {
 
 #tab-overview .reading-flow .section-card,
 #tab-functional .reading-flow .task-item,
-#tab-non-functional .reading-flow .task-item {
+#tab-non-functional .reading-flow .task-item,
+#tab-decisions .reading-flow .task-item {
   background: #272b31;
   border: 1px solid rgba(214, 207, 194, 0.2);
   border-radius: 10px;
@@ -2086,13 +2087,15 @@ body {
 
 #tab-overview .reading-flow .section-card:last-child,
 #tab-functional .reading-flow .task-item:last-child,
-#tab-non-functional .reading-flow .task-item:last-child {
+#tab-non-functional .reading-flow .task-item:last-child,
+#tab-decisions .reading-flow .task-item:last-child {
   margin-bottom: 0;
 }
 
 #tab-overview .reading-flow .section-title,
 #tab-functional .reading-flow .task-title,
 #tab-non-functional .reading-flow .task-title,
+#tab-decisions .reading-flow .task-title,
 #tab-architectural-decisions .task-title,
 #tab-user-stories .task-title,
 #tab-open-questions .task-title {
@@ -2107,6 +2110,7 @@ body {
 #tab-overview .reading-flow .section-body,
 #tab-functional .reading-flow .task-what,
 #tab-non-functional .reading-flow .task-what,
+#tab-decisions .reading-flow .task-what,
 #tab-architectural-decisions .task-what,
 #tab-user-stories .task-context-values,
 #tab-user-stories .task-what,
@@ -2120,12 +2124,14 @@ body {
 
 #tab-overview .reading-flow .section-body + .section-body,
 #tab-functional .reading-flow .task-what + .task-what,
-#tab-non-functional .reading-flow .task-what + .task-what {
+#tab-non-functional .reading-flow .task-what + .task-what,
+#tab-decisions .reading-flow .task-what + .task-what {
   margin-top: 10px;
 }
 
 #tab-functional .reading-flow .task-header,
 #tab-non-functional .reading-flow .task-header,
+#tab-decisions .reading-flow .task-header,
 #tab-architectural-decisions .task-header,
 #tab-user-stories .task-header,
 #tab-open-questions .task-header {
@@ -2134,6 +2140,7 @@ body {
 
 #tab-functional .reading-flow .task-id,
 #tab-non-functional .reading-flow .task-id,
+#tab-decisions .reading-flow .task-id,
 #tab-architectural-decisions .task-id,
 #tab-user-stories .task-id,
 #tab-open-questions .task-id {
