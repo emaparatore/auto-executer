@@ -6,12 +6,11 @@
   "targetArchitecture": null,
   "status": "completed",
   "created": "2026-03-18",
-  "lastUpdated": "2026-04-30T00:29:26.368Z",
+  "lastUpdated": "2026-04-30T00:46:23.036Z",
   "lastUpdatedNote": "aggiornato stato T-17 completato, story coverage US-012–US-013",
   "notes": "Piano di implementazione dettagliato per la funzionalità FEAT-1, suddiviso in 4 fasi principali (A-D) con 20 task specifici. Include decisioni architetturali chiave, storie utente collegate a ciascun task, e criteri di completamento definiti. Il piano è progettato per garantire una solida infrastruttura di autorizzazione basata su permessi, un audit log completo, e un'interfaccia di amministrazione funzionale e sicura.",
   "phases": [
     {
-      "id": "A",
       "title": "Fase A — Fondazione: Permessi, Ruoli e Seeding",
       "tasks": [
         "T-02",
@@ -21,7 +20,6 @@
       ]
     },
     {
-      "id": "B",
       "title": "Fase B — Flusso Cambio Password e Audit Log",
       "tasks": [
         "T-05",
@@ -29,7 +27,6 @@
       ]
     },
     {
-      "id": "C",
       "title": "Fase C — API Admin: Gestione Utenti e Ruoli",
       "tasks": [
         "T-07",
@@ -41,7 +38,6 @@
       ]
     },
     {
-      "id": "D",
       "title": "Fase D — Frontend Admin: Layout e Pagine",
       "tasks": [
         "T-13",
