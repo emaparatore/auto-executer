@@ -789,7 +789,7 @@ async function selectRequirement(id) {
 
 function scrollWorkspaceToTop() {
   const contentEl = document.querySelector('.content');
-  contentEl?.scrollTo({ top: 0, behavior: 'smooth' });
+  contentEl?.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function renderRequirementDetail() {
@@ -1278,7 +1278,7 @@ async function createFunctionalRequirement() {
       const cards = Array.from(document.querySelectorAll('#functionalList .task-item'));
       const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === functionalId);
       if (!card) return;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
       card.style.transition = 'box-shadow .35s ease, transform .35s ease';
       card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
       card.style.transform = 'scale(1.01)';
@@ -1667,7 +1667,7 @@ async function createNonFunctionalRequirementFromEvent(event) {
       const cards = Array.from(document.querySelectorAll('#nonFunctionalList .task-item'));
       const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === nonFunctionalId);
       if (!card) return;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
       card.style.transition = 'box-shadow .35s ease, transform .35s ease';
       card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
       card.style.transform = 'scale(1.01)';
@@ -1778,7 +1778,7 @@ async function createStoryFromEvent(event) {
       const cards = Array.from(document.querySelectorAll('#userStoriesRequirementsList .task-item'));
       const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === createdStoryId);
       if (!card) return;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
       card.style.transition = 'box-shadow .35s ease, transform .35s ease';
       card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
       card.style.transform = 'scale(1.01)';
@@ -3337,7 +3337,7 @@ async function createOpenQuestionFromEvent(event) {
       const cards = Array.from(document.querySelectorAll('#openQuestionsList .task-item'));
       const card = cards.find(el => el.querySelector('.task-id')?.textContent?.trim() === createdOpenQuestionId);
       if (!card) return;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
       card.style.transition = 'box-shadow .35s ease, transform .35s ease';
       card.style.boxShadow = '0 0 0 2px rgba(82, 145, 255, 0.45)';
       card.style.transform = 'scale(1.01)';
@@ -3572,7 +3572,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.add('show');
     const contentEl = document.querySelector('.content');
-    contentEl?.scrollTo({ top: 0, behavior: 'smooth' });
+    contentEl?.scrollTo({ top: 0, behavior: 'instant' });
     buildRightNav();
   });
 });
@@ -3784,7 +3784,7 @@ function rightNavScrollTo(event, anchorId) {
   const contentRect = content.getBoundingClientRect();
   const targetRect = target.getBoundingClientRect();
   const offset = targetRect.top - contentRect.top + content.scrollTop - 80;
-  content.scrollTo({ top: offset, behavior: 'smooth' });
+  content.scrollTo({ top: offset, behavior: 'instant' });
 
   document.querySelectorAll('.right-nav-link').forEach(l => l.classList.remove('active'));
   document.querySelector(`.right-nav-link[href="#${anchorId}"]`)?.classList.add('active');

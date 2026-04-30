@@ -65,12 +65,6 @@
       "choice": "Grafici SVG custom (Option C)",
       "rationale": "Zero dipendenze esterne, componenti Angular isolati e facilmente rimovibili. Coerente con l'obiettivo di mantenere la seed app leggera. Se in futuro servono grafici più complessi, si aggiunge una libreria a quel punto.",
       "date": "2026-03-23"
-    },
-    {
-      "id": "DEC-333",
-      "description": "Visualizzare i piani disponibili",
-      "rationale": "Visualizzare i piani disponibili",
-      "date": "2026-04-30"
     }
   ],
   "stories": [
