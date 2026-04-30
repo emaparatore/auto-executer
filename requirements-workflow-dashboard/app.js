@@ -563,7 +563,7 @@ function renderPlanDetail() {
               ${titleValue ? `<div class="task-title">${escapeHtml(titleValue)}</div>` : '<div class="task-title task-title-empty">Titolo non impostato</div>'}
               <button type="button" class="icon-action-btn" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'primary')" aria-label="Modifica titolo e what to do task" title="Modifica titolo e what to do task">✎</button>
             </div>
-            <div class="task-notes-title-row"><strong>What to do</strong></div>
+            <div class="task-meta-label">What to do</div>
             ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : '<div class="task-what task-meta-empty">Nessun what to do impostato</div>'}
           `}
       </div>
