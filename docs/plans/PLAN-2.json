@@ -2,9 +2,9 @@
   "id": "PLAN-2",
   "title": "PLAN-2: Staging + Production deploy sullo stesso VPS",
   "requirements": null,
-  "status": "in_progress",
+  "status": "completed",
   "created": null,
-  "lastUpdated": "2026-04-29T21:23:20.679Z",
+  "lastUpdated": "2026-04-30T12:15:45.323Z",
   "decisions": [
     {
       "decision": "Isolamento ambienti",
@@ -230,7 +230,7 @@
       "id": "T-7",
       "stories": [],
       "size": "small",
-      "status": "cancelled",
+      "status": "completed",
       "dependsOn": [],
       "whatToDo": "Aggiornare CLAUDE.md: aggiornare entry di docs/vps-setup-guide.md nella lista docs se la descrizione cambia",
       "definitionOfDone": [

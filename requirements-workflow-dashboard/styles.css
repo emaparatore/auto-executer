@@ -2368,18 +2368,18 @@ body {
 
 .right-nav-dot {
   flex-shrink: 0;
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.7;
+  opacity: 1;
 }
 
-.right-nav-dot.status-completed { color: var(--status-completed-fg, #6fcf97); }
-.right-nav-dot.status-in_progress { color: var(--status-inprogress-fg, #f2c94c); }
-.right-nav-dot.status-pending { color: #555; }
-.right-nav-dot.status-skipped,
-.right-nav-dot.status-cancelled { color: #555; }
+.right-nav-dot.status-completed { color: #4ade80; }
+.right-nav-dot.status-in_progress { color: #60a5fa; }
+.right-nav-dot.status-pending { color: #4b5563; }
+.right-nav-dot.status-skipped { color: #374151; }
+.right-nav-dot.status-cancelled { color: #f87171; }
 
 .right-nav-empty {
   padding: 8px 14px;
