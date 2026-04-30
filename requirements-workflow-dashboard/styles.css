@@ -86,7 +86,7 @@ html::-webkit-scrollbar-button:decrement {
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', 'Inter', sans-serif;
   color: var(--ink);
   height: 100dvh;
   line-height: 1.56;
