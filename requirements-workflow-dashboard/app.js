@@ -487,7 +487,7 @@ function renderPlanDetail() {
     </div>
   `;
 
-  document.getElementById('storiesList').innerHTML = p.stories?.map(s => {
+  const storiesContent = p.stories?.map(s => {
     const storyStatus = normalizeStoryStatus(s.status);
     const taskList = Array.isArray(s.tasks) ? s.tasks.join(', ') : String(s.tasks || '');
     return `
@@ -501,8 +501,9 @@ function renderPlanDetail() {
       </div>
     `;
   }).join('') || '<p class="empty-state">No stories defined</p>';
+  document.getElementById('storiesList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Stories</div></div>${storiesContent}`;
 
-  document.getElementById('tasksList').innerHTML = tasks.map(t => {
+  const tasksContent = tasks.map(t => {
     const titleValue = String(t.title || '');
     const phaseValue = String(t.phase || '');
     const whatToDoValue = String(t.whatToDo || '');
@@ -738,6 +739,7 @@ function renderPlanDetail() {
     </div>
   `;
   }).join('') || '<p class="empty-state">No tasks defined</p>';
+  document.getElementById('tasksList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Tasks</div></div>${tasksContent}`;
 
   document.getElementById('decisionsList').innerHTML = renderPlanDecisionItems(Array.isArray(p.decisions) ? p.decisions : []);
 
