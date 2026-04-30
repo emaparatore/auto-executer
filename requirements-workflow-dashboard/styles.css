@@ -1423,6 +1423,41 @@ details.summary-block { margin-top: 8px; }
   margin-top: 2px;
 }
 
+.task-primary-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.task-title-empty {
+  color: #bfb7a9;
+  font-style: italic;
+}
+
+.task-primary-section {
+  margin: 2px 0 12px;
+  padding: 10px 11px;
+  border: 1px solid rgba(201, 193, 178, 0.2);
+  border-radius: 8px;
+  background: rgba(45, 49, 54, 0.3);
+}
+
+.task-primary-section .task-notes-form {
+  margin-top: 0;
+}
+
+.task-primary-section .task-notes-title-row {
+  margin-top: 8px;
+}
+
+.task-primary-section .task-title {
+  margin-bottom: 0;
+}
+
+.task-primary-section .task-what {
+  margin-top: 8px;
+}
+
 .task-phase,
 .task-context-row,
 .task-depends-on {

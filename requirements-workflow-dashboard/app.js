@@ -544,38 +544,29 @@ function renderPlanDetail() {
         </div>
       </div>
       
-      ${isTaskFieldEditing(t.id, 'title')
-        ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-title-${escapeHtml(t.id)}">Title</label>
-            <input id="task-title-${escapeHtml(t.id)}" class="task-inline-input" type="text" value="${escapeHtml(titleValue)}" ${isTaskFieldUpdating ? 'disabled' : ''}>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'title')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+      <div class="task-primary-section">
+        ${isTaskFieldEditing(t.id, 'primary')
+          ? `
+            <div class="task-notes-form" onclick="event.stopPropagation()">
+              <label class="open-question-label" for="task-title-${escapeHtml(t.id)}">Title</label>
+              <input id="task-title-${escapeHtml(t.id)}" class="task-inline-input" type="text" value="${escapeHtml(titleValue)}" ${isTaskFieldUpdating ? 'disabled' : ''}>
+              <label class="open-question-label" for="task-whatToDo-${escapeHtml(t.id)}">What to do</label>
+              <textarea id="task-whatToDo-${escapeHtml(t.id)}" class="task-notes-input" rows="5" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(whatToDoValue)}</textarea>
+              <div class="task-notes-actions">
+                <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'primary')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
+                <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+              </div>
             </div>
-          </div>
-        `
-        : `
-          <div class="task-title-row">
-            ${titleValue ? `<div class="task-title">${escapeHtml(titleValue)}</div>` : ''}
-            <button type="button" class="icon-action-btn${titleValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'title')" aria-label="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}" title="${titleValue ? 'Modifica titolo task' : 'Aggiungi titolo task'}">${titleValue ? '✎' : ADD_ICON_SVG}</button>
-          </div>
-        `}
-      ${isTaskFieldEditing(t.id, 'whatToDo')
-        ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-whatToDo-${escapeHtml(t.id)}">What to do</label>
-            <textarea id="task-whatToDo-${escapeHtml(t.id)}" class="task-notes-input" rows="5" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(whatToDoValue)}</textarea>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'whatToDo')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
+          `
+          : `
+            <div class="task-primary-header">
+              ${titleValue ? `<div class="task-title">${escapeHtml(titleValue)}</div>` : '<div class="task-title task-title-empty">Titolo non impostato</div>'}
+              <button type="button" class="icon-action-btn" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'primary')" aria-label="Modifica titolo e what to do task" title="Modifica titolo e what to do task">✎</button>
             </div>
-          </div>
-        `
-        : `
-          <div class="task-notes-title-row"><strong>What to do</strong><button type="button" class="icon-action-btn${whatToDoValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'whatToDo')" aria-label="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}" title="${whatToDoValue ? 'Modifica what to do task' : 'Aggiungi what to do task'}">${whatToDoValue ? '✎' : ADD_ICON_SVG}</button></div>
-          ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : ''}
-        `}
+            <div class="task-notes-title-row"><strong>What to do</strong></div>
+            ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : '<div class="task-what task-meta-empty">Nessun what to do impostato</div>'}
+          `}
+      </div>
 
       <div class="task-meta-section">
         <div class="task-meta-title">Task context</div>
@@ -2396,7 +2387,67 @@ async function saveTaskField(planId, taskId, field) {
   let body = {};
   const previousValue = task[field];
 
-  if (field === 'title' || field === 'phase') {
+  if (field === 'primary') {
+    const titleInputEl = document.getElementById(`task-title-${taskId}`);
+    const whatToDoTextareaEl = document.getElementById(`task-whatToDo-${taskId}`);
+    if (!titleInputEl || !whatToDoTextareaEl) return;
+
+    const title = String(titleInputEl.value || '');
+    const whatToDo = String(whatToDoTextareaEl.value || '');
+    const previousTitle = task.title;
+    const previousWhatToDo = task.whatToDo;
+
+    task.title = title;
+    task.whatToDo = whatToDo;
+
+    isTaskFieldUpdating = true;
+    renderPlanDetail();
+
+    try {
+      const [titleRes, whatToDoRes] = await Promise.all([
+        fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/title`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        }),
+        fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/what-to-do`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ whatToDo })
+        })
+      ]);
+
+      if (!titleRes.ok || !whatToDoRes.ok) {
+        const titleErr = !titleRes.ok ? await titleRes.json().catch(() => ({})) : null;
+        const whatErr = !whatToDoRes.ok ? await whatToDoRes.json().catch(() => ({})) : null;
+        throw new Error(titleErr?.error || whatErr?.error || 'Unable to update task fields');
+      }
+
+      const [updatedPlanRes] = await Promise.all([
+        fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
+        loadPlans()
+      ]);
+
+      if (!updatedPlanRes.ok) {
+        throw new Error('Unable to refresh plan after task field update');
+      }
+
+      currentPlan = await updatedPlanRes.json();
+      editingTaskField = null;
+      document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
+      renderPlanDetail();
+      showToast('Campi task salvati');
+    } catch (error) {
+      task.title = previousTitle;
+      task.whatToDo = previousWhatToDo;
+      renderPlanDetail();
+      showToast(error.message, 'error');
+    } finally {
+      isTaskFieldUpdating = false;
+      renderPlanDetail();
+    }
+    return;
+  } else if (field === 'title' || field === 'phase') {
     const inputEl = document.getElementById(`task-${field}-${taskId}`);
     if (!inputEl) return;
     body[field] = String(inputEl.value || '');
