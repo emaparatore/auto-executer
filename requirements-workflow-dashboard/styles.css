@@ -2202,6 +2202,9 @@ body {
 #tab-architectural-decisions .task-header,
 #tab-user-stories .task-header,
 #tab-open-questions .task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
 }
 
