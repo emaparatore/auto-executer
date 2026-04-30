@@ -703,6 +703,17 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   margin-inline: auto;
 }
 
+.detail-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.detail-body-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .detail-view {
   background: #1f2227;
   border-radius: 14px;
@@ -735,8 +746,8 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   z-index: 30;
   border-bottom: 1px solid var(--stroke);
   padding: 0 18px;
-  background: #23272d;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  background: #1b1c1f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
@@ -2293,9 +2304,9 @@ body {
   align-self: flex-start;
   flex-shrink: 0;
   width: 152px;
-  margin-left: 18px;
+  margin-left: 0;
   background: transparent;
-  max-height: 100vh;
+  max-height: 80vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(154,151,143,0.25) transparent;
