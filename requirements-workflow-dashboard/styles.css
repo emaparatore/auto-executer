@@ -17,16 +17,16 @@
   --warn: #d5b485;
   --bad: #d8a3a3;
   --pending: #ab9b83;
-  --status-progress-bg: rgba(97, 143, 189, 0.26);
-  --status-progress-fg: #d6e9fb;
-  --status-completed-bg: rgba(92, 153, 116, 0.26);
-  --status-completed-fg: #d9f0e0;
-  --status-pending-bg: rgba(178, 147, 98, 0.24);
-  --status-pending-fg: #f4e7ce;
-  --status-skipped-bg: rgba(164, 124, 84, 0.24);
-  --status-skipped-fg: #f3dfc8;
-  --status-cancelled-bg: rgba(162, 101, 101, 0.24);
-  --status-cancelled-fg: #f3d7d7;
+  --status-progress-bg: rgba(59, 130, 246, 0.28);
+  --status-progress-fg: #93c5fd;
+  --status-completed-bg: rgba(34, 197, 94, 0.22);
+  --status-completed-fg: #86efac;
+  --status-pending-bg: rgba(161, 130, 80, 0.32);
+  --status-pending-fg: #fcd592;
+  --status-skipped-bg: rgba(100, 116, 139, 0.28);
+  --status-skipped-fg: #cbd5e1;
+  --status-cancelled-bg: rgba(220, 38, 38, 0.22);
+  --status-cancelled-fg: #fca5a5;
   --badge-height: 22px;
   --badge-radius: 999px;
   --badge-border: rgba(255, 255, 255, 0.14);
@@ -657,26 +657,48 @@ body.sidebar-collapsed .sidebar .sidebar-handle {
   border: 1px solid var(--badge-border);
 }
 
-.plan-item-status { min-width: 92px; }
+/* status badges: no background, just dot + text */
 .plan-item-status,
-.story-status,
+.story-status {
+  background: transparent;
+  border-color: transparent;
+  padding-left: 4px;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.plan-item-status::before,
+.story-status::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.85;
+}
+
 .task-size {
   background: rgba(90, 93, 98, 0.4);
   color: #e7dfd2;
 }
-.status-in_progress { background: var(--status-progress-bg); color: var(--status-progress-fg); }
-.status-completed { background: var(--status-completed-bg); color: var(--status-completed-fg); }
-.status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
-.status-skipped { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
-.status-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
-.status-draft { background: rgba(116, 129, 146, 0.2); color: #dbe5f1; }
-.status-in_review { background: rgba(123, 144, 171, 0.22); color: #d5e4f4; }
-.status-approved { background: rgba(92, 153, 116, 0.2); color: #d6eddc; }
-.status-implemented { background: rgba(146, 129, 94, 0.2); color: #ebdfc8; }
-.status-open { background: var(--status-pending-bg); color: var(--status-pending-fg); }
-.status-resolved { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+
+/* status colors — fg only, no bg */
+.status-in_progress { background: transparent; color: var(--status-progress-fg); }
+.status-completed   { background: transparent; color: var(--status-completed-fg); }
+.status-pending     { background: transparent; color: var(--status-pending-fg); }
+.status-skipped     { background: transparent; color: var(--status-skipped-fg); }
+.status-cancelled   { background: transparent; color: var(--status-cancelled-fg); }
+.status-draft       { background: transparent; color: #93b4d4; }
+.status-in_review   { background: transparent; color: #7eb8f5; }
+.status-approved    { background: transparent; color: var(--status-completed-fg); }
+.status-implemented { background: transparent; color: #d4bb88; }
+.status-open        { background: transparent; color: var(--status-pending-fg); }
+.status-resolved    { background: transparent; color: var(--status-completed-fg); }
 .status-done,
-.status-Done { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+.status-Done        { background: transparent; color: var(--status-completed-fg); }
 .plan-item-title { font-size: 13px; color: #e6dfd2; line-height: 1.45; }
 .plan-item-meta { margin-top: 8px; display: flex; gap: 10px; font-size: 11px; color: var(--ink-dim); }
 
@@ -1270,34 +1292,44 @@ details.summary-block { margin-top: 8px; }
 }
 
 .task-status-trigger {
-  border: 1px solid var(--badge-border);
+  border: 1px solid transparent;
   border-radius: var(--badge-radius);
   min-height: var(--badge-height);
-  padding: 0 10px;
+  padding: 0 8px 0 6px;
   min-width: 108px;
-  font-size: 10px;
-  font-weight: 760;
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15px;
   line-height: 1;
   cursor: pointer;
-  color: var(--ink);
-  background: rgba(56, 60, 65, 0.65);
-  transition: border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease, color 0.22s ease, transform 0.18s ease;
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.task-status-trigger:hover { }
+.task-status-trigger::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.task-status-trigger:hover { background: rgba(255,255,255,0.05); }
 
 .task-status-trigger:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(214, 207, 194, 0.28); }
 
-.task-status-trigger.status-in_progress { background: var(--status-progress-bg); color: var(--status-progress-fg); }
-.task-status-trigger.status-completed { background: var(--status-completed-bg); color: var(--status-completed-fg); }
-.task-status-trigger.status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
-.task-status-trigger.status-skipped { background: var(--status-skipped-bg); color: var(--status-skipped-fg); }
-.task-status-trigger.status-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+.task-status-trigger.status-in_progress { color: var(--status-progress-fg); }
+.task-status-trigger.status-completed   { color: var(--status-completed-fg); }
+.task-status-trigger.status-pending     { color: var(--status-pending-fg); }
+.task-status-trigger.status-skipped     { color: var(--status-skipped-fg); }
+.task-status-trigger.status-cancelled   { color: var(--status-cancelled-fg); }
 .task-phase-trigger {
   width: 100%;
   justify-content: space-between;
@@ -2377,7 +2409,7 @@ body {
 
 .right-nav-dot.status-completed { color: #4ade80; }
 .right-nav-dot.status-in_progress { color: #60a5fa; }
-.right-nav-dot.status-pending { color: #4b5563; }
+.right-nav-dot.status-pending { color: var(--status-pending-fg); }
 .right-nav-dot.status-skipped { color: #374151; }
 .right-nav-dot.status-cancelled { color: #f87171; }
 

@@ -2,9 +2,9 @@
   "id": "PLAN-3",
   "title": "PLAN-3: Monitoring Stack",
   "requirements": null,
-  "status": "completed",
+  "status": "in_progress",
   "created": "2026-04-01",
-  "lastUpdated": "2026-04-28T03:12:12.888Z",
+  "lastUpdated": "2026-04-30T12:27:29.743Z",
   "decisions": [],
   "stories": [],
   "tasks": [
@@ -12,7 +12,7 @@
       "id": "T-1",
       "stories": [],
       "size": "medium",
-      "status": "completed",
+      "status": "pending",
       "dependsOn": [],
       "whatToDo": "Aggiungere mem_limit ai servizi esistenti in docker-compose.deploy.yml: postgres=1536m, api=768m, seq=512m, web=384m, nginx=64m. Aggiungere restart: unless-stopped a tutti i servizi.",
       "definitionOfDone": [
