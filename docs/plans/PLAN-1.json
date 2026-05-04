@@ -6,7 +6,7 @@
   "targetArchitecture": null,
   "status": "completed",
   "created": "2026-03-18",
-  "lastUpdated": "2026-05-04T17:46:33.938Z",
+  "lastUpdated": "2026-05-04T22:21:31.811Z",
   "lastUpdatedNote": "aggiornato stato T-17 completato, story coverage US-012–US-013",
   "notes": "Piano di implementazione dettagliato per la funzionalità FEAT-1, suddiviso in 4 fasi principali (A-D) con 20 task specifici. Include decisioni architetturali chiave, storie utente collegate a ciascun task, e criteri di completamento definiti. Il piano è progettato per garantire una solida infrastruttura di autorizzazione basata su permessi, un audit log completo, e un'interfaccia di amministrazione funzionale e sicura.",
   "phases": [
@@ -84,37 +84,37 @@
       "id": "US-003",
       "description": "Lista utenti",
       "tasks": "T-07, T-14, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-004",
       "description": "Promuovere un utente",
       "tasks": "T-07, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-005",
       "description": "Disattivare un utente",
       "tasks": "T-07, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-006",
       "description": "Creare un utente",
       "tasks": "T-07, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-007",
       "description": "Eliminare un utente",
       "tasks": "T-07, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-008",
       "description": "Modificare un utente",
       "tasks": "T-07, T-15",
-      "status": "Done"
+      "status": "completed"
     },
     {
       "id": "US-009",
@@ -556,51 +556,51 @@
       "definitionOfDone": [
         {
           "description": "Tutti gli endpoint implementati con MediatR commands/queries",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Paginazione lato server con PagedResult<T> (pageNumber, pageSize, totalCount, items)",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Ricerca per nome/email, filtri per ruolo/stato/periodo di registrazione",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Ordinamento per qualsiasi colonna esposta",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Ogni endpoint protetto dal permesso corretto",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Regole di protezione: no auto-eliminazione, no eliminazione/disattivazione SuperAdmin, no auto-modifica ruolo SuperAdmin",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Alla disattivazione utente: invalidazione immediata dei token attivi tramite ITokenBlacklistService",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Soft delete per eliminazione utenti (flag IsDeleted) — l'utente non è più visibile ma i dati restano per audit",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Tutte le operazioni loggate nell'audit log con dettaglio prima/dopo",
-          "completed": false
+          "completed": true
         },
         {
           "description": "FluentValidation per tutti i comandi",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Unit test per command handler e validatori",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Integration test per endpoint (permessi, paginazione, protezioni)",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": null,
