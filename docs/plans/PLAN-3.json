@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": "2026-04-01",
-  "lastUpdated": "2026-05-04T15:49:28.747Z",
+  "lastUpdated": "2026-05-04T21:01:57.547Z",
   "decisions": [],
   "stories": [],
   "tasks": [
@@ -34,7 +34,8 @@
         }
       ],
       "decision": null,
-      "notes": "mem_limit posizionato come proprietà top-level di ogni servizio. Somma totale limiti: 3264MB"
+      "notes": "mem_limit posizionato come proprietà top-level di ogni servizio. Somma totale limiti: 3264MB",
+      "title": "titolo"
     },
     {
       "id": "T-2",

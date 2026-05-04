@@ -1,0 +1,55 @@
+{
+  "name": "requirements-workflow-desktop",
+  "version": "1.0.0",
+  "description": "Desktop app for Requirements Workflow dashboard",
+  "author": "Requirements Workflow Team",
+  "license": "UNLICENSED",
+  "main": "electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "server": "node server.js",
+    "dist": "electron-builder --win",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^31.0.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.requirementsworkflow.desktop",
+    "productName": "Requirements Workflow Desktop",
+    "copyright": "Copyright (c) 2026",
+    "files": [
+      "electron/**/*",
+      "server.js",
+      "app.js",
+      "index.html",
+      "styles.css",
+      "requirements.schema.json",
+      "plans.schema.json",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "artifactName": "Requirements-Workflow-Desktop-${version}-Setup.${ext}",
+      "publisherName": "Requirements Workflow",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Requirements Workflow Desktop",
+      "uninstallDisplayName": "Requirements Workflow Desktop"
+    }
+  }
+}

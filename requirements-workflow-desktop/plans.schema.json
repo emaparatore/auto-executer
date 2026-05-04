@@ -1,0 +1,254 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/plan.schema.json",
+  "title": "Plan",
+  "description": "Schema for a Plan document used by the auto-executer system",
+  "type": "object",
+  "required": ["id", "title", "status", "created"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PLAN-\\d+$",
+      "description": "Unique plan identifier (e.g., PLAN-1)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Plan title"
+    },
+    "requirements": {
+      "type": "string",
+      "description": "Path to the requirements document"
+    },
+    "objective": {
+      "type": ["string", "null"],
+      "description": "High-level objective/goal section extracted from the markdown"
+    },
+    "targetArchitecture": {
+      "type": ["string", "null"],
+      "description": "Target architecture section extracted from the markdown (may include code blocks)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "completed", "cancelled"],
+      "description": "Plan status"
+    },
+    "created": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Creation date in YYYY-MM-DD format"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "description": "Last update date with optional note"
+    },
+    "lastUpdatedNote": {
+      "type": ["string", "null"],
+      "description": "Optional note extracted from Last Updated (text in parentheses)"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Plan-level notes section"
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/phase"
+      },
+      "default": []
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/decision"
+      },
+      "default": []
+    },
+    "stories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/story"
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "definitions": {
+    "phase": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "id": {
+          "type": ["string", "null"],
+          "description": "Phase identifier (e.g., 'A', '1')"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs that belong to this phase",
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "type": "object",
+      "anyOf": [
+        { "required": ["id", "description"] },
+        { "required": ["decision", "choice"] },
+        { "required": ["description"] }
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DEC-\\d+$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string",
+          "description": "Legacy/alternative decision title field"
+        },
+        "choice": {
+          "type": "string",
+          "description": "Legacy/alternative choice field"
+        },
+        "motivation": {
+          "type": "string",
+          "description": "Optional motivation/rationale (e.g., from a decisions table)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "story": {
+      "type": "object",
+      "required": ["id", "description", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^US-\\d{3,4}$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tasks": {
+          "type": "string",
+          "description": "Comma-separated task IDs (e.g., 'T-01, T-02, T-03')"
+        },
+        "status": {
+          "type": "string",
+          "description": "Story status (e.g., 'Done', ' Done', 'in_progress', 'pending')"
+        }
+      },
+      "additionalProperties": false
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^T-\\d{1,3}[A-Za-z0-9]*$"
+        },
+        "title": {
+          "type": ["string", "null"],
+          "description": "Task title extracted from the markdown heading"
+        },
+        "phase": {
+          "type": ["string", "null"],
+          "description": "Phase title this task belongs to"
+        },
+        "stories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of story IDs this task belongs to"
+        },
+        "size": {
+          "type": "string",
+          "enum": [
+            "Small",
+            "Medium",
+            "Large",
+            "ExtraLarge",
+            "small",
+            "medium",
+            "large",
+            "extralarge"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "skipped", "cancelled"]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of task IDs this task depends on"
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files referenced by the task (from **File:** / **Files:** fields)",
+          "default": []
+        },
+        "endpoints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Endpoints list extracted from an 'Endpoint:' section",
+          "default": []
+        },
+        "whatToDo": {
+          "type": ["string", "null"],
+          "description": "Task description"
+        },
+        "definitionOfDone": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "completed": {
+                "type": "boolean"
+              }
+            }
+          },
+          "default": []
+        },
+        "decision": {
+          "type": ["string", "null"],
+          "description": "Decision ID linked to this task"
+        },
+        "implementationNotes": {
+          "type": ["string", "null"],
+          "description": "Implementation Notes block extracted from markdown"
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Additional notes"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
