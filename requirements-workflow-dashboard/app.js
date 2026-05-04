@@ -81,6 +81,10 @@ let sectionStatusCatalog = {
   plans: new Set(),
   requirements: new Set()
 };
+let currentWorkspace = null;
+let isSwitchingWorkspace = false;
+let hasWorkspaceConfigured = false;
+let pendingWorkspaceDeleteKey = null;
 
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 const ADD_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
@@ -161,6 +165,219 @@ async function loadRequirements() {
   const res = await fetch('/api/requirements');
   requirements = await res.json();
   if (currentSection === 'requirements') renderRequirementsList();
+}
+
+async function fetchJsonOrThrow(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+function setWorkspaceUiDisabled(disabled) {
+  const select = document.getElementById('workspaceSelect');
+  const reloadBtn = document.getElementById('workspaceReload');
+  const manageBtn = document.getElementById('workspaceManage');
+  const addBtn = document.getElementById('workspaceAdd');
+  if (select) select.classList.toggle('is-disabled', disabled);
+  if (reloadBtn) reloadBtn.disabled = disabled;
+  if (manageBtn) manageBtn.disabled = disabled;
+  if (addBtn) addBtn.disabled = disabled;
+}
+
+function renderWorkspaceOptions(workspaces, selectedKey) {
+  const menu = document.getElementById('workspaceSelectMenu');
+  const value = document.getElementById('workspaceSelectValue');
+  if (!menu || !value) return;
+  menu.innerHTML = workspaces.map(item => `<button type="button" class="workspace-select-option${item.key === selectedKey ? ' is-current' : ''}" data-workspace-key="${escapeHtml(item.key)}" role="option" aria-selected="${item.key === selectedKey ? 'true' : 'false'}">${escapeHtml(item.label)}</button>`).join('');
+  const current = workspaces.find(item => item.key === selectedKey);
+  value.textContent = current ? current.label : 'Seleziona workspace';
+}
+
+async function reloadCurrentWorkspaceData() {
+  currentPlan = null;
+  currentRequirement = null;
+  await Promise.all([loadPlans(), loadRequirements()]);
+  setSection(currentSection || 'plans');
+}
+
+async function loadWorkspaceState() {
+  const [workspacesPayload, currentPayload] = await Promise.all([
+    fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' }),
+    fetchJsonOrThrow('/api/workspace/current', { cache: 'no-store' })
+  ]);
+  const list = Array.isArray(workspacesPayload?.workspaces) ? workspacesPayload.workspaces : [];
+  hasWorkspaceConfigured = list.length > 0;
+  currentWorkspace = currentPayload?.workspace || null;
+  renderWorkspaceOptions(list, currentWorkspace?.key || list[0]?.key || '');
+  if (!list.length) {
+    showToast('Nessun workspace caricato. Aggiungine uno con +');
+  }
+}
+
+function openWorkspaceModal() {
+  const modal = document.getElementById('workspaceModal');
+  const errorBox = document.getElementById('workspaceModalError');
+  if (!modal) return;
+  if (errorBox) {
+    errorBox.textContent = '';
+    errorBox.classList.remove('show');
+  }
+  modal.style.display = 'flex';
+}
+
+function closeWorkspaceModalFromEvent(event) {
+  if (event) event.stopPropagation();
+  const modal = document.getElementById('workspaceModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+function setWorkspaceModalError(message) {
+  const errorBox = document.getElementById('workspaceModalError');
+  if (!errorBox) return;
+  const text = String(message || '').trim();
+  if (!text) {
+    errorBox.textContent = '';
+    errorBox.classList.remove('show');
+    return;
+  }
+  errorBox.textContent = text;
+  errorBox.classList.add('show');
+}
+
+async function createWorkspaceFromEvent(event) {
+  event.stopPropagation();
+  const label = String(document.getElementById('workspaceLabelInput')?.value || '').trim();
+  const rootDir = String(document.getElementById('workspaceRootInput')?.value || '').trim();
+  if (!label || !rootDir) {
+    setWorkspaceModalError('Compila nome e percorso della cartella progetto.');
+    return;
+  }
+  setWorkspaceModalError('');
+  try {
+    await fetchJsonOrThrow('/api/workspaces', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label, rootDir })
+    });
+    await loadWorkspaceState();
+    await reloadCurrentWorkspaceData();
+    closeWorkspaceModalFromEvent(event);
+    showToast('Workspace caricato');
+  } catch (error) {
+    setWorkspaceModalError(error.message);
+    showToast(error.message, 'error');
+  }
+}
+
+async function openWorkspaceManageModal() {
+  const modal = document.getElementById('workspaceManageModal');
+  const list = document.getElementById('workspaceManageList');
+  if (!modal || !list) return;
+  const payload = await fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' });
+  const currentKey = currentWorkspace?.key || payload.currentWorkspaceKey;
+  const workspaces = Array.isArray(payload.workspaces) ? payload.workspaces : [];
+  list.innerHTML = workspaces.map(item => `
+    <div class="workspace-manage-item" data-key="${escapeHtml(item.key)}">
+      <div class="workspace-manage-row">
+        <div class="workspace-manage-main">
+          <input class="search-input" value="${escapeHtml(item.label)}" data-workspace-label-input="${escapeHtml(item.key)}" data-original-label="${escapeHtml(item.label)}">
+          <div class="workspace-manage-path" title="${escapeHtml(item.rootDir || '')}">${escapeHtml(item.rootDir || '')}</div>
+        </div>
+        <div class="workspace-manage-actions">
+          <button type="button" class="workspace-icon-btn is-success workspace-save-btn" data-workspace-save="${escapeHtml(item.key)}" style="display:none" aria-label="Salva nome workspace" title="Salva nome workspace">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+          </button>
+          <button type="button" class="workspace-icon-btn is-danger" data-workspace-delete="${escapeHtml(item.key)}" ${item.key === currentKey ? 'title="Elimina workspace corrente"' : 'title="Elimina workspace"'} aria-label="Elimina workspace">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          </button>
+        </div>
+      </div>
+      ${pendingWorkspaceDeleteKey === item.key ? `
+        <div class="workspace-delete-confirm" data-workspace-delete-confirm="${escapeHtml(item.key)}">
+          <div class="workspace-delete-confirm-text">Confermi eliminazione workspace <strong>${escapeHtml(item.label)}</strong>?</div>
+          <div class="workspace-manage-actions">
+            <button type="button" class="open-question-btn is-danger" data-workspace-delete-confirm-yes="${escapeHtml(item.key)}">Si, elimina</button>
+            <button type="button" class="open-question-btn is-secondary" data-workspace-delete-confirm-no="${escapeHtml(item.key)}">Annulla</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `).join('') || '<div class="empty-state empty-state-padded">Nessun workspace disponibile.</div>';
+  modal.style.display = 'flex';
+}
+
+function closeWorkspaceManageModalFromEvent(event) {
+  if (event) event.stopPropagation();
+  const modal = document.getElementById('workspaceManageModal');
+  if (modal) modal.style.display = 'none';
+  pendingWorkspaceDeleteKey = null;
+}
+
+async function handleWorkspaceManageClick(event) {
+  const renameBtn = event.target.closest('[data-workspace-save]');
+  const deleteBtn = event.target.closest('[data-workspace-delete]');
+  if (renameBtn) {
+    const key = renameBtn.dataset.workspaceSave;
+    const input = document.querySelector(`[data-workspace-label-input="${CSS.escape(key)}"]`);
+    const label = String(input?.value || '').trim();
+    if (!label) return showToast('Nome workspace obbligatorio', 'error');
+    await fetchJsonOrThrow(`/api/workspaces/${encodeURIComponent(key)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
+    await loadWorkspaceState();
+    await openWorkspaceManageModal();
+    showToast('Workspace rinominato');
+    return;
+  }
+  if (deleteBtn) {
+    const key = deleteBtn.dataset.workspaceDelete;
+    pendingWorkspaceDeleteKey = key;
+    await openWorkspaceManageModal();
+    return;
+  }
+  const cancelDeleteBtn = event.target.closest('[data-workspace-delete-confirm-no]');
+  if (cancelDeleteBtn) {
+    pendingWorkspaceDeleteKey = null;
+    await openWorkspaceManageModal();
+    return;
+  }
+  const confirmDeleteBtn = event.target.closest('[data-workspace-delete-confirm-yes]');
+  if (confirmDeleteBtn) {
+    const key = confirmDeleteBtn.dataset.workspaceDeleteConfirmYes;
+    await fetchJsonOrThrow(`/api/workspaces/${encodeURIComponent(key)}`, { method: 'DELETE' });
+    pendingWorkspaceDeleteKey = null;
+    await loadWorkspaceState();
+    await reloadCurrentWorkspaceData();
+    await openWorkspaceManageModal();
+    showToast('Workspace eliminato');
+  }
+}
+
+async function selectWorkspaceByKey(workspaceKey) {
+  if (!workspaceKey || isSwitchingWorkspace) return;
+  const value = document.getElementById('workspaceSelectValue');
+  const previousValue = currentWorkspace?.key || '';
+  isSwitchingWorkspace = true;
+  setWorkspaceUiDisabled(true);
+  try {
+    const payload = await fetchJsonOrThrow('/api/workspace/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: workspaceKey })
+    });
+    currentWorkspace = payload.workspace;
+    await reloadCurrentWorkspaceData();
+    showToast(`Workspace attivo: ${currentWorkspace.label}`);
+  } catch (error) {
+    if (value && currentWorkspace?.label) value.textContent = currentWorkspace.label;
+    renderWorkspaceOptions((await fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' })).workspaces || [], previousValue);
+    showToast(error.message, 'error');
+  } finally {
+    isSwitchingWorkspace = false;
+    setWorkspaceUiDisabled(false);
+  }
 }
 
 function renderPlansList() {
@@ -1851,6 +2068,17 @@ function showDetail() {
 }
 
 function setSection(section) {
+  if (!hasWorkspaceConfigured || !currentWorkspace) {
+    currentSection = section || 'plans';
+    document.querySelectorAll('.section-switch-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.section === currentSection));
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('show'));
+    document.getElementById('detailView').classList.remove('show');
+    document.getElementById('welcome').style.display = 'flex';
+    document.getElementById('welcomeTitle').textContent = 'Aggiungi un workspace';
+    document.getElementById('welcomeText').textContent = 'Per iniziare clicca + nella sidebar e carica una cartella progetto con docs/plans e docs/requirements.';
+    return;
+  }
   currentSection = section;
   const welcomeIcon = document.getElementById('welcomeIcon');
   document.querySelectorAll('.section-switch-tab').forEach(tab => {
@@ -3586,6 +3814,68 @@ const searchResults = document.getElementById('searchResults');
 const sidebarToggle = document.getElementById('sidebarToggle');
 const plansListElement = document.getElementById('plansList');
 const statusFiltersElement = document.getElementById('statusFilters');
+const workspaceSelect = document.getElementById('workspaceSelect');
+const workspaceSelectTrigger = document.getElementById('workspaceSelectTrigger');
+const workspaceSelectMenu = document.getElementById('workspaceSelectMenu');
+const workspaceManage = document.getElementById('workspaceManage');
+const workspaceAdd = document.getElementById('workspaceAdd');
+const workspaceBrowseBtn = document.getElementById('workspaceBrowseBtn');
+
+workspaceSelectTrigger?.addEventListener('click', () => {
+  if (workspaceSelect?.classList.contains('is-disabled')) return;
+  const willOpen = !workspaceSelect?.classList.contains('is-open');
+  workspaceSelect?.classList.toggle('is-open', willOpen);
+  workspaceSelectTrigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+});
+
+workspaceSelectMenu?.addEventListener('click', event => {
+  const option = event.target.closest('[data-workspace-key]');
+  if (!option) return;
+  const key = String(option.dataset.workspaceKey || '').trim();
+  if (!key || key === currentWorkspace?.key) return;
+  workspaceSelect?.classList.remove('is-open');
+  workspaceSelectTrigger?.setAttribute('aria-expanded', 'false');
+  selectWorkspaceByKey(key);
+});
+
+workspaceManage?.addEventListener('click', () => openWorkspaceManageModal().catch(error => showToast(error.message, 'error')));
+
+workspaceAdd?.addEventListener('click', () => openWorkspaceModal());
+
+workspaceBrowseBtn?.addEventListener('click', async event => {
+  event.stopPropagation();
+  workspaceBrowseBtn.disabled = true;
+  try {
+    const payload = await fetchJsonOrThrow('/api/workspaces/pick-folder', { method: 'POST' });
+    const input = document.getElementById('workspaceRootInput');
+    if (input && payload?.path) input.value = payload.path;
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    workspaceBrowseBtn.disabled = false;
+  }
+});
+
+window.openWorkspaceModal = openWorkspaceModal;
+window.closeWorkspaceModalFromEvent = closeWorkspaceModalFromEvent;
+window.createWorkspaceFromEvent = createWorkspaceFromEvent;
+window.closeWorkspaceManageModalFromEvent = closeWorkspaceManageModalFromEvent;
+
+document.getElementById('workspaceManageList')?.addEventListener('click', event => {
+  handleWorkspaceManageClick(event).catch(error => showToast(error.message, 'error'));
+});
+
+document.getElementById('workspaceManageList')?.addEventListener('input', event => {
+  const input = event.target.closest('[data-workspace-label-input]');
+  if (!input) return;
+  const key = String(input.dataset.workspaceLabelInput || '').trim();
+  if (!key) return;
+  const original = String(input.dataset.originalLabel || '').trim();
+  const current = String(input.value || '').trim();
+  const saveBtn = document.querySelector(`[data-workspace-save="${CSS.escape(key)}"]`);
+  if (!saveBtn) return;
+  saveBtn.style.display = current && current !== original ? 'inline-flex' : 'none';
+});
 
 searchInput.addEventListener('input', e => {
   clearTimeout(searchDebounceTimer);
@@ -3642,6 +3932,11 @@ document.addEventListener('click', e => {
 
   if (!e.target.closest('.task-status-dropdown')) {
     closeAllTaskStatusDropdowns();
+  }
+
+  if (!e.target.closest('.workspace-select')) {
+    workspaceSelect?.classList.remove('is-open');
+    workspaceSelectTrigger?.setAttribute('aria-expanded', 'false');
   }
 });
 
@@ -3804,7 +4099,8 @@ function hideBootLoader() {
   document.body.classList.remove('loading');
 }
 
-Promise.all([loadPlans(), loadRequirements()])
+loadWorkspaceState()
+  .then(() => Promise.all([loadPlans(), loadRequirements()]))
   .then(() => {
     updateSidebarHeight();
     window.addEventListener('resize', updateSidebarHeight);

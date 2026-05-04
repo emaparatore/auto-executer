@@ -4,7 +4,7 @@
   "requirements": null,
   "status": "in_progress",
   "created": "2026-04-01",
-  "lastUpdated": "2026-04-30T12:27:29.743Z",
+  "lastUpdated": "2026-05-04T15:49:28.747Z",
   "decisions": [],
   "stories": [],
   "tasks": [
@@ -12,7 +12,7 @@
       "id": "T-1",
       "stories": [],
       "size": "medium",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [],
       "whatToDo": "Aggiungere mem_limit ai servizi esistenti in docker-compose.deploy.yml: postgres=1536m, api=768m, seq=512m, web=384m, nginx=64m. Aggiungere restart: unless-stopped a tutti i servizi.",
       "definitionOfDone": [
@@ -244,7 +244,7 @@
       "id": "T-8",
       "stories": [],
       "size": "medium",
-      "status": "completed",
+      "status": "in_progress",
       "dependsOn": [],
       "whatToDo": "Documentazione: creare docs/monitoring.md con architettura, accesso servizi, metriche custom, dashboard, alerting. Aggiornare docs/vps-setup-guide.md con sezione Monitoring Stack. Aggiornare CLAUDE.md. Aggiornare README.md.",
       "definitionOfDone": [
@@ -254,23 +254,24 @@
         },
         {
           "description": "docs/vps-setup-guide.md aggiornato",
-          "completed": true
+          "completed": false
         },
         {
           "description": "CLAUDE.md aggiornato",
-          "completed": true
+          "completed": false
         },
         {
           "description": "README.md aggiornato",
-          "completed": true
+          "completed": false
         },
         {
           "description": ".env.prod.example verificato completo",
-          "completed": true
+          "completed": false
         }
       ],
       "decision": null,
       "notes": "Documentazione scritta in italiano coerente con lo stile degli altri doc"
     }
-  ]
+  ],
+  "objective": ""
 }

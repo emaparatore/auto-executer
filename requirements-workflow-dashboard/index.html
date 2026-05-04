@@ -45,6 +45,20 @@
         </button>
       </div>
       <div class="plans-list">
+        <div class="workspace-switcher" id="workspaceSwitcher">
+          <label class="workspace-switcher-label" for="workspaceSelect">Workspace</label>
+          <div class="workspace-switcher-row">
+            <div class="workspace-select" id="workspaceSelect" aria-label="Seleziona workspace">
+              <button type="button" class="workspace-select-trigger" id="workspaceSelectTrigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="workspaceSelectValue">Seleziona workspace</span>
+                <span class="workspace-select-caret">▾</span>
+              </button>
+              <div class="workspace-select-menu" id="workspaceSelectMenu" role="listbox" aria-label="Workspace disponibili"></div>
+            </div>
+            <button id="workspaceAdd" class="workspace-switcher-reload" type="button" aria-label="Aggiungi workspace" title="Aggiungi workspace">+</button>
+            <button id="workspaceManage" class="workspace-switcher-reload" type="button" aria-label="gestisci workspaces" title="gestisci workspaces">⚙</button>
+          </div>
+        </div>
         <div class="plans-list-header">
           <div class="section-switch" aria-label="Main section switcher">
             <button class="section-switch-tab" data-section="requirements" type="button">
@@ -171,6 +185,41 @@
       </div>
     </div>
   </main>
+
+  <div class="confirm-modal-overlay" id="workspaceModal" style="display:none" onclick="closeWorkspaceModalFromEvent(event)">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="workspace-modal-title" tabindex="-1" onclick="event.stopPropagation()">
+      <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeWorkspaceModalFromEvent(event)">×</button>
+      <div class="confirm-modal-title" id="workspace-modal-title">Aggiungi workspace</div>
+      <div class="confirm-modal-text">Inserisci nome e cartella progetto. Il sistema usera <strong>docs/plans</strong> e <strong>docs/requirements</strong> dentro quella cartella.</div>
+      <div class="workspace-modal-fields">
+        <input id="workspaceLabelInput" class="search-input" placeholder="Nome workspace (es: Cliente ACME)">
+        <div class="workspace-path-group">
+          <div class="workspace-path-group-label">Cartella progetto</div>
+          <div class="workspace-path-row">
+            <input id="workspaceRootInput" class="search-input" placeholder="Incolla il path oppure usa Sfoglia cartella">
+            <button type="button" class="open-question-btn is-secondary workspace-browse-btn" id="workspaceBrowseBtn" aria-label="Sfoglia cartella" title="Sfoglia cartella">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="workspace-modal-error" id="workspaceModalError" role="alert" aria-live="assertive"></div>
+      <div class="plan-notes-actions confirm-modal-actions">
+        <button type="button" class="open-question-btn" onclick="createWorkspaceFromEvent(event)">Carica workspace</button>
+        <button type="button" class="open-question-btn is-secondary" onclick="closeWorkspaceModalFromEvent(event)">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-modal-overlay" id="workspaceManageModal" style="display:none" onclick="closeWorkspaceManageModalFromEvent(event)">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="workspace-manage-title" tabindex="-1" onclick="event.stopPropagation()">
+      <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeWorkspaceManageModalFromEvent(event)">×</button>
+      <div class="confirm-modal-title" id="workspace-manage-title">Gestisci workspaces</div>
+      <div class="workspace-manage-list" id="workspaceManageList"></div>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>

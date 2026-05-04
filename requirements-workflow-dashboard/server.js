@@ -1,6 +1,7 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,8 +10,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3500;
 
-const PLANS_DIR = path.join(__dirname, '..', 'docs', 'plans');
-const REQUIREMENTS_DIR = path.join(__dirname, '..', 'docs', 'requirements');
+const WORKSPACES_STATE_FILE = path.join(__dirname, 'workspaces.state.json');
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 const STORY_STATUSES = ['in_progress', 'completed'];
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
@@ -18,12 +18,49 @@ const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 app.use(express.json());
 app.use(express.static(__dirname));
 
+function readWorkspacesState() {
+  if (!fs.existsSync(WORKSPACES_STATE_FILE)) return { currentWorkspaceKey: null, workspaces: [] };
+  try {
+    const parsed = JSON.parse(fs.readFileSync(WORKSPACES_STATE_FILE, 'utf-8'));
+    return {
+      currentWorkspaceKey: typeof parsed.currentWorkspaceKey === 'string' ? parsed.currentWorkspaceKey : null,
+      workspaces: Array.isArray(parsed.workspaces) ? parsed.workspaces : []
+    };
+  } catch {
+    return { currentWorkspaceKey: null, workspaces: [] };
+  }
+}
+
+function writeWorkspacesState(state) {
+  fs.writeFileSync(WORKSPACES_STATE_FILE, `${JSON.stringify(state, null, 2)}\n`, 'utf-8');
+}
+
+function getWorkspaceCatalog() {
+  const state = readWorkspacesState();
+  return state.workspaces.filter(item => item && typeof item.key === 'string' && typeof item.label === 'string' && typeof item.rootDir === 'string');
+}
+
+function getCurrentWorkspace() {
+  const state = readWorkspacesState();
+  const workspaces = getWorkspaceCatalog();
+  const active = workspaces.find(item => item.key === state.currentWorkspaceKey) || null;
+  if (!active) return null;
+  return {
+    ...active,
+    plansDir: path.join(active.rootDir, 'plans'),
+    requirementsDir: path.join(active.rootDir, 'requirements')
+  };
+}
+
 function getPlanFilePath(planId) {
-  return path.join(PLANS_DIR, `${planId}.json`);
+  const workspace = getCurrentWorkspace();
+  if (!workspace) return null;
+  return path.join(workspace.plansDir, `${planId}.json`);
 }
 
 function readPlanById(planId) {
   const filePath = getPlanFilePath(planId);
+  if (!filePath) return null;
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -36,11 +73,14 @@ function writePlan(filePath, data) {
 }
 
 function getRequirementFilePath(requirementId) {
-  return path.join(REQUIREMENTS_DIR, `${requirementId}.json`);
+  const workspace = getCurrentWorkspace();
+  if (!workspace) return null;
+  return path.join(workspace.requirementsDir, `${requirementId}.json`);
 }
 
 function readRequirementById(requirementId) {
   const filePath = getRequirementFilePath(requirementId);
+  if (!filePath) return null;
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -53,11 +93,106 @@ function writeRequirement(filePath, data) {
 }
 
 function getRequirementsFiles() {
-  if (!fs.existsSync(REQUIREMENTS_DIR)) return [];
+  const workspace = getCurrentWorkspace();
+  if (!workspace) return [];
+  const requirementsDir = workspace.requirementsDir;
+  if (!requirementsDir) return [];
+  if (!fs.existsSync(requirementsDir)) return [];
   return fs
-    .readdirSync(REQUIREMENTS_DIR)
+    .readdirSync(requirementsDir)
     .filter(file => file.endsWith('.json') && file !== 'requirements.schema.json');
 }
+
+app.get('/api/workspaces', (req, res) => {
+  const state = readWorkspacesState();
+  const workspaces = getWorkspaceCatalog().map(item => ({ key: item.key, label: item.label, rootDir: item.rootDir }));
+  res.json({ workspaces, currentWorkspaceKey: state.currentWorkspaceKey || null });
+});
+
+app.get('/api/workspace/current', (req, res) => {
+  const active = getCurrentWorkspace();
+  res.json({ workspace: active ? { key: active.key, label: active.label } : null });
+});
+
+app.post('/api/workspace/select', (req, res) => {
+  const key = String(req.body?.key || '').trim();
+  const workspaces = getWorkspaceCatalog();
+  const selected = workspaces.find(item => item.key === key);
+  if (!selected) return res.status(404).json({ error: 'Workspace not found' });
+  const state = readWorkspacesState();
+  state.currentWorkspaceKey = selected.key;
+  writeWorkspacesState(state);
+  res.json({ ok: true, workspace: { key: selected.key, label: selected.label } });
+});
+
+app.post('/api/workspaces', (req, res) => {
+  const label = String(req.body?.label || '').trim();
+  const projectRootDir = path.resolve(String(req.body?.rootDir || '').trim());
+  if (!label || !projectRootDir) return res.status(400).json({ error: 'label e rootDir sono obbligatori.' });
+  const docsDir = path.join(projectRootDir, 'docs');
+  const plansDir = path.join(docsDir, 'plans');
+  const requirementsDir = path.join(docsDir, 'requirements');
+  if (!fs.existsSync(docsDir) || !fs.statSync(docsDir).isDirectory()) {
+    return res.status(400).json({ error: 'Cartella docs non trovata. Crea docs/plans e docs/requirements e riprova.' });
+  }
+  if (!fs.existsSync(plansDir) || !fs.statSync(plansDir).isDirectory()) {
+    return res.status(400).json({ error: 'Cartella docs/plans non trovata. Creala e riprova ad aggiungere il workspace.' });
+  }
+  if (!fs.existsSync(requirementsDir) || !fs.statSync(requirementsDir).isDirectory()) {
+    return res.status(400).json({ error: 'Cartella docs/requirements non trovata. Creala e riprova ad aggiungere il workspace.' });
+  }
+
+  const state = readWorkspacesState();
+  const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `ws-${Date.now()}`;
+  if (state.workspaces.some(item => item.key === key || path.resolve(item.rootDir) === docsDir)) {
+    return res.status(409).json({ error: 'Workspace gia presente.' });
+  }
+  state.workspaces.push({ key, label, rootDir: docsDir });
+  state.currentWorkspaceKey = key;
+  writeWorkspacesState(state);
+  res.status(201).json({ ok: true, workspace: { key, label } });
+});
+
+app.post('/api/workspaces/pick-folder', (req, res) => {
+  if (process.platform !== 'win32') {
+    return res.status(400).json({ error: 'Selezione grafica cartella disponibile solo su Windows.' });
+  }
+  try {
+    const script = "Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.FolderBrowserDialog; $dialog.Description = 'Seleziona la cartella progetto'; $dialog.ShowNewFolderButton = $false; $result = $dialog.ShowDialog(); if ($result -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.SelectedPath }";
+    const selectedPath = String(execFileSync('powershell', ['-NoProfile', '-STA', '-Command', script], { encoding: 'utf-8' }) || '').trim();
+    if (!selectedPath) {
+      return res.status(400).json({ error: 'Nessuna cartella selezionata.' });
+    }
+    res.json({ ok: true, path: selectedPath });
+  } catch {
+    res.status(500).json({ error: 'Impossibile aprire il selettore cartella.' });
+  }
+});
+
+app.patch('/api/workspaces/:key', (req, res) => {
+  const key = String(req.params.key || '').trim();
+  const label = String(req.body?.label || '').trim();
+  if (!key || !label) return res.status(400).json({ error: 'key e label sono obbligatori.' });
+  const state = readWorkspacesState();
+  const item = state.workspaces.find(workspace => workspace.key === key);
+  if (!item) return res.status(404).json({ error: 'Workspace non trovato.' });
+  item.label = label;
+  writeWorkspacesState(state);
+  res.json({ ok: true, workspace: { key: item.key, label: item.label } });
+});
+
+app.delete('/api/workspaces/:key', (req, res) => {
+  const key = String(req.params.key || '').trim();
+  const state = readWorkspacesState();
+  const before = state.workspaces.length;
+  state.workspaces = state.workspaces.filter(item => item.key !== key);
+  if (state.workspaces.length === before) return res.status(404).json({ error: 'Workspace non trovato.' });
+  if (state.currentWorkspaceKey === key) {
+    state.currentWorkspaceKey = state.workspaces[0]?.key || null;
+  }
+  writeWorkspacesState(state);
+  res.json({ ok: true, currentWorkspaceKey: state.currentWorkspaceKey });
+});
 
 function validateStatus(status, allowedStatuses) {
   return typeof status === 'string' && allowedStatuses.includes(status);
@@ -154,9 +289,13 @@ function normalizeUniqueStringArray(values) {
 }
 
 app.get('/api/plans', (req, res) => {
-  const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
+  const workspace = getCurrentWorkspace();
+  if (!workspace) return res.json([]);
+  const plansDir = workspace.plansDir;
+  if (!fs.existsSync(plansDir)) return res.json([]);
+  const files = fs.readdirSync(plansDir).filter(f => f.endsWith('.json'));
   const plans = files.map(file => {
-    const filePath = path.join(PLANS_DIR, file);
+    const filePath = path.join(plansDir, file);
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     if (syncPlanStatusWithTasks(data)) {
       writePlan(filePath, data);
@@ -267,9 +406,12 @@ app.delete('/api/plans/:id/decisions/:decisionId', (req, res) => {
 });
 
 app.get('/api/requirements', (req, res) => {
+  const activeWorkspace = getCurrentWorkspace();
+  if (!activeWorkspace) return res.json([]);
+  const requirementsDir = activeWorkspace.requirementsDir;
   const files = getRequirementsFiles();
   const requirements = files.map(file => {
-    const data = JSON.parse(fs.readFileSync(path.join(REQUIREMENTS_DIR, file), 'utf-8'));
+    const data = JSON.parse(fs.readFileSync(path.join(requirementsDir, file), 'utf-8'));
     const document = data.document || {};
 
     return {
@@ -1109,12 +1251,15 @@ app.patch('/api/plans/:id/stories/:storyId/status', (req, res) => {
 app.get('/api/search', (req, res) => {
   const query = (req.query.q || '').toLowerCase();
   if (!query) return res.json([]);
-  
-  const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.json'));
+  const activeWorkspace = getCurrentWorkspace();
+  if (!activeWorkspace) return res.json([]);
+  const plansDir = activeWorkspace.plansDir;
+  const requirementsDir = activeWorkspace.requirementsDir;
+  const files = fs.existsSync(plansDir) ? fs.readdirSync(plansDir).filter(f => f.endsWith('.json')) : [];
   const results = [];
   
   for (const file of files) {
-    const data = JSON.parse(fs.readFileSync(path.join(PLANS_DIR, file), 'utf-8'));
+    const data = JSON.parse(fs.readFileSync(path.join(plansDir, file), 'utf-8'));
     const matches = [];
     
     if (data.id?.toLowerCase().includes(query) || data.title?.toLowerCase().includes(query)) {
@@ -1144,7 +1289,7 @@ app.get('/api/search', (req, res) => {
   const requirementFiles = getRequirementsFiles();
 
   for (const file of requirementFiles) {
-    const data = JSON.parse(fs.readFileSync(path.join(REQUIREMENTS_DIR, file), 'utf-8'));
+    const data = JSON.parse(fs.readFileSync(path.join(requirementsDir, file), 'utf-8'));
     const document = data.document || {};
     const matches = [];
     const requirementId = document.id || file.replace('.json', '');
