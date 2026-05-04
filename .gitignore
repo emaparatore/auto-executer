@@ -10,3 +10,6 @@ yarn-error.log*
 .DS_Store
 .vscode/
 .idea/
+requirements-workflow-dashboard/workspaces.db
+requirements-workflow-dashboard/workspaces.db-shm
+requirements-workflow-dashboard/workspaces.db-wal

@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
+import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3500;
 
-const WORKSPACES_STATE_FILE = path.join(__dirname, 'workspaces.state.json');
+const WORKSPACES_DB_FILE = path.join(__dirname, 'workspaces.db');
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 const STORY_STATUSES = ['in_progress', 'completed'];
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
@@ -18,32 +19,19 @@ const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 app.use(express.json());
 app.use(express.static(__dirname));
 
-function readWorkspacesState() {
-  if (!fs.existsSync(WORKSPACES_STATE_FILE)) return { currentWorkspaceKey: null, workspaces: [] };
-  try {
-    const parsed = JSON.parse(fs.readFileSync(WORKSPACES_STATE_FILE, 'utf-8'));
-    return {
-      currentWorkspaceKey: typeof parsed.currentWorkspaceKey === 'string' ? parsed.currentWorkspaceKey : null,
-      workspaces: Array.isArray(parsed.workspaces) ? parsed.workspaces : []
-    };
-  } catch {
-    return { currentWorkspaceKey: null, workspaces: [] };
-  }
-}
+const db = new Database(WORKSPACES_DB_FILE);
+db.exec('CREATE TABLE IF NOT EXISTS workspaces (key TEXT PRIMARY KEY, label TEXT NOT NULL, root_dir TEXT NOT NULL, is_current INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)');
 
-function writeWorkspacesState(state) {
-  fs.writeFileSync(WORKSPACES_STATE_FILE, `${JSON.stringify(state, null, 2)}\n`, 'utf-8');
+function clearCurrentWorkspaceFlag() {
+  db.prepare('UPDATE workspaces SET is_current = 0 WHERE is_current = 1').run();
 }
 
 function getWorkspaceCatalog() {
-  const state = readWorkspacesState();
-  return state.workspaces.filter(item => item && typeof item.key === 'string' && typeof item.label === 'string' && typeof item.rootDir === 'string');
+  return db.prepare('SELECT key, label, root_dir as rootDir, is_current as isCurrent FROM workspaces ORDER BY created_at ASC').all();
 }
 
 function getCurrentWorkspace() {
-  const state = readWorkspacesState();
-  const workspaces = getWorkspaceCatalog();
-  const active = workspaces.find(item => item.key === state.currentWorkspaceKey) || null;
+  const active = db.prepare('SELECT key, label, root_dir as rootDir FROM workspaces WHERE is_current = 1 LIMIT 1').get() || null;
   if (!active) return null;
   return {
     ...active,
@@ -104,9 +92,9 @@ function getRequirementsFiles() {
 }
 
 app.get('/api/workspaces', (req, res) => {
-  const state = readWorkspacesState();
   const workspaces = getWorkspaceCatalog().map(item => ({ key: item.key, label: item.label, rootDir: item.rootDir }));
-  res.json({ workspaces, currentWorkspaceKey: state.currentWorkspaceKey || null });
+  const currentWorkspace = db.prepare('SELECT key FROM workspaces WHERE is_current = 1 LIMIT 1').get();
+  res.json({ workspaces, currentWorkspaceKey: currentWorkspace?.key || null });
 });
 
 app.get('/api/workspace/current', (req, res) => {
@@ -119,9 +107,8 @@ app.post('/api/workspace/select', (req, res) => {
   const workspaces = getWorkspaceCatalog();
   const selected = workspaces.find(item => item.key === key);
   if (!selected) return res.status(404).json({ error: 'Workspace not found' });
-  const state = readWorkspacesState();
-  state.currentWorkspaceKey = selected.key;
-  writeWorkspacesState(state);
+  clearCurrentWorkspaceFlag();
+  db.prepare('UPDATE workspaces SET is_current = 1, updated_at = ? WHERE key = ?').run(new Date().toISOString(), selected.key);
   res.json({ ok: true, workspace: { key: selected.key, label: selected.label } });
 });
 
@@ -142,14 +129,14 @@ app.post('/api/workspaces', (req, res) => {
     return res.status(400).json({ error: 'Cartella docs/requirements non trovata. Creala e riprova ad aggiungere il workspace.' });
   }
 
-  const state = readWorkspacesState();
+  const state = { workspaces: getWorkspaceCatalog() };
   const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `ws-${Date.now()}`;
   if (state.workspaces.some(item => item.key === key || path.resolve(item.rootDir) === docsDir)) {
     return res.status(409).json({ error: 'Workspace gia presente.' });
   }
-  state.workspaces.push({ key, label, rootDir: docsDir });
-  state.currentWorkspaceKey = key;
-  writeWorkspacesState(state);
+  clearCurrentWorkspaceFlag();
+  const now = new Date().toISOString();
+  db.prepare('INSERT INTO workspaces (key, label, root_dir, is_current, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(key, label, docsDir, now, now);
   res.status(201).json({ ok: true, workspace: { key, label } });
 });
 
@@ -173,25 +160,23 @@ app.patch('/api/workspaces/:key', (req, res) => {
   const key = String(req.params.key || '').trim();
   const label = String(req.body?.label || '').trim();
   if (!key || !label) return res.status(400).json({ error: 'key e label sono obbligatori.' });
-  const state = readWorkspacesState();
-  const item = state.workspaces.find(workspace => workspace.key === key);
+  const item = db.prepare('SELECT key FROM workspaces WHERE key = ?').get(key);
   if (!item) return res.status(404).json({ error: 'Workspace non trovato.' });
-  item.label = label;
-  writeWorkspacesState(state);
-  res.json({ ok: true, workspace: { key: item.key, label: item.label } });
+  db.prepare('UPDATE workspaces SET label = ?, updated_at = ? WHERE key = ?').run(label, new Date().toISOString(), key);
+  res.json({ ok: true, workspace: { key, label } });
 });
 
 app.delete('/api/workspaces/:key', (req, res) => {
   const key = String(req.params.key || '').trim();
-  const state = readWorkspacesState();
-  const before = state.workspaces.length;
-  state.workspaces = state.workspaces.filter(item => item.key !== key);
-  if (state.workspaces.length === before) return res.status(404).json({ error: 'Workspace non trovato.' });
-  if (state.currentWorkspaceKey === key) {
-    state.currentWorkspaceKey = state.workspaces[0]?.key || null;
+  const exists = db.prepare('SELECT is_current as isCurrent FROM workspaces WHERE key = ?').get(key);
+  if (!exists) return res.status(404).json({ error: 'Workspace non trovato.' });
+  db.prepare('DELETE FROM workspaces WHERE key = ?').run(key);
+  if (exists.isCurrent) {
+    const next = db.prepare('SELECT key FROM workspaces ORDER BY created_at ASC LIMIT 1').get();
+    if (next) db.prepare('UPDATE workspaces SET is_current = 1, updated_at = ? WHERE key = ?').run(new Date().toISOString(), next.key);
   }
-  writeWorkspacesState(state);
-  res.json({ ok: true, currentWorkspaceKey: state.currentWorkspaceKey });
+  const current = db.prepare('SELECT key FROM workspaces WHERE is_current = 1 LIMIT 1').get();
+  res.json({ ok: true, currentWorkspaceKey: current?.key || null });
 });
 
 function validateStatus(status, allowedStatuses) {
