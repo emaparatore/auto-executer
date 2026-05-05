@@ -235,7 +235,7 @@
         "US-010"
       ],
       "size": "Large",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-02"
       ],
@@ -248,19 +248,19 @@
       "definitionOfDone": [
         {
           "description": "requirementDetail.renderer.js esiste con export renderRequirementDetail",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Funzioni ausiliarie (renderRequirementItems, renderNonFunctionalRequirementItems, ecc.) sono nel modulo",
-          "completed": false
+          "completed": true
         },
         {
           "description": "renderRequirementDetail riceve tutti i dati come parametri",
-          "completed": false
+          "completed": true
         },
         {
           "description": "app.js importa e usa il renderer - output HTML identico",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-2",
