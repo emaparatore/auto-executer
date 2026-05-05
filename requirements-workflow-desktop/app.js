@@ -1,6 +1,7 @@
 import { getCurrentDateIso } from '/src/utils/date.js';
 import { escapeHtml } from '/src/utils/html.js';
 import { formatStatus, normalizeStoryStatus } from '/src/utils/status.js';
+import { TASK_STATUSES, STATUS_SORT_ORDER } from '/src/utils/constants.js';
 import { createStore } from '/src/state/store.js';
 import { listPlans, getPlanById } from '/src/api/plansApi.js';
 import { listRequirements, getRequirementById } from '/src/api/requirementsApi.js';
@@ -27,6 +28,7 @@ import { uiState } from '/src/state/uiState.js';
 import { createPlansController } from '/src/features/plans/plans.controller.js';
 import { createRequirementsController } from '/src/features/requirements/requirements.controller.js';
 import { createWorkspacesController } from '/src/features/workspaces/workspaces.controller.js';
+import { buildPhasesForEditor } from '/src/features/plans/plans.selectors.js';
 
 let plans = [];
 let requirements = [];
@@ -108,7 +110,7 @@ const plansDeps = {
 const plansController = createPlansController(plansDeps);
 plansDeps.loadPlans = () => plansController.loadPlans();
 
-const requirementsController = createRequirementsController({
+const requirementsDeps = {
   listRequirements,
   getRequirementById,
   readState: readCoreState,
@@ -118,8 +120,15 @@ const requirementsController = createRequirementsController({
   renderRequirementDetail: () => renderRequirementDetail(),
   scrollWorkspaceToTop,
   resetRequirementUiEditingState,
-  activateRequirementListItem
-});
+  activateRequirementListItem,
+  uiState,
+  showToast,
+  OPEN_QUESTION_STATUSES,
+  loadRequirements: null
+};
+
+const requirementsController = createRequirementsController(requirementsDeps);
+requirementsDeps.loadRequirements = () => requirementsController.loadRequirements();
 
 const workspacesController = createWorkspacesController({
   listWorkspaces,
@@ -190,10 +199,6 @@ appStore.subscribe((nextState, previousState, meta) => {
 
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 const ADD_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
-
-const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
-const STATUS_SORT_ORDER = ['pending', 'draft', 'in_progress', 'in_review', 'approved', 'implemented', 'completed', 'skipped', 'cancelled'];
-
 plansDeps.TASK_STATUSES = TASK_STATUSES;
 
 const WELCOME_PLAN_ICON = `
@@ -228,31 +233,6 @@ function updateSidebarHeight() {
 
 function isTaskFieldEditing(taskId, field) {
   return uiState.taskField.editing?.taskId === taskId && uiState.taskField.editing?.field === field;
-}
-
-function buildPhasesForEditor(plan) {
-  const planPhases = Array.isArray(plan?.phases) ? plan.phases : [];
-  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
-  const tasksById = new Map(tasks.map(task => [String(task.id), task]));
-
-  return planPhases
-    .map(phase => {
-      const title = String(phase?.title || '').trim();
-      if (!title) return null;
-
-      const fromPhaseList = Array.isArray(phase?.tasks)
-        ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean)
-        : [];
-      const fromTaskField = tasks
-        .filter(task => String(task?.phase || '').trim() === title)
-        .map(task => String(task.id));
-
-      const mergedTaskIds = Array.from(new Set([...fromPhaseList, ...fromTaskField]))
-        .filter(taskId => tasksById.has(taskId));
-
-      return { title, tasks: mergedTaskIds };
-    })
-    .filter(Boolean);
 }
 
 async function loadPlans() {
@@ -2128,65 +2108,63 @@ window.requestDeletePlanDecisionByEncodedId = plansController.requestDeletePlanD
 window.closeDeletePlanDecisionModalFromEvent = plansController.closeDeletePlanDecisionModalFromEvent;
 window.confirmDeletePlanDecisionFromEvent = plansController.confirmDeletePlanDecisionFromEvent;
 window.handleDeletePlanDecisionModalKeydown = plansController.handleDeletePlanDecisionModalKeydown;
-window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
-window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
-window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
-window.handleAcceptanceRegionKeydown = handleAcceptanceRegionKeydown;
+window.enableAcceptanceEditByEncodedId = requirementsController.enableAcceptanceEditByEncodedId;
+window.toggleAcceptanceCriterionByEncodedIds = requirementsController.toggleAcceptanceCriterionByEncodedIds;
+window.disableAcceptanceEditFromEvent = requirementsController.disableAcceptanceEditFromEvent;
+window.handleAcceptanceRegionKeydown = requirementsController.handleAcceptanceRegionKeydown;
 window.handleAcceptanceItemKeydown = handleAcceptanceItemKeydown;
-window.enableOpenQuestionEditByEncodedId = enableOpenQuestionEditByEncodedId;
-window.cancelOpenQuestionEditFromEvent = cancelOpenQuestionEditFromEvent;
-window.handleOpenQuestionCardKeydown = handleOpenQuestionCardKeydown;
-window.saveOpenQuestionByEncodedIds = saveOpenQuestionByEncodedIds;
-window.enableRequirementOverviewEditFromEvent = enableRequirementOverviewEditFromEvent;
-window.cancelRequirementOverviewEditFromEvent = cancelRequirementOverviewEditFromEvent;
-window.saveRequirementOverviewFromEvent = saveRequirementOverviewFromEvent;
-window.enableRequirementCurrentStateEditFromEvent = enableRequirementCurrentStateEditFromEvent;
-window.cancelRequirementCurrentStateEditFromEvent = cancelRequirementCurrentStateEditFromEvent;
-window.saveRequirementCurrentStateFromEvent = saveRequirementCurrentStateFromEvent;
-window.addRequirementCurrentStateRowFromEvent = addRequirementCurrentStateRowFromEvent;
-window.removeRequirementCurrentStateRowFromEvent = removeRequirementCurrentStateRowFromEvent;
-window.enableRequirementNotesEditFromEvent = enableRequirementNotesEditFromEvent;
-window.cancelRequirementNotesEditFromEvent = cancelRequirementNotesEditFromEvent;
-window.saveRequirementNotesFromEvent = saveRequirementNotesFromEvent;
-window.enableCreateFunctionalRequirementFromEvent = enableCreateFunctionalRequirementFromEvent;
-window.editFunctionalRequirementByEncodedId = editFunctionalRequirementByEncodedId;
-window.requestDeleteFunctionalRequirementByEncodedId = requestDeleteFunctionalRequirementByEncodedId;
-window.saveFunctionalRequirementByEncodedId = saveFunctionalRequirementByEncodedId;
-window.cancelFunctionalRequirementEditFromEvent = cancelFunctionalRequirementEditFromEvent;
-window.deleteFunctionalRequirementByEncodedId = deleteFunctionalRequirementByEncodedId;
-window.closeDeleteFunctionalRequirementModalFromEvent = closeDeleteFunctionalRequirementModalFromEvent;
-window.confirmDeleteFunctionalRequirementFromEvent = confirmDeleteFunctionalRequirementFromEvent;
-window.handleDeleteFunctionalRequirementModalKeydown = handleDeleteFunctionalRequirementModalKeydown;
-window.enableCreateNonFunctionalRequirementFromEvent = enableCreateNonFunctionalRequirementFromEvent;
-window.editNonFunctionalRequirementByEncodedId = editNonFunctionalRequirementByEncodedId;
-window.requestDeleteNonFunctionalRequirementByEncodedId = requestDeleteNonFunctionalRequirementByEncodedId;
-window.saveNonFunctionalRequirementByEncodedId = saveNonFunctionalRequirementByEncodedId;
-window.cancelNonFunctionalRequirementEditFromEvent = cancelNonFunctionalRequirementEditFromEvent;
-window.closeDeleteNonFunctionalRequirementModalFromEvent = closeDeleteNonFunctionalRequirementModalFromEvent;
-window.confirmDeleteNonFunctionalRequirementFromEvent = confirmDeleteNonFunctionalRequirementFromEvent;
-window.handleDeleteNonFunctionalRequirementModalKeydown = handleDeleteNonFunctionalRequirementModalKeydown;
-window.enableStoryCreateFromEvent = enableStoryCreateFromEvent;
-window.enableStoryEditByEncodedId = enableStoryEditByEncodedId;
-window.cancelStoryEditFromEvent = cancelStoryEditFromEvent;
-window.saveStoryByEncodedId = saveStoryByEncodedId;
-window.createStoryFromEvent = createStoryFromEvent;
-window.requestDeleteStoryByEncodedId = requestDeleteStoryByEncodedId;
-window.closeDeleteStoryModalFromEvent = closeDeleteStoryModalFromEvent;
-window.confirmDeleteStoryFromEvent = confirmDeleteStoryFromEvent;
-window.addStoryCriterionFromEvent = addStoryCriterionFromEvent;
-window.removeStoryCriterionFromEvent = removeStoryCriterionFromEvent;
-window.enableOpenQuestionCreateFromEvent = enableOpenQuestionCreateFromEvent;
-window.proceedCreateOpenQuestionFromEvent = proceedCreateOpenQuestionFromEvent;
-window.backCreateOpenQuestionFromEvent = backCreateOpenQuestionFromEvent;
-window.cancelCreateOpenQuestionFromEvent = cancelCreateOpenQuestionFromEvent;
-window.createOpenQuestionFromEvent = createOpenQuestionFromEvent;
-window.enableOpenQuestionEditByEncodedId = enableOpenQuestionEditByEncodedId;
-window.cancelOpenQuestionEditFromEvent = cancelOpenQuestionEditFromEvent;
-window.saveOpenQuestionByEncodedIds = saveOpenQuestionByEncodedIds;
-window.requestDeleteOpenQuestionByEncodedIds = requestDeleteOpenQuestionByEncodedIds;
-window.closeDeleteOpenQuestionModalFromEvent = closeDeleteOpenQuestionModalFromEvent;
-window.confirmDeleteOpenQuestionFromEvent = confirmDeleteOpenQuestionFromEvent;
-window.handleOpenQuestionCardKeydown = handleOpenQuestionCardKeydown;
+window.enableOpenQuestionEditByEncodedId = requirementsController.enableOpenQuestionEditByEncodedId;
+window.cancelOpenQuestionEditFromEvent = requirementsController.cancelOpenQuestionEditFromEvent;
+window.handleOpenQuestionCardKeydown = requirementsController.handleOpenQuestionCardKeydown;
+window.saveOpenQuestionByEncodedIds = requirementsController.saveOpenQuestionByEncodedIds;
+window.enableRequirementOverviewEditFromEvent = requirementsController.enableRequirementOverviewEditFromEvent;
+window.cancelRequirementOverviewEditFromEvent = requirementsController.cancelRequirementOverviewEditFromEvent;
+window.saveRequirementOverviewFromEvent = requirementsController.saveRequirementOverviewFromEvent;
+window.enableRequirementCurrentStateEditFromEvent = requirementsController.enableRequirementCurrentStateEditFromEvent;
+window.cancelRequirementCurrentStateEditFromEvent = requirementsController.cancelRequirementCurrentStateEditFromEvent;
+window.saveRequirementCurrentStateFromEvent = requirementsController.saveRequirementCurrentStateFromEvent;
+window.addRequirementCurrentStateRowFromEvent = requirementsController.addRequirementCurrentStateRowFromEvent;
+window.removeRequirementCurrentStateRowFromEvent = requirementsController.removeRequirementCurrentStateRowFromEvent;
+window.enableRequirementNotesEditFromEvent = requirementsController.enableRequirementNotesEditFromEvent;
+window.cancelRequirementNotesEditFromEvent = requirementsController.cancelRequirementNotesEditFromEvent;
+window.saveRequirementNotesFromEvent = requirementsController.saveRequirementNotesFromEvent;
+window.enableCreateFunctionalRequirementFromEvent = requirementsController.enableCreateFunctionalRequirementFromEvent;
+window.editFunctionalRequirementByEncodedId = requirementsController.editFunctionalRequirementByEncodedId;
+window.requestDeleteFunctionalRequirementByEncodedId = requirementsController.requestDeleteFunctionalRequirementByEncodedId;
+window.saveFunctionalRequirementByEncodedId = requirementsController.saveFunctionalRequirementByEncodedId;
+window.cancelFunctionalRequirementEditFromEvent = requirementsController.cancelFunctionalRequirementEditFromEvent;
+window.deleteFunctionalRequirementByEncodedId = requirementsController.deleteFunctionalRequirementByEncodedId;
+window.closeDeleteFunctionalRequirementModalFromEvent = requirementsController.closeDeleteFunctionalRequirementModalFromEvent;
+window.confirmDeleteFunctionalRequirementFromEvent = requirementsController.confirmDeleteFunctionalRequirementFromEvent;
+window.handleDeleteFunctionalRequirementModalKeydown = requirementsController.handleDeleteFunctionalRequirementModalKeydown;
+window.enableCreateNonFunctionalRequirementFromEvent = requirementsController.enableCreateNonFunctionalRequirementFromEvent;
+window.editNonFunctionalRequirementByEncodedId = requirementsController.editNonFunctionalRequirementByEncodedId;
+window.requestDeleteNonFunctionalRequirementByEncodedId = requirementsController.requestDeleteNonFunctionalRequirementByEncodedId;
+window.saveNonFunctionalRequirementByEncodedId = requirementsController.saveNonFunctionalRequirementByEncodedId;
+window.cancelNonFunctionalRequirementEditFromEvent = requirementsController.cancelNonFunctionalRequirementEditFromEvent;
+window.closeDeleteNonFunctionalRequirementModalFromEvent = requirementsController.closeDeleteNonFunctionalRequirementModalFromEvent;
+window.confirmDeleteNonFunctionalRequirementFromEvent = requirementsController.confirmDeleteNonFunctionalRequirementFromEvent;
+window.handleDeleteNonFunctionalRequirementModalKeydown = requirementsController.handleDeleteNonFunctionalRequirementModalKeydown;
+window.enableStoryCreateFromEvent = requirementsController.enableStoryCreateFromEvent;
+window.cancelStoryCreateFromEvent = requirementsController.cancelStoryCreateFromEvent;
+window.proceedStoryCreateFromEvent = requirementsController.proceedStoryCreateFromEvent;
+window.enableStoryEditByEncodedId = requirementsController.enableStoryEditByEncodedId;
+window.cancelStoryEditFromEvent = requirementsController.cancelStoryEditFromEvent;
+window.saveStoryByEncodedId = requirementsController.saveStoryByEncodedId;
+window.createStoryFromEvent = requirementsController.createStoryFromEvent;
+window.requestDeleteStoryByEncodedId = requirementsController.requestDeleteStoryByEncodedId;
+window.closeDeleteStoryModalFromEvent = requirementsController.closeDeleteStoryModalFromEvent;
+window.confirmDeleteStoryFromEvent = requirementsController.confirmDeleteStoryFromEvent;
+window.addStoryCriterionFromEvent = requirementsController.addStoryCriterionFromEvent;
+window.removeStoryCriterionFromEvent = requirementsController.removeStoryCriterionFromEvent;
+window.enableOpenQuestionCreateFromEvent = requirementsController.enableOpenQuestionCreateFromEvent;
+window.proceedCreateOpenQuestionFromEvent = requirementsController.proceedCreateOpenQuestionFromEvent;
+window.backCreateOpenQuestionFromEvent = requirementsController.backCreateOpenQuestionFromEvent;
+window.cancelCreateOpenQuestionFromEvent = requirementsController.cancelCreateOpenQuestionFromEvent;
+window.createOpenQuestionFromEvent = requirementsController.createOpenQuestionFromEvent;
+window.requestDeleteOpenQuestionByEncodedIds = requirementsController.requestDeleteOpenQuestionByEncodedIds;
+window.closeDeleteOpenQuestionModalFromEvent = requirementsController.closeDeleteOpenQuestionModalFromEvent;
+window.confirmDeleteOpenQuestionFromEvent = requirementsController.confirmDeleteOpenQuestionFromEvent;
 
 const RIGHT_NAV_TAB_CONFIG = {
   tasks:                  { prefix: 'anchor-task-',      labelKey: 'id',    titleKey: 'title',    statusKey: 'status' },

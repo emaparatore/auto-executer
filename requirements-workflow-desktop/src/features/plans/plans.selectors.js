@@ -18,4 +18,29 @@ function filterPlansByStatuses(plans, enabledStatuses) {
   return (plans || []).filter((item) => (enabledStatuses || new Set()).has(getPlanStatus(item)));
 }
 
-export { getPlanStatus, getPlanStatuses, filterPlansByStatuses };
+function buildPhasesForEditor(plan) {
+  const planPhases = Array.isArray(plan?.phases) ? plan.phases : [];
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  const tasksById = new Map(tasks.map(task => [String(task.id), task]));
+
+  return planPhases
+    .map(phase => {
+      const title = String(phase?.title || '').trim();
+      if (!title) return null;
+
+      const fromPhaseList = Array.isArray(phase?.tasks)
+        ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean)
+        : [];
+      const fromTaskField = tasks
+        .filter(task => String(task?.phase || '').trim() === title)
+        .map(task => String(task.id));
+
+      const mergedTaskIds = Array.from(new Set([...fromPhaseList, ...fromTaskField]))
+        .filter(taskId => tasksById.has(taskId));
+
+      return { title, tasks: mergedTaskIds };
+    })
+    .filter(Boolean);
+}
+
+export { getPlanStatus, getPlanStatuses, filterPlansByStatuses, buildPhasesForEditor };

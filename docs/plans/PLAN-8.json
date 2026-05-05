@@ -6,7 +6,7 @@
   "targetArchitecture": "Struttura target: app.js ridotta a bootstrap/wiring. src/state/uiState.js (stato editing centralizzato). src/ui/renderers/planDetail.renderer.js e requirementDetail.renderer.js (template+render dettaglio). src/features/*/handlers.js ampliati con tutti i CRUD handlers. Eventuali sottogruppi: src/features/plans/planDetails.handlers.js, src/features/requirements/stories.handlers.js, requirements.functional.handlers.js, etc.",
   "status": "in_progress",
   "created": "2026-05-05",
-  "lastUpdated": "2026-05-05T16:29:18.000Z",
+  "lastUpdated": "2026-05-05T17:00:01.507Z",
   "notes": "Piano orientato a migrazione aggressiva ma incrementale. Ogni task deve mantenere app avviabile. Le funzioni devono essere spostate OUT di app.js, non duplicate.",
   "phases": [
     {
@@ -95,19 +95,19 @@
       "id": "US-010",
       "description": "Renderer dettaglio requirement estratto da app.js",
       "tasks": "T-04, T-07, T-08, T-09, T-10",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-011",
       "description": "CRUD handlers plans spostati nel feature module",
       "tasks": "T-05, T-06",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-012",
       "description": "CRUD handlers requirements spostati nel feature module",
       "tasks": "T-07, T-08, T-09, T-10",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-013",
@@ -329,7 +329,7 @@
         "US-011"
       ],
       "size": "Small",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-05"
       ],
@@ -343,15 +343,15 @@
       "definitionOfDone": [
         {
           "description": "TASK_STATUSES e STATUS_SORT_ORDER sono in utils/constants.js o plans.selectors.js",
-          "completed": false
+          "completed": true
         },
         {
           "description": "buildPhasesForEditor e in plans.selectors.js",
-          "completed": false
+          "completed": true
         },
         {
           "description": "app.js non contiene piu queste costanti/helper",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": null,
@@ -367,7 +367,7 @@
         "US-012"
       ],
       "size": "Large",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-04"
       ],
@@ -385,19 +385,19 @@
       "definitionOfDone": [
         {
           "description": "stories.handlers.js esiste con tutti i CRUD story handlers",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Handlers usano uiState per stato editing",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Controller espone i metodi e app.js li wiring su window",
-          "completed": false
+          "completed": true
         },
         {
           "description": "CRUD stories e acceptance criteria funzionano come prima",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-3",
@@ -413,7 +413,7 @@
         "US-012"
       ],
       "size": "Large",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-04"
       ],
@@ -434,19 +434,19 @@
       "definitionOfDone": [
         {
           "description": "subRequirements.handlers.js esiste con CRUD functional e non-functional",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Handlers usano uiState per stato editing",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Controller espone i metodi e app.js li wiring su window",
-          "completed": false
+          "completed": true
         },
         {
           "description": "CRUD functional e non-functional funzionano come prima",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-3",
@@ -462,7 +462,7 @@
         "US-012"
       ],
       "size": "Medium",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-04"
       ],
@@ -480,19 +480,19 @@
       "definitionOfDone": [
         {
           "description": "openQuestions.handlers.js esiste con tutti i CRUD handlers",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Handlers usano uiState per stato editing",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Controller espone i metodi e app.js li wiring su window",
-          "completed": false
+          "completed": true
         },
         {
           "description": "CRUD open questions funzionano come prima",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-3",
@@ -508,7 +508,7 @@
         "US-012"
       ],
       "size": "Medium",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-04"
       ],
@@ -526,19 +526,19 @@
       "definitionOfDone": [
         {
           "description": "requirementDetail.handlers.js esiste con editing handlers",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Handlers usano uiState per stato editing",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Controller espone i metodi e app.js li wiring su window",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Editing overview, current state, notes funzionano come prima",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-3",
