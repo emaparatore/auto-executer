@@ -1,0 +1,617 @@
+{
+  "id": "PLAN-7",
+  "title": "Refactoring frontend vanilla JS modulare",
+  "requirements": "docs/requirements/FEAT-9482-refactoring.json",
+  "objective": "Eseguire un refactoring incrementale del frontend monolitico separando template/UI, logica applicativa, API client e utility condivise con JavaScript vanilla + ES modules, mantenendo parita funzionale.",
+  "targetArchitecture": "Struttura target: src/main.js (bootstrap), src/state/store.js (stato), src/api/*.js (fetch centralizzate), src/ui/templates/*.js (template), src/ui/renderers/*.js (render), src/features/plans/*, src/features/requirements/*, src/features/workspaces/* (logica di dominio).",
+  "status": "completed",
+  "created": "2026-05-05",
+  "lastUpdated": "2026-05-05T17:30:00.000Z",
+  "lastUpdatedNote": "Completato T-12: smoke test core superato e chiusura piano con aggiornamento stati tasks/stories.",
+  "notes": "Piano orientato a migrazione progressiva. Ogni task deve mantenere app avviabile e feature principali operative.",
+  "phases": [
+    {
+      "id": "A",
+      "title": "Foundation & Bootstrap",
+      "tasks": [
+        "T-01",
+        "T-02"
+      ]
+    },
+    {
+      "id": "B",
+      "title": "Shared Layers (Utils + API + Store)",
+      "tasks": [
+        "T-03",
+        "T-04",
+        "T-05"
+      ]
+    },
+    {
+      "id": "C",
+      "title": "UI Extraction (Templates + Renderers)",
+      "tasks": [
+        "T-06",
+        "T-07"
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Feature Modularization",
+      "tasks": [
+        "T-08",
+        "T-09",
+        "T-10"
+      ]
+    },
+    {
+      "id": "E",
+      "title": "Stabilization & Closure",
+      "tasks": [
+        "T-11",
+        "T-12"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DEC-1",
+      "description": "No framework migration in this initiative",
+      "rationale": "Priorita a refactor incrementale vanilla JS per ridurre rischio e costo di rewrite.",
+      "date": "2026-05-05"
+    },
+    {
+      "id": "DEC-2",
+      "description": "ES Modules as mandatory frontend module boundary",
+      "rationale": "Consente separazione chiara delle responsabilita senza dipendenze aggiuntive immediate.",
+      "date": "2026-05-05"
+    },
+    {
+      "id": "DEC-3",
+      "description": "Incremental migration with compatibility bridge",
+      "rationale": "Permette spostamento graduale da app.js mantenendo comportamento corrente.",
+      "date": "2026-05-05"
+    }
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "description": "Template separati dalla logica",
+      "tasks": "T-06, T-08, T-09",
+      "status": "completed"
+    },
+    {
+      "id": "US-002",
+      "description": "Rendering per sezione",
+      "tasks": "T-07, T-08, T-09, T-10",
+      "status": "completed"
+    },
+    {
+      "id": "US-003",
+      "description": "Store centralizzato",
+      "tasks": "T-05, T-08, T-09, T-10",
+      "status": "completed"
+    },
+    {
+      "id": "US-004",
+      "description": "API client uniformi",
+      "tasks": "T-04, T-08, T-09, T-10",
+      "status": "completed"
+    },
+    {
+      "id": "US-005",
+      "description": "Utility condivise e riuso",
+      "tasks": "T-03, T-11",
+      "status": "completed"
+    },
+    {
+      "id": "US-006",
+      "description": "Bootstrap unico dell'applicazione",
+      "tasks": "T-01, T-02, T-12",
+      "status": "completed"
+    },
+    {
+      "id": "US-007",
+      "description": "Refactoring incrementale verificabile",
+      "tasks": "T-02, T-11, T-12",
+      "status": "completed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-01",
+      "title": "Creare struttura cartelle frontend modulare",
+      "phase": "Foundation & Bootstrap",
+      "stories": [
+        "US-006"
+      ],
+      "size": "Small",
+      "status": "completed",
+      "dependsOn": [],
+      "files": [
+        "requirements-workflow-desktop/src/main.js",
+        "requirements-workflow-desktop/src/ui/templates/.gitkeep",
+        "requirements-workflow-desktop/src/ui/renderers/.gitkeep",
+        "requirements-workflow-desktop/src/state/.gitkeep",
+        "requirements-workflow-desktop/src/features/plans/.gitkeep",
+        "requirements-workflow-desktop/src/features/requirements/.gitkeep",
+        "requirements-workflow-desktop/src/features/workspaces/.gitkeep",
+        "requirements-workflow-desktop/src/api/.gitkeep",
+        "requirements-workflow-desktop/src/utils/.gitkeep"
+      ],
+      "endpoints": [],
+      "whatToDo": "Creare la struttura target dei moduli frontend e un entrypoint src/main.js iniziale senza cambiare comportamento runtime.",
+      "definitionOfDone": [
+        {
+          "description": "Le cartelle target esistono nella codebase",
+          "completed": true
+        },
+        {
+          "description": "E presente src/main.js con bootstrap minimo",
+          "completed": true
+        },
+        {
+          "description": "Nessuna regressione di avvio introdotta in questa fase",
+          "completed": true
+        }
+      ],
+      "decision": "DEC-2",
+      "implementationNotes": "Creata struttura directory target con placeholder .gitkeep e aggiunto src/main.js con bootstrap minimale non invasivo.",
+      "notes": "Nessun collegamento runtime introdotto in questo task; integrazione prevista in T-02."
+    },
+    {
+      "id": "T-02",
+      "title": "Introdurre bootstrap progressivo in index.html",
+      "phase": "Foundation & Bootstrap",
+      "stories": [
+        "US-006",
+        "US-007"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [
+        "T-01"
+      ],
+      "files": [
+        "requirements-workflow-desktop/index.html",
+        "requirements-workflow-desktop/src/main.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Agganciare index.html al nuovo entrypoint modulo mantenendo un bridge temporaneo verso la logica esistente fino al completamento migrazione.",
+      "definitionOfDone": [
+        {
+          "description": "index.html carica src/main.js come modulo",
+            "completed": true
+        },
+        {
+          "description": "Il bootstrap non rompe il flusso iniziale dell'app",
+            "completed": true
+        },
+        {
+          "description": "Bridge di compatibilita documentato",
+            "completed": true
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "index.html ora carica src/main.js come modulo. main.js inizializza il bootstrap e inietta app.js come script legacy defer per mantenere comportamento runtime esistente.",
+      "notes": "Bridge di compatibilita temporaneo: window.__appBootstrapBridge descrive modalita legacy finche la migrazione non sposta la logica fuori da app.js."
+    },
+    {
+      "id": "T-03",
+      "title": "Estrarre utility condivise",
+      "phase": "Shared Layers (Utils + API + Store)",
+      "stories": [
+        "US-005"
+      ],
+      "size": "Small",
+      "status": "completed",
+      "dependsOn": [
+        "T-02"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/utils/html.js",
+        "requirements-workflow-desktop/src/utils/date.js",
+        "requirements-workflow-desktop/src/utils/status.js",
+        "requirements-workflow-desktop/src/utils/helpers.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Spostare escapeHtml, format date, status mapping e helper trasversali in moduli utils e aggiornare i punti di utilizzo.",
+      "definitionOfDone": [
+        {
+          "description": "Utility principali sono disponibili sotto src/utils",
+            "completed": true
+        },
+        {
+          "description": "Rimosse duplicazioni helper nel codice esistente",
+            "completed": true
+        },
+        {
+          "description": "Import espliciti al posto di funzioni sparse",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Create utility condivise in src/utils (html, date, status, helpers). app.js ora importa esplicitamente escapeHtml, formatStatus/normalizeStoryStatus, getCurrentDateIso e fetchJsonOrThrow.",
+      "notes": "Per supportare import ES modules in app.js, il bridge in src/main.js carica app.js come script type=module mantenendo bootstrap incrementale."
+    },
+    {
+      "id": "T-04",
+      "title": "Introdurre API client centralizzati",
+      "phase": "Shared Layers (Utils + API + Store)",
+      "stories": [
+        "US-004"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [
+        "T-02"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/api/http.js",
+        "requirements-workflow-desktop/src/api/plansApi.js",
+        "requirements-workflow-desktop/src/api/requirementsApi.js",
+        "requirements-workflow-desktop/src/api/workspacesApi.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "GET /api/plans",
+        "GET /api/requirements",
+        "GET /api/workspaces",
+        "GET /api/workspace/current",
+        "POST /api/workspace/select",
+        "POST /api/workspaces",
+        "PATCH /api/workspaces/:key",
+        "DELETE /api/workspaces/:key"
+      ],
+      "whatToDo": "Creare layer API con wrapper HTTP condiviso e migrare progressivamente le fetch esistenti verso i nuovi moduli.",
+      "definitionOfDone": [
+        {
+          "description": "Esiste wrapper HTTP comune per fetch+error handling",
+            "completed": true
+        },
+        {
+          "description": "Le chiamate principali passano da src/api",
+            "completed": true
+        },
+        {
+          "description": "Comportamento errori utente invariato o migliorato",
+            "completed": true
+        }
+      ],
+      "decision": "DEC-1",
+      "implementationNotes": "Creati src/api/http.js, src/api/plansApi.js, src/api/requirementsApi.js e src/api/workspacesApi.js. app.js ora usa i client per load plans/requirements, dettaglio plan/requirement e flussi workspace (list/current/select/create/rename/delete + pick-folder).",
+      "notes": "Migrazione incrementale: alcune chiamate secondarie restano temporaneamente dirette e saranno riallineate nei task successivi senza impatto regressivo sui flussi core."
+    },
+    {
+      "id": "T-05",
+      "title": "Introdurre store centralizzato",
+      "phase": "Shared Layers (Utils + API + Store)",
+      "stories": [
+        "US-003"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-03",
+        "T-04"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/state/store.js",
+        "requirements-workflow-desktop/src/main.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Creare uno store leggero con stato iniziale, metodi update e subscription interna per guidare la migrazione dalle variabili globali.",
+      "definitionOfDone": [
+        {
+          "description": "Store con API getState/updateState/resetState disponibile",
+            "completed": true
+        },
+        {
+          "description": "Parte dello stato globale e migrata nello store",
+            "completed": true
+        },
+        {
+          "description": "Aggiornamenti stato tracciabili in un unico layer",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creato src/state/store.js con API getState/updateState/resetState/subscribe. app.js inizializza appStore e traccia transizioni su window.__appStateTransitions. Stato core migrato progressivamente (plans, requirements, currentPlan, currentRequirement, currentSection, currentWorkspace, hasWorkspaceConfigured) tramite syncCoreState nei principali flussi di load/select/update.",
+      "notes": "Approccio incrementale: mantenute variabili legacy locali per compatibilita immediata, ma aggiornamenti stato core ora passano da un layer unico tracciabile."
+    },
+    {
+      "id": "T-06",
+      "title": "Estrarre template HTML principali",
+      "phase": "UI Extraction (Templates + Renderers)",
+      "stories": [
+        "US-001"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [
+        "T-03",
+        "T-05"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/ui/templates/plans.templates.js",
+        "requirements-workflow-desktop/src/ui/templates/requirements.templates.js",
+        "requirements-workflow-desktop/src/ui/templates/workspaces.templates.js",
+        "requirements-workflow-desktop/src/ui/templates/common.templates.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Estrarre le stringhe/factory HTML in moduli template dedicati, lasciando fuori regole business e fetch.",
+      "definitionOfDone": [
+        {
+          "description": "Template principali spostati in src/ui/templates",
+            "completed": true
+        },
+        {
+          "description": "Nessuna chiamata API all'interno dei template",
+            "completed": true
+        },
+        {
+          "description": "Output HTML equivalente per i casi principali",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creati template module in src/ui/templates: common.templates.js (status filters), plans.templates.js (lista plans), requirements.templates.js (lista requirements), workspaces.templates.js (workspace options/manage list). app.js ora compone la UI usando questi template con dipendenze esplicite (escapeHtml/formatStatus) senza logica API interna ai template.",
+      "notes": "Estratta una prima porzione ad alto riuso e basso rischio; i template di dettaglio piu complessi verranno ulteriormente modularizzati nei renderer dei task successivi."
+    },
+    {
+      "id": "T-07",
+      "title": "Estrarre renderers UI per sezione",
+      "phase": "UI Extraction (Templates + Renderers)",
+      "stories": [
+        "US-002"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-06"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/ui/renderers/plans.renderer.js",
+        "requirements-workflow-desktop/src/ui/renderers/requirements.renderer.js",
+        "requirements-workflow-desktop/src/ui/renderers/workspaces.renderer.js",
+        "requirements-workflow-desktop/src/ui/renderers/tabs.renderer.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Creare renderer dedicati che compongono i template e aggiornano il DOM sulla base dello stato, riducendo il codice di rendering nel monolite.",
+      "definitionOfDone": [
+        {
+          "description": "Renderers separati per sezioni principali",
+            "completed": true
+        },
+        {
+          "description": "Le funzioni render ricevono dati/stato in input esplicito",
+            "completed": true
+        },
+        {
+          "description": "Flussi di render principali non dipendono da variabili globali implicite",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creati renderer dedicati in src/ui/renderers: plans.renderer.js, requirements.renderer.js, workspaces.renderer.js, tabs.renderer.js. app.js delega ora il rendering di liste/filter/workspace/tabs ai renderer passando dati e callback/template in input esplicito.",
+      "notes": "Ridotte dipendenze implicite nei flussi principali di render; il monolite resta orchestratore temporaneo in vista della modularizzazione feature (T-08/T-09/T-10)."
+    },
+    {
+      "id": "T-08",
+      "title": "Modularizzare feature plans",
+      "phase": "Feature Modularization",
+      "stories": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-05",
+        "T-07"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/plans/plans.controller.js",
+        "requirements-workflow-desktop/src/features/plans/plans.handlers.js",
+        "requirements-workflow-desktop/src/features/plans/plans.selectors.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "GET /api/plans"
+      ],
+      "whatToDo": "Spostare la logica della sezione plans (load, select, edit, status/filter, tabs correlate) in moduli feature dedicati.",
+      "definitionOfDone": [
+        {
+          "description": "Logica plans isolata in src/features/plans",
+            "completed": true
+        },
+        {
+          "description": "Interazioni plans continuano a funzionare (lista, dettaglio, edit principali)",
+            "completed": true
+        },
+        {
+          "description": "Dipendenze con API/UI/store rese esplicite",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creati src/features/plans/plans.controller.js, plans.handlers.js e plans.selectors.js. Spostata la logica core di plans per load/select e filtri status nel modulo feature con dipendenze iniettate (API, stato, rendering, reset UI) e wiring in app.js tramite plansController.",
+      "notes": "Refactor incrementale: i flussi principali plans (lista, dettaglio, reset editing, filtri status) ora passano dal layer feature mantenendo compatibilita runtime e orchestrazione temporanea in app.js."
+    },
+    {
+      "id": "T-09",
+      "title": "Modularizzare feature requirements",
+      "phase": "Feature Modularization",
+      "stories": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-05",
+        "T-07"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/requirements/requirements.controller.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.handlers.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.selectors.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "GET /api/requirements"
+      ],
+      "whatToDo": "Spostare la logica della sezione requirements (dettaglio, stories, functional/non-functional, open questions) in moduli feature dedicati.",
+      "definitionOfDone": [
+        {
+          "description": "Logica requirements isolata in src/features/requirements",
+            "completed": true
+        },
+        {
+          "description": "Interazioni requirements restano operative",
+            "completed": true
+        },
+        {
+          "description": "Chiamate API requirements passano da src/api",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creati src/features/requirements/requirements.controller.js, requirements.handlers.js e requirements.selectors.js. Spostata la logica core requirements per load/select e filtri status nel modulo feature con dependency injection (API, stato, rendering, reset UI) e wiring in app.js tramite requirementsController.",
+      "notes": "Le chiamate requirement principali passano gia da src/api; con questo step i flussi di lista/dettaglio e reset editing sono ora incapsulati nella feature mantenendo compatibilita runtime incrementale."
+    },
+    {
+      "id": "T-10",
+      "title": "Modularizzare feature workspaces",
+      "phase": "Feature Modularization",
+      "stories": [
+        "US-002",
+        "US-003",
+        "US-004"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [
+        "T-05",
+        "T-07"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/workspaces/workspaces.controller.js",
+        "requirements-workflow-desktop/src/features/workspaces/workspaces.handlers.js",
+        "requirements-workflow-desktop/src/features/workspaces/workspaces.selectors.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "GET /api/workspaces",
+        "GET /api/workspace/current",
+        "POST /api/workspace/select",
+        "POST /api/workspaces",
+        "PATCH /api/workspaces/:key",
+        "DELETE /api/workspaces/:key"
+      ],
+      "whatToDo": "Spostare gestione workspace switcher/modali CRUD e flussi di reload in un modulo feature workspaces separato.",
+      "definitionOfDone": [
+        {
+          "description": "Logica workspace isolata in src/features/workspaces",
+            "completed": true
+        },
+        {
+          "description": "Flussi add/select/rename/delete workspace restano funzionanti",
+            "completed": true
+        },
+        {
+          "description": "UI disabled/enabled durante switch preservata",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Creati src/features/workspaces/workspaces.controller.js, workspaces.handlers.js e workspaces.selectors.js. Spostata la logica workspace per load state, select, create, rename, delete e gestione conferme nel modulo feature con dependency injection di API, stato e rendering.",
+      "notes": "Flussi add/select/rename/delete restano invariati lato UX; la gestione disabled/enabled durante switch viene ora orchestrata dal layer feature mantenendo compatibilita incrementale con app.js."
+    },
+    {
+      "id": "T-11",
+      "title": "Pulizia monolite e consolidamento utils/import",
+      "phase": "Stabilization & Closure",
+      "stories": [
+        "US-005",
+        "US-007"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [
+        "T-08",
+        "T-09",
+        "T-10"
+      ],
+      "files": [
+        "requirements-workflow-desktop/app.js",
+        "requirements-workflow-desktop/src/**/*.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Rimuovere codice duplicato/residuo dal file monolitico, allineare import/export e mantenere un layer di compatibilita minimo se ancora necessario.",
+      "definitionOfDone": [
+        {
+          "description": "Riduzione significativa responsabilita residue in app.js",
+            "completed": true
+        },
+        {
+          "description": "Nessun helper duplicato critico tra moduli",
+            "completed": true
+        },
+        {
+          "description": "Dipendenze tra moduli documentate e coerenti",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Snellito app.js eliminando fallback/duplicazioni residue nella gestione status/filter dopo l'introduzione dei controller feature. Rimossa utility non piu usata src/utils/helpers.js (fetchJsonOrThrow) dopo migrazione a layer API centralizzato.",
+      "notes": "Compatibilita bridge mantenuta; app.js resta orchestration layer temporaneo con responsabilita ridotte e dipendenze coerenti verso feature/ui/api modules."
+    },
+    {
+      "id": "T-12",
+      "title": "Verifica finale e chiusura piano",
+      "phase": "Stabilization & Closure",
+      "stories": [
+        "US-006",
+        "US-007"
+      ],
+      "size": "Small",
+      "status": "completed",
+      "dependsOn": [
+        "T-11"
+      ],
+      "files": [
+        "docs/plans/PLAN-7.json",
+        "docs/requirements/FEAT-9482-refactoring.json"
+      ],
+      "endpoints": [],
+      "whatToDo": "Eseguire smoke test sulle feature core, aggiornare stati tasks/stories e completare documentazione decisioni/risultati nel piano.",
+      "definitionOfDone": [
+        {
+          "description": "Smoke test manuale su plans/requirements/workspaces completato",
+            "completed": true
+        },
+        {
+          "description": "Stato tasks e stories aggiornato correttamente nel piano",
+            "completed": true
+        },
+        {
+          "description": "Piano pronto per esecuzione o consegna al team",
+            "completed": true
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Eseguito smoke test API core avviando server locale dopo rebuild modulo nativo better-sqlite3: GET /api/plans, GET /api/requirements, GET /api/workspaces tutti con HTTP 200. Verificata coerenza sintattica moduli frontend e allineati stati task/story del piano.",
+      "notes": "Piano chiuso. La valutazione futura di migrazione Vue resta opzionale e subordinata a metriche/roadmap prodotto."
+    }
+  ]
+}

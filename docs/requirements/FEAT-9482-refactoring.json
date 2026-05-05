@@ -1,0 +1,346 @@
+{
+  "document": {
+    "id": "FEAT-9482-refactoring",
+    "title": "Refactoring frontend monolitico in JavaScript vanilla modulare",
+    "status": "implemented",
+    "version": "1.1",
+    "language": "it",
+    "sourcePath": "docs/requirements/FEAT-9482-refactoring.json",
+    "notes": "Refactoring incrementale senza migrazione immediata a framework"
+  },
+  "overview": "Separare il file frontend monolitico in moduli ES dedicati a template/UI, logica applicativa, API client e utility condivise, mantenendo JavaScript vanilla e riducendo accoppiamento, complessita cognitiva e rischio regressioni.",
+  "currentState": [
+    {
+      "area": "Struttura frontend",
+      "status": "Monolitica",
+      "notes": "La logica frontend risiede principalmente in un singolo file app.js con molte responsabilita miste"
+    },
+    {
+      "area": "Template e rendering",
+      "status": "Accoppiata alla logica",
+      "notes": "Template HTML generati inline insieme a gestione stato/eventi"
+    },
+    {
+      "area": "Chiamate API",
+      "status": "Distribuite",
+      "notes": "Le fetch sono presenti in punti diversi del codice senza modulo client centralizzato"
+    },
+    {
+      "area": "Gestione stato",
+      "status": "Globale non isolata",
+      "notes": "Molte variabili globali e flussi di aggiornamento difficili da tracciare"
+    },
+    {
+      "area": "Testabilita frontend",
+      "status": "Limitata",
+      "notes": "La separazione insufficiente delle responsabilita rende complessi test unitari e integrazione"
+    }
+  ],
+  "notes": "Refactoring modulare completato con migrazione incrementale (bootstrap, utils, api, store, templates, renderers, feature modules). Eventuale migrazione a framework (es. Vue) resta una valutazione futura separata.",
+  "architecturalDecisions": [
+    {
+      "id": "DA-1",
+      "title": "Mantenere JavaScript vanilla con ES Modules",
+      "decision": "Il refactoring frontend viene eseguito senza introdurre framework UI, usando moduli ES nativi come base architetturale.",
+      "rationale": "Riduce costo e rischio di rewrite, consente migrazione incrementale e preserva comportamento esistente."
+    },
+    {
+      "id": "DA-2",
+      "title": "Separazione template/UI dalla logica applicativa",
+      "decision": "Le funzioni che generano HTML e aggiornano il DOM sono isolate in moduli UI dedicati, mentre stato/regole/event orchestration sono in moduli di logica.",
+      "rationale": "Migliora leggibilita, manutenibilita e facilita debugging e test."
+    },
+    {
+      "id": "DA-3",
+      "title": "API client centralizzato",
+      "decision": "Tutte le chiamate fetch verso backend passano da moduli src/api/*.js con gestione errori comune.",
+      "rationale": "Standardizza accesso dati, evita duplicazioni e semplifica evoluzioni future (retry, logging, auth headers)."
+    },
+    {
+      "id": "DA-4",
+      "title": "Store centralizzato leggero",
+      "decision": "Lo stato condiviso frontend e i relativi aggiornamenti sono concentrati in src/state/store.js con API esplicite di lettura/scrittura.",
+      "rationale": "Riduce variabili globali non controllate e rende i flussi dati piu prevedibili."
+    },
+    {
+      "id": "DA-5",
+      "title": "Organizzazione per feature + layer",
+      "decision": "Il codice frontend viene organizzato in moduli per responsabilita e dominio, seguendo la struttura target definita nei requisiti.",
+      "rationale": "Bilancia coesione funzionale e chiarezza architetturale, mantenendo onboarding rapido."
+    }
+  ],
+  "functionalRequirements": [
+    {
+      "id": "RF-1",
+      "title": "Separazione dei template HTML",
+      "description": "Il sistema deve spostare la generazione dei template HTML in moduli dedicati sotto src/ui/templates/*.js, senza alterare il risultato visivo e funzionale percepito dall'utente."
+    },
+    {
+      "id": "RF-2",
+      "title": "Renderers dedicati per sezioni UI",
+      "description": "Il sistema deve introdurre moduli src/ui/renderers/*.js responsabili del rendering delle principali sezioni (liste, dettaglio, modali, filtri), mantenendo il comportamento attuale."
+    },
+    {
+      "id": "RF-3",
+      "title": "Store centralizzato dello stato frontend",
+      "description": "Il sistema deve introdurre src/state/store.js per gestire stato e aggiornamenti, riducendo l'uso di variabili globali e fornendo metodi espliciti per update e accesso."
+    },
+    {
+      "id": "RF-4",
+      "title": "Modularizzazione per feature",
+      "description": "Il sistema deve separare la logica di dominio in moduli sotto src/features/plans/*, src/features/requirements/* e src/features/workspaces/*, includendo orchestrazione eventi e regole applicative."
+    },
+    {
+      "id": "RF-5",
+      "title": "Centralizzazione delle API fetch",
+      "description": "Il sistema deve concentrare le chiamate HTTP in src/api/*.js (es. plansApi, requirementsApi, workspacesApi) con comportamento uniforme su error handling e parsing JSON."
+    },
+    {
+      "id": "RF-6",
+      "title": "Utility condivise",
+      "description": "Il sistema deve introdurre moduli utility per escape HTML, formattazione date, normalizzazione/status mapping e helper riusabili, eliminando duplicazioni."
+    },
+    {
+      "id": "RF-7",
+      "title": "Bootstrap applicativo unico",
+      "description": "Il sistema deve introdurre src/main.js come punto di avvio che inizializza store, event binding, caricamento dati iniziali e bootstrap UI."
+    },
+    {
+      "id": "RF-8",
+      "title": "Migrazione incrementale senza regressioni funzionali",
+      "description": "Il sistema deve consentire una migrazione progressiva dal file monolitico ai moduli, mantenendo feature correnti (plans, requirements, workspaces, ricerca, edit inline, modali) operative."
+    }
+  ],
+  "nonFunctionalRequirements": [
+    {
+      "id": "RNF-1",
+      "title": "Leggibilita e manutenibilita",
+      "description": "Ogni modulo frontend deve avere responsabilita chiara e dimensione contenuta, con naming coerente e import espliciti."
+    },
+    {
+      "id": "RNF-2",
+      "title": "Basso accoppiamento",
+      "description": "I moduli UI non devono contenere logica di business; la logica non deve dipendere da dettagli DOM non necessari."
+    },
+    {
+      "id": "RNF-3",
+      "title": "Compatibilita runtime attuale",
+      "description": "La soluzione deve funzionare nell'ambiente desktop corrente (Electron + Express static server) senza introdurre dipendenze framework obbligatorie."
+    },
+    {
+      "id": "RNF-4",
+      "title": "Performance equivalente o migliore",
+      "description": "Il refactoring non deve degradare percepibilmente tempi di avvio, rendering iniziale o reattivita delle interazioni principali."
+    },
+    {
+      "id": "RNF-5",
+      "title": "Testabilita migliorata",
+      "description": "La separazione dei layer deve permettere testare in modo isolato utility, logica di store e API client con mocking semplice."
+    },
+    {
+      "id": "RNF-6",
+      "title": "Osservabilita errori",
+      "description": "Errori API e runtime devono essere gestiti in modo consistente con messaggi utente comprensibili e logging tecnico sufficiente al debug."
+    },
+    {
+      "id": "RNF-7",
+      "title": "Evolvibilita architetturale",
+      "description": "La nuova struttura deve mantenere aperta la possibilita di futura migrazione a framework (es. Vue) con mapping diretto tra moduli esistenti e componentizzazione."
+    }
+  ],
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Template separati dalla logica",
+      "asA": "sviluppatore frontend",
+      "iWant": "avere i template HTML in moduli dedicati",
+      "soThat": "possa modificare la UI senza toccare la logica di business",
+      "acceptanceCriteria": [
+        {
+          "text": "Esistono moduli in src/ui/templates per le principali sezioni UI",
+          "checked": false
+        },
+        {
+          "text": "La generazione HTML non contiene fetch o regole di business",
+          "checked": false
+        },
+        {
+          "text": "Il comportamento visibile della UI rimane equivalente",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-002",
+      "title": "Rendering per sezione",
+      "asA": "sviluppatore frontend",
+      "iWant": "avere renderers per ciascuna area funzionale",
+      "soThat": "possa localizzare rapidamente dove intervenire per una modifica",
+      "acceptanceCriteria": [
+        {
+          "text": "Sono presenti moduli renderer in src/ui/renderers per liste, dettagli e modali principali",
+          "checked": false
+        },
+        {
+          "text": "Ogni renderer riceve dati in input senza dipendere da variabili globali implicite",
+          "checked": false
+        },
+        {
+          "text": "Le sezioni plans/requirements/workspaces sono renderizzate tramite i nuovi moduli",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-003",
+      "title": "Store centralizzato",
+      "asA": "sviluppatore frontend",
+      "iWant": "gestire lo stato in un unico store",
+      "soThat": "i flussi dati siano prevedibili e facili da debuggare",
+      "acceptanceCriteria": [
+        {
+          "text": "E presente src/state/store.js con API di get/set/update dello stato",
+          "checked": false
+        },
+        {
+          "text": "Le variabili globali vengono progressivamente sostituite con accessi allo store",
+          "checked": false
+        },
+        {
+          "text": "Le principali azioni utente aggiornano lo stato tramite funzioni esplicite",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-004",
+      "title": "API client uniformi",
+      "asA": "sviluppatore frontend",
+      "iWant": "centralizzare tutte le fetch in moduli API",
+      "soThat": "possa riusare chiamate e gestione errori in modo coerente",
+      "acceptanceCriteria": [
+        {
+          "text": "Sono presenti src/api/plansApi.js, src/api/requirementsApi.js e src/api/workspacesApi.js",
+          "checked": false
+        },
+        {
+          "text": "Le chiamate fetch dal codice UI/logica passano esclusivamente dai moduli API",
+          "checked": false
+        },
+        {
+          "text": "Error handling e parsing JSON sono uniformi tra endpoint",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-005",
+      "title": "Utility condivise e riuso",
+      "asA": "sviluppatore frontend",
+      "iWant": "raggruppare helper comuni in moduli utils",
+      "soThat": "evitare duplicazioni e inconsistenze",
+      "acceptanceCriteria": [
+        {
+          "text": "Le funzioni escape HTML, date formatting e status mapping sono in moduli utils dedicati",
+          "checked": false
+        },
+        {
+          "text": "Il codice duplicato relativo a helper comuni viene rimosso",
+          "checked": false
+        },
+        {
+          "text": "I moduli feature importano gli helper dal layer utils",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-006",
+      "title": "Bootstrap unico dell'applicazione",
+      "asA": "sviluppatore frontend",
+      "iWant": "avere un entrypoint src/main.js",
+      "soThat": "il flusso di inizializzazione sia chiaro e controllabile",
+      "acceptanceCriteria": [
+        {
+          "text": "src/main.js inizializza store, listener globali e caricamento dati iniziali",
+          "checked": false
+        },
+        {
+          "text": "index.html carica il nuovo entrypoint come modulo ES",
+          "checked": false
+        },
+        {
+          "text": "L'avvio applicazione mantiene le funzionalita correnti",
+          "checked": false
+        }
+      ],
+      "notes": null
+    },
+    {
+      "id": "US-007",
+      "title": "Refactoring incrementale verificabile",
+      "asA": "product owner tecnico",
+      "iWant": "procedere per step con regressioni controllate",
+      "soThat": "ridurre rischio operativo durante il refactor",
+      "acceptanceCriteria": [
+        {
+          "text": "Ogni step di migrazione mantiene app eseguibile",
+          "checked": false
+        },
+        {
+          "text": "Le feature principali sono verificate dopo ogni step",
+          "checked": false
+        },
+        {
+          "text": "Eventuali deviazioni sono documentate in notes/decisioni",
+          "checked": false
+        }
+      ],
+      "notes": null
+    }
+  ],
+  "storyDependencies": [
+    "US-001 propedeutica a US-002",
+    "US-003 trasversale e necessaria per US-002, US-004 e US-006",
+    "US-004 necessaria prima della completa rimozione delle fetch inline",
+    "US-005 puo procedere in parallelo ma consolidata prima di US-006",
+    "US-007 copre il controllo qualita lungo tutta l'esecuzione"
+  ],
+  "implementationOrder": [
+    "Definire struttura cartelle target e bootstrap minimo src/main.js",
+    "Estrarre utils condivise (escape, date, status, helper)",
+    "Introdurre API client centralizzati in src/api",
+    "Introdurre store centralizzato in src/state/store.js",
+    "Estrarre template UI in src/ui/templates",
+    "Estrarre renderers in src/ui/renderers",
+    "Modularizzare logica per feature (plans, requirements, workspaces)",
+    "Rimuovere residui monolitici e consolidare test/regression check"
+  ],
+  "outOfScope": [
+    "Migrazione completa a framework (Vue, Angular, React) in questa iniziativa",
+    "Riscrittura backend o API contract",
+    "Re-design grafico completo della UI",
+    "Introduzione obbligatoria di TypeScript",
+    "Refactor di funzionalita non frontend"
+  ],
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Dopo il refactoring vanilla, quando rivalutare l'adozione di Vue?",
+      "answer": "Rivalutazione prevista dopo completamento del refactor e misurazione di maintainability, tempi di sviluppo e regressioni.",
+      "status": "resolved"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Serve introdurre un bundler nella prima fase del refactoring?",
+      "answer": "Non obbligatorio nella fase iniziale; usare ES Modules nativi e introdurre bundler solo se emergono esigenze concrete.",
+      "status": "resolved"
+    }
+  ],
+  "rawMarkdown": null
+}

@@ -1,3 +1,30 @@
+import { getCurrentDateIso } from '/src/utils/date.js';
+import { escapeHtml } from '/src/utils/html.js';
+import { formatStatus, normalizeStoryStatus } from '/src/utils/status.js';
+import { createStore } from '/src/state/store.js';
+import { listPlans, getPlanById } from '/src/api/plansApi.js';
+import { listRequirements, getRequirementById } from '/src/api/requirementsApi.js';
+import {
+  listWorkspaces,
+  getCurrentWorkspace,
+  createWorkspace,
+  updateWorkspaceLabel,
+  deleteWorkspace,
+  selectWorkspace,
+  pickWorkspaceFolder
+} from '/src/api/workspacesApi.js';
+import { renderStatusFiltersTemplate } from '/src/ui/templates/common.templates.js';
+import { renderPlansListTemplate } from '/src/ui/templates/plans.templates.js';
+import { renderRequirementsListTemplate } from '/src/ui/templates/requirements.templates.js';
+import { renderWorkspaceOptionsTemplate, renderWorkspaceManageListTemplate } from '/src/ui/templates/workspaces.templates.js';
+import { renderPlansListSection } from '/src/ui/renderers/plans.renderer.js';
+import { renderRequirementsListSection, renderStatusFiltersSection } from '/src/ui/renderers/requirements.renderer.js';
+import { renderWorkspaceOptionsSection, renderWorkspaceManageListSection } from '/src/ui/renderers/workspaces.renderer.js';
+import { setTabVisibility, activateTabByName } from '/src/ui/renderers/tabs.renderer.js';
+import { createPlansController } from '/src/features/plans/plans.controller.js';
+import { createRequirementsController } from '/src/features/requirements/requirements.controller.js';
+import { createWorkspacesController } from '/src/features/workspaces/workspaces.controller.js';
+
 let plans = [];
 let requirements = [];
 let currentPlan = null;
@@ -86,6 +113,203 @@ let isSwitchingWorkspace = false;
 let hasWorkspaceConfigured = false;
 let pendingWorkspaceDeleteKey = null;
 
+function readCoreState() {
+  return {
+    plans,
+    requirements,
+    currentPlan,
+    currentRequirement,
+    currentSection,
+    currentWorkspace,
+    hasWorkspaceConfigured,
+    pendingWorkspaceDeleteKey,
+    isSwitchingWorkspace
+  };
+}
+
+function writeCoreState(patch) {
+  if (Object.prototype.hasOwnProperty.call(patch, 'plans')) plans = patch.plans;
+  if (Object.prototype.hasOwnProperty.call(patch, 'requirements')) requirements = patch.requirements;
+  if (Object.prototype.hasOwnProperty.call(patch, 'currentPlan')) currentPlan = patch.currentPlan;
+  if (Object.prototype.hasOwnProperty.call(patch, 'currentRequirement')) currentRequirement = patch.currentRequirement;
+  if (Object.prototype.hasOwnProperty.call(patch, 'currentSection')) currentSection = patch.currentSection;
+  if (Object.prototype.hasOwnProperty.call(patch, 'currentWorkspace')) currentWorkspace = patch.currentWorkspace;
+  if (Object.prototype.hasOwnProperty.call(patch, 'hasWorkspaceConfigured')) hasWorkspaceConfigured = patch.hasWorkspaceConfigured;
+  if (Object.prototype.hasOwnProperty.call(patch, 'pendingWorkspaceDeleteKey')) pendingWorkspaceDeleteKey = patch.pendingWorkspaceDeleteKey;
+  if (Object.prototype.hasOwnProperty.call(patch, 'isSwitchingWorkspace')) isSwitchingWorkspace = patch.isSwitchingWorkspace;
+}
+
+function resetPlanUiEditingState() {
+  editingTaskDodId = null;
+  taskDodFocusTarget = null;
+  isPlanNotesEditing = false;
+  isPlanNotesUpdating = false;
+  isPlanObjectiveEditing = false;
+  isPlanObjectiveUpdating = false;
+  isPlanPhasesEditing = false;
+  isPlanPhasesUpdating = false;
+  editingPlanPhases = [];
+  editingTaskNotesId = null;
+  isTaskNotesUpdating = false;
+  editingTaskImplementationNotesId = null;
+  isTaskImplementationNotesUpdating = false;
+  openTaskNotesIds = new Set();
+  editingTaskField = null;
+  isTaskFieldUpdating = false;
+  editingPlanDecisionId = null;
+  isPlanDecisionUpdating = false;
+  creatingPlanDecision = false;
+  creatingPlanDecisionStep = 'id';
+  newPlanDecisionId = '';
+  newPlanDecisionDescription = '';
+  newPlanDecisionRationale = '';
+  deletingPlanDecisionId = null;
+}
+
+function activatePlanListItem(id) {
+  document.querySelectorAll('.plan-item').forEach((el) => el.classList.remove('active'));
+  document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
+}
+
+function resetRequirementUiEditingState() {
+  editingAcceptanceStoryId = null;
+  acceptanceFocusTarget = null;
+  editingOpenQuestionId = null;
+  isRequirementOverviewEditing = false;
+  isRequirementOverviewUpdating = false;
+  isRequirementCurrentStateEditing = false;
+  isRequirementCurrentStateUpdating = false;
+  isRequirementNotesEditing = false;
+  isRequirementNotesUpdating = false;
+  editingFunctionalRequirementId = null;
+  isFunctionalRequirementUpdating = false;
+  creatingFunctionalRequirement = false;
+  newFunctionalRequirementId = '';
+  creatingFunctionalRequirementStep = 'id';
+  newFunctionalRequirementTitle = '';
+  newFunctionalRequirementDescription = '';
+  deletingFunctionalRequirementId = null;
+  editingNonFunctionalRequirementId = null;
+  isNonFunctionalRequirementUpdating = false;
+  creatingNonFunctionalRequirement = false;
+  newNonFunctionalRequirementId = '';
+  creatingNonFunctionalRequirementStep = 'id';
+  newNonFunctionalRequirementTitle = '';
+  newNonFunctionalRequirementDescription = '';
+  deletingNonFunctionalRequirementId = null;
+  editingStoryId = null;
+  isStoryUpdating = false;
+  creatingStory = false;
+  creatingStoryStep = 'id';
+  newStoryId = '';
+  deletingStoryId = null;
+  creatingOpenQuestion = false;
+  creatingOpenQuestionStep = 'id';
+  newOpenQuestionId = '';
+  newOpenQuestionQuestion = '';
+  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  newOpenQuestionStatus = 'open';
+  deletingOpenQuestionId = null;
+}
+
+function activateRequirementListItem(id) {
+  document.querySelectorAll('.plan-item').forEach((el) => el.classList.remove('active'));
+  document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
+}
+
+const plansController = createPlansController({
+  listPlans,
+  getPlanById,
+  readState: readCoreState,
+  writeState: writeCoreState,
+  syncCoreState,
+  renderPlansList: () => renderPlansList(),
+  renderPlanDetail: () => renderPlanDetail(),
+  scrollWorkspaceToTop,
+  resetPlanUiEditingState,
+  activatePlanListItem
+});
+
+const requirementsController = createRequirementsController({
+  listRequirements,
+  getRequirementById,
+  readState: readCoreState,
+  writeState: writeCoreState,
+  syncCoreState,
+  renderRequirementsList: () => renderRequirementsList(),
+  renderRequirementDetail: () => renderRequirementDetail(),
+  scrollWorkspaceToTop,
+  resetRequirementUiEditingState,
+  activateRequirementListItem
+});
+
+const workspacesController = createWorkspacesController({
+  listWorkspaces,
+  getCurrentWorkspace,
+  createWorkspace,
+  updateWorkspaceLabel,
+  deleteWorkspace,
+  selectWorkspace,
+  readState: readCoreState,
+  writeState: writeCoreState,
+  syncCoreState,
+  renderWorkspaceOptions,
+  renderWorkspaceManageModal: (workspaces, currentKey, pendingKey) => {
+    const modal = document.getElementById('workspaceManageModal');
+    const list = document.getElementById('workspaceManageList');
+    if (!modal || !list) return;
+    renderWorkspaceManageListSection({
+      list,
+      workspaces,
+      currentKey,
+      pendingWorkspaceDeleteKey: pendingKey,
+      renderWorkspaceManageListTemplate: (items, selected, pending) => renderWorkspaceManageListTemplate(items, selected, pending, { escapeHtml })
+    });
+    modal.style.display = 'flex';
+  },
+  reloadCurrentWorkspaceData,
+  setWorkspaceUiDisabled,
+  showToast,
+  setWorkspaceModalError
+});
+
+const INITIAL_APP_STATE = {
+  plans: [],
+  requirements: [],
+  currentPlan: null,
+  currentRequirement: null,
+  currentSection: 'plans',
+  currentWorkspace: null,
+  hasWorkspaceConfigured: false
+};
+
+const appStore = createStore(INITIAL_APP_STATE);
+
+function syncCoreState(patch, reason) {
+  appStore.updateState(patch, { reason });
+}
+
+window.__appStore = appStore;
+window.__appStateTransitions = [];
+appStore.subscribe((nextState, previousState, meta) => {
+  window.__appStateTransitions.push({
+    at: meta.timestamp,
+    reason: meta.reason || 'unknown',
+    changedKeys: meta.changedKeys,
+    next: meta.changedKeys.reduce((acc, key) => {
+      acc[key] = nextState[key];
+      return acc;
+    }, {}),
+    previous: meta.changedKeys.reduce((acc, key) => {
+      acc[key] = previousState[key];
+      return acc;
+    }, {})
+  });
+  if (window.__appStateTransitions.length > 200) {
+    window.__appStateTransitions.shift();
+  }
+});
+
 const OPEN_QUESTION_STATUSES = ['open', 'resolved'];
 const ADD_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
 
@@ -126,10 +350,6 @@ function isTaskFieldEditing(taskId, field) {
   return editingTaskField?.taskId === taskId && editingTaskField?.field === field;
 }
 
-function getCurrentDateIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function buildPhasesForEditor(plan) {
   const planPhases = Array.isArray(plan?.phases) ? plan.phases : [];
   const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
@@ -156,24 +376,11 @@ function buildPhasesForEditor(plan) {
 }
 
 async function loadPlans() {
-  const res = await fetch('/api/plans', { cache: 'no-store' });
-  plans = await res.json();
-  if (currentSection === 'plans') renderPlansList();
+  await plansController.loadPlans();
 }
 
 async function loadRequirements() {
-  const res = await fetch('/api/requirements');
-  requirements = await res.json();
-  if (currentSection === 'requirements') renderRequirementsList();
-}
-
-async function fetchJsonOrThrow(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
-  }
-  return res.json();
+  await requirementsController.loadRequirements();
 }
 
 function setWorkspaceUiDisabled(disabled) {
@@ -191,30 +398,25 @@ function renderWorkspaceOptions(workspaces, selectedKey) {
   const menu = document.getElementById('workspaceSelectMenu');
   const value = document.getElementById('workspaceSelectValue');
   if (!menu || !value) return;
-  menu.innerHTML = workspaces.map(item => `<button type="button" class="workspace-select-option${item.key === selectedKey ? ' is-current' : ''}" data-workspace-key="${escapeHtml(item.key)}" role="option" aria-selected="${item.key === selectedKey ? 'true' : 'false'}">${escapeHtml(item.label)}</button>`).join('');
-  const current = workspaces.find(item => item.key === selectedKey);
-  value.textContent = current ? current.label : 'Seleziona workspace';
+  renderWorkspaceOptionsSection({
+    menu,
+    value,
+    workspaces,
+    selectedKey,
+    renderWorkspaceOptionsTemplate: (items, key) => renderWorkspaceOptionsTemplate(items, key, { escapeHtml })
+  });
 }
 
 async function reloadCurrentWorkspaceData() {
   currentPlan = null;
   currentRequirement = null;
+  syncCoreState({ currentPlan, currentRequirement }, 'reloadCurrentWorkspaceData:resetSelection');
   await Promise.all([loadPlans(), loadRequirements()]);
   setSection(currentSection || 'plans');
 }
 
 async function loadWorkspaceState() {
-  const [workspacesPayload, currentPayload] = await Promise.all([
-    fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' }),
-    fetchJsonOrThrow('/api/workspace/current', { cache: 'no-store' })
-  ]);
-  const list = Array.isArray(workspacesPayload?.workspaces) ? workspacesPayload.workspaces : [];
-  hasWorkspaceConfigured = list.length > 0;
-  currentWorkspace = currentPayload?.workspace || null;
-  renderWorkspaceOptions(list, currentWorkspace?.key || list[0]?.key || '');
-  if (!list.length) {
-    showToast('Nessun workspace caricato. Aggiungine uno con +');
-  }
+  await workspacesController.loadWorkspaceState();
 }
 
 function openWorkspaceModal() {
@@ -252,21 +454,9 @@ async function createWorkspaceFromEvent(event) {
   event.stopPropagation();
   const label = String(document.getElementById('workspaceLabelInput')?.value || '').trim();
   const rootDir = String(document.getElementById('workspaceRootInput')?.value || '').trim();
-  if (!label || !rootDir) {
-    setWorkspaceModalError('Compila nome e percorso della cartella progetto.');
-    return;
-  }
-  setWorkspaceModalError('');
   try {
-    await fetchJsonOrThrow('/api/workspaces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label, rootDir })
-    });
-    await loadWorkspaceState();
-    await reloadCurrentWorkspaceData();
-    closeWorkspaceModalFromEvent(event);
-    showToast('Workspace caricato');
+    const created = await workspacesController.createWorkspaceFromModal(label, rootDir);
+    if (created) closeWorkspaceModalFromEvent(event);
   } catch (error) {
     setWorkspaceModalError(error.message);
     showToast(error.message, 'error');
@@ -274,40 +464,7 @@ async function createWorkspaceFromEvent(event) {
 }
 
 async function openWorkspaceManageModal() {
-  const modal = document.getElementById('workspaceManageModal');
-  const list = document.getElementById('workspaceManageList');
-  if (!modal || !list) return;
-  const payload = await fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' });
-  const currentKey = currentWorkspace?.key || payload.currentWorkspaceKey;
-  const workspaces = Array.isArray(payload.workspaces) ? payload.workspaces : [];
-  list.innerHTML = workspaces.map(item => `
-    <div class="workspace-manage-item" data-key="${escapeHtml(item.key)}">
-      <div class="workspace-manage-row">
-        <div class="workspace-manage-main">
-          <input class="search-input" value="${escapeHtml(item.label)}" data-workspace-label-input="${escapeHtml(item.key)}" data-original-label="${escapeHtml(item.label)}">
-          <div class="workspace-manage-path" title="${escapeHtml(item.rootDir || '')}">${escapeHtml(item.rootDir || '')}</div>
-        </div>
-        <div class="workspace-manage-actions">
-          <button type="button" class="workspace-icon-btn is-success workspace-save-btn" data-workspace-save="${escapeHtml(item.key)}" style="display:none" aria-label="Salva nome workspace" title="Salva nome workspace">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-          </button>
-          <button type="button" class="workspace-icon-btn is-danger" data-workspace-delete="${escapeHtml(item.key)}" ${item.key === currentKey ? 'title="Elimina workspace corrente"' : 'title="Elimina workspace"'} aria-label="Elimina workspace">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-          </button>
-        </div>
-      </div>
-      ${pendingWorkspaceDeleteKey === item.key ? `
-        <div class="workspace-delete-confirm" data-workspace-delete-confirm="${escapeHtml(item.key)}">
-          <div class="workspace-delete-confirm-text">Confermi eliminazione workspace <strong>${escapeHtml(item.label)}</strong>?</div>
-          <div class="workspace-manage-actions">
-            <button type="button" class="open-question-btn is-danger" data-workspace-delete-confirm-yes="${escapeHtml(item.key)}">Si, elimina</button>
-            <button type="button" class="open-question-btn is-secondary" data-workspace-delete-confirm-no="${escapeHtml(item.key)}">Annulla</button>
-          </div>
-        </div>
-      ` : ''}
-    </div>
-  `).join('') || '<div class="empty-state empty-state-padded">Nessun workspace disponibile.</div>';
-  modal.style.display = 'flex';
+  await workspacesController.openWorkspaceManageModal();
 }
 
 function closeWorkspaceManageModalFromEvent(event) {
@@ -324,34 +481,23 @@ async function handleWorkspaceManageClick(event) {
     const key = renameBtn.dataset.workspaceSave;
     const input = document.querySelector(`[data-workspace-label-input="${CSS.escape(key)}"]`);
     const label = String(input?.value || '').trim();
-    if (!label) return showToast('Nome workspace obbligatorio', 'error');
-    await fetchJsonOrThrow(`/api/workspaces/${encodeURIComponent(key)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
-    await loadWorkspaceState();
-    await openWorkspaceManageModal();
-    showToast('Workspace rinominato');
+    await workspacesController.renameWorkspace(key, label);
     return;
   }
   if (deleteBtn) {
     const key = deleteBtn.dataset.workspaceDelete;
-    pendingWorkspaceDeleteKey = key;
-    await openWorkspaceManageModal();
+    await workspacesController.requestDeleteWorkspace(key);
     return;
   }
   const cancelDeleteBtn = event.target.closest('[data-workspace-delete-confirm-no]');
   if (cancelDeleteBtn) {
-    pendingWorkspaceDeleteKey = null;
-    await openWorkspaceManageModal();
+    await workspacesController.cancelDeleteWorkspace();
     return;
   }
   const confirmDeleteBtn = event.target.closest('[data-workspace-delete-confirm-yes]');
   if (confirmDeleteBtn) {
     const key = confirmDeleteBtn.dataset.workspaceDeleteConfirmYes;
-    await fetchJsonOrThrow(`/api/workspaces/${encodeURIComponent(key)}`, { method: 'DELETE' });
-    pendingWorkspaceDeleteKey = null;
-    await loadWorkspaceState();
-    await reloadCurrentWorkspaceData();
-    await openWorkspaceManageModal();
-    showToast('Workspace eliminato');
+    await workspacesController.confirmDeleteWorkspace(key);
   }
 }
 
@@ -359,102 +505,57 @@ async function selectWorkspaceByKey(workspaceKey) {
   if (!workspaceKey || isSwitchingWorkspace) return;
   const value = document.getElementById('workspaceSelectValue');
   const previousValue = currentWorkspace?.key || '';
-  isSwitchingWorkspace = true;
-  setWorkspaceUiDisabled(true);
   try {
-    const payload = await fetchJsonOrThrow('/api/workspace/select', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: workspaceKey })
-    });
-    currentWorkspace = payload.workspace;
-    await reloadCurrentWorkspaceData();
-    showToast(`Workspace attivo: ${currentWorkspace.label}`);
+    await workspacesController.selectWorkspaceByKey(workspaceKey);
   } catch (error) {
     if (value && currentWorkspace?.label) value.textContent = currentWorkspace.label;
-    renderWorkspaceOptions((await fetchJsonOrThrow('/api/workspaces', { cache: 'no-store' })).workspaces || [], previousValue);
+    renderWorkspaceOptions((await listWorkspaces()).workspaces || [], previousValue);
     showToast(error.message, 'error');
-  } finally {
-    isSwitchingWorkspace = false;
-    setWorkspaceUiDisabled(false);
   }
 }
 
 function renderPlansList() {
   const container = document.getElementById('plansList');
-  document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
-  document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
-
   renderStatusFilters();
   const filteredPlans = getFilteredItems('plans');
-
-  if (!filteredPlans.length) {
-    container.innerHTML = '<div class="empty-state empty-state-padded">No plans match the selected status filters.</div>';
-    return;
-  }
-
-  container.innerHTML = filteredPlans.map(plan => `
-    <div class="plan-item" data-id="${escapeHtml(plan.id)}" onclick="selectPlanByEncodedId('${encodeURIComponent(plan.id)}')">
-      <div class="plan-item-header">
-        <span class="plan-item-id">${escapeHtml(plan.id)}</span>
-        <span class="plan-item-status status-${escapeHtml(plan.status)}">${formatStatus(plan.status)}</span>
-      </div>
-      <div class="plan-item-title">${escapeHtml(plan.title)}</div>
-      <div class="plan-item-meta">
-        <span>${plan.storiesCount} stories</span>
-        <span>${plan.tasksCount} tasks</span>
-      </div>
-    </div>
-  `).join('');
+  renderPlansListSection({
+    container,
+    plans,
+    requirements,
+    filteredPlans,
+    counts: {
+      plansSwitchCount: document.getElementById('plansSwitchCount'),
+      requirementsSwitchCount: document.getElementById('requirementsSwitchCount')
+    },
+    renderPlansListTemplate: (items) => renderPlansListTemplate(items, { escapeHtml, formatStatus })
+  });
 }
 
 function renderRequirementsList() {
   const container = document.getElementById('plansList');
-  document.getElementById('plansSwitchCount').textContent = `(${plans.length})`;
-  document.getElementById('requirementsSwitchCount').textContent = `(${requirements.length})`;
-
   renderStatusFilters();
   const filteredRequirements = getFilteredItems('requirements');
-
-  if (!filteredRequirements.length) {
-    container.innerHTML = '<div class="empty-state empty-state-padded">No requirements match the selected status filters.</div>';
-    return;
-  }
-
-  container.innerHTML = filteredRequirements.map(req => `
-    <div class="plan-item" data-id="${escapeHtml(req.id)}" onclick="selectRequirementByEncodedId('${encodeURIComponent(req.id)}')">
-      <div class="plan-item-header">
-        <span class="plan-item-id">${escapeHtml(req.id)}</span>
-        <span class="plan-item-status status-${escapeHtml(req.status || 'pending')}">${formatStatus(req.status || 'pending')}</span>
-      </div>
-      <div class="plan-item-title">${escapeHtml(req.title || req.id)}</div>
-      <div class="plan-item-meta">
-        <span>${req.functionalCount || 0} RF</span>
-        <span>${req.nonFunctionalCount || 0} RNF</span>
-        <span>${req.storiesCount || 0} US</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function getItemStatus(item, section) {
-  if (section === 'requirements') {
-    return String(item?.status || 'pending').trim().toLowerCase();
-  }
-  return String(item?.status || 'pending').trim().toLowerCase();
+  renderRequirementsListSection({
+    container,
+    plans,
+    requirements,
+    filteredRequirements,
+    counts: {
+      plansSwitchCount: document.getElementById('plansSwitchCount'),
+      requirementsSwitchCount: document.getElementById('requirementsSwitchCount')
+    },
+    renderRequirementsListTemplate: (items) => renderRequirementsListTemplate(items, { escapeHtml, formatStatus })
+  });
 }
 
 function getStatusesForSection(section) {
-  const source = section === 'requirements' ? requirements : plans;
-  const statuses = Array.from(new Set(source.map(item => getItemStatus(item, section)).filter(Boolean)));
-  const orderMap = new Map(STATUS_SORT_ORDER.map((status, index) => [status, index]));
-
-  return statuses.sort((a, b) => {
-    const aRank = orderMap.has(a) ? orderMap.get(a) : Number.MAX_SAFE_INTEGER;
-    const bRank = orderMap.has(b) ? orderMap.get(b) : Number.MAX_SAFE_INTEGER;
-    if (aRank !== bRank) return aRank - bRank;
-    return a.localeCompare(b);
-  });
+  if (section === 'plans') {
+    return plansController.getStatusesForPlans(plans, STATUS_SORT_ORDER);
+  }
+  if (section === 'requirements') {
+    return requirementsController.getStatusesForRequirements(requirements, STATUS_SORT_ORDER);
+  }
+  return [];
 }
 
 function syncSectionFilterState(section, statuses) {
@@ -476,9 +577,13 @@ function syncSectionFilterState(section, statuses) {
 }
 
 function getFilteredItems(section) {
-  const source = section === 'requirements' ? requirements : plans;
-  const enabledStatuses = sectionStatusFilters[section] || new Set();
-  return source.filter(item => enabledStatuses.has(getItemStatus(item, section)));
+  if (section === 'plans') {
+    return plansController.getFilteredPlans(plans, sectionStatusFilters[section] || new Set());
+  }
+  if (section === 'requirements') {
+    return requirementsController.getFilteredRequirements(requirements, sectionStatusFilters[section] || new Set());
+  }
+  return [];
 }
 
 function renderStatusFilters() {
@@ -488,58 +593,21 @@ function renderStatusFilters() {
   const statuses = getStatusesForSection(currentSection);
   syncSectionFilterState(currentSection, statuses);
 
-  if (!statuses.length) {
-    filtersRoot.innerHTML = '';
-    filtersRoot.classList.add('is-empty');
-    return;
-  }
-
   const activeSet = sectionStatusFilters[currentSection] || new Set();
-  filtersRoot.classList.remove('is-empty');
-  filtersRoot.innerHTML = statuses.map(status => `
-    <label class="status-filter-option" title="${escapeHtml(formatStatus(status))}">
-      <input type="checkbox" data-status="${escapeHtml(status)}" ${activeSet.has(status) ? 'checked' : ''}>
-      <span>${escapeHtml(formatStatus(status))}</span>
-    </label>
-  `).join('');
+  renderStatusFiltersSection({
+    filtersRoot,
+    statuses,
+    activeSet,
+    renderStatusFiltersTemplate: (statusList, set) => renderStatusFiltersTemplate(statusList, set, { escapeHtml, formatStatus })
+  });
 }
 
 async function selectPlan(id) {
-  if (currentSection !== 'plans') return;
-  document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
-  document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
-
-  const res = await fetch(`/api/plans/${encodeURIComponent(id)}`, { cache: 'no-store' });
-  currentPlan = await res.json();
-  editingTaskDodId = null;
-  taskDodFocusTarget = null;
-  isPlanNotesEditing = false;
-  isPlanNotesUpdating = false;
-  isPlanObjectiveEditing = false;
-  isPlanObjectiveUpdating = false;
-  isPlanPhasesEditing = false;
-  isPlanPhasesUpdating = false;
-  editingPlanPhases = [];
-  editingTaskNotesId = null;
-  isTaskNotesUpdating = false;
-  editingTaskImplementationNotesId = null;
-  isTaskImplementationNotesUpdating = false;
-  openTaskNotesIds = new Set();
-  editingTaskField = null;
-  isTaskFieldUpdating = false;
-  editingPlanDecisionId = null;
-  isPlanDecisionUpdating = false;
-  creatingPlanDecision = false;
-  creatingPlanDecisionStep = 'id';
-  newPlanDecisionId = '';
-  newPlanDecisionDescription = '';
-  newPlanDecisionRationale = '';
-  deletingPlanDecisionId = null;
-  renderPlanDetail();
-  scrollWorkspaceToTop();
+  await plansController.selectPlan(id);
 }
 
 function renderPlanDetail() {
+  syncCoreState({ currentPlan }, 'renderPlanDetail');
   const p = currentPlan;
   const tasks = Array.isArray(p.tasks) ? p.tasks : [];
   const effectivePlanStatus = p.status || 'pending';
@@ -956,52 +1024,7 @@ function renderPlanDetail() {
 }
 
 async function selectRequirement(id) {
-  if (currentSection !== 'requirements') return;
-  document.querySelectorAll('.plan-item').forEach(el => el.classList.remove('active'));
-  document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
-
-  const res = await fetch(`/api/requirements/${encodeURIComponent(id)}`);
-  currentRequirement = await res.json();
-  editingAcceptanceStoryId = null;
-  acceptanceFocusTarget = null;
-  editingOpenQuestionId = null;
-  isRequirementOverviewEditing = false;
-  isRequirementOverviewUpdating = false;
-  isRequirementCurrentStateEditing = false;
-  isRequirementCurrentStateUpdating = false;
-  isRequirementNotesEditing = false;
-  isRequirementNotesUpdating = false;
-  editingFunctionalRequirementId = null;
-  isFunctionalRequirementUpdating = false;
-  creatingFunctionalRequirement = false;
-  newFunctionalRequirementId = '';
-  creatingFunctionalRequirementStep = 'id';
-  newFunctionalRequirementTitle = '';
-  newFunctionalRequirementDescription = '';
-  deletingFunctionalRequirementId = null;
-  editingNonFunctionalRequirementId = null;
-  isNonFunctionalRequirementUpdating = false;
-  creatingNonFunctionalRequirement = false;
-  newNonFunctionalRequirementId = '';
-  creatingNonFunctionalRequirementStep = 'id';
-  newNonFunctionalRequirementTitle = '';
-  newNonFunctionalRequirementDescription = '';
-  deletingNonFunctionalRequirementId = null;
-  editingStoryId = null;
-  isStoryUpdating = false;
-  creatingStory = false;
-  creatingStoryStep = 'id';
-  newStoryId = '';
-  deletingStoryId = null;
-  creatingOpenQuestion = false;
-  creatingOpenQuestionStep = 'id';
-  newOpenQuestionId = '';
-  newOpenQuestionQuestion = '';
-  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
-  newOpenQuestionStatus = 'open';
-  deletingOpenQuestionId = null;
-  renderRequirementDetail();
-  scrollWorkspaceToTop();
+  await requirementsController.selectRequirement(id);
 }
 
 function scrollWorkspaceToTop() {
@@ -1010,6 +1033,7 @@ function scrollWorkspaceToTop() {
 }
 
 function renderRequirementDetail() {
+  syncCoreState({ currentRequirement }, 'renderRequirementDetail');
   const data = currentRequirement;
   const doc = data.document || {};
   const rf = data.functionalRequirements || [];
@@ -1483,6 +1507,7 @@ async function createFunctionalRequirement() {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'createFunctionalRequirementFromEvent:refreshRequirement');
     creatingFunctionalRequirement = false;
     newFunctionalRequirementId = '';
     creatingFunctionalRequirementStep = 'id';
@@ -1554,6 +1579,7 @@ async function saveFunctionalRequirement(functionalId) {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'saveFunctionalRequirementByEncodedId:refreshRequirement');
     editingFunctionalRequirementId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
@@ -1593,6 +1619,7 @@ async function deleteFunctionalRequirement(functionalId) {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'confirmDeleteFunctionalRequirementFromEvent:refreshRequirement');
     if (editingFunctionalRequirementId === functionalId) editingFunctionalRequirementId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
@@ -1872,6 +1899,7 @@ async function createNonFunctionalRequirementFromEvent(event) {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'createNonFunctionalRequirementFromEvent:refreshRequirement');
     creatingNonFunctionalRequirement = false;
     newNonFunctionalRequirementId = '';
     creatingNonFunctionalRequirementStep = 'id';
@@ -2017,49 +2045,33 @@ function closeDeleteStoryModalFromEvent(event) { event.stopPropagation(); deleti
 async function confirmDeleteStoryFromEvent(event) { event.stopPropagation(); const storyId = deletingStoryId; if (!storyId) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; deletingStoryId = null; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); showToast('User story eliminata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
 
 function configurePlanTabs(activeTab = 'overview') {
-  toggleTab('overview', true);
-  toggleTab('stories', true);
-  toggleTab('tasks', true);
-  toggleTab('decisions', true);
-  toggleTab('functional', false);
-  toggleTab('architectural-decisions', false);
-  toggleTab('non-functional', false);
-  toggleTab('user-stories', false);
-  toggleTab('open-questions', false);
+  setTabVisibility('overview', true);
+  setTabVisibility('stories', true);
+  setTabVisibility('tasks', true);
+  setTabVisibility('decisions', true);
+  setTabVisibility('functional', false);
+  setTabVisibility('architectural-decisions', false);
+  setTabVisibility('non-functional', false);
+  setTabVisibility('user-stories', false);
+  setTabVisibility('open-questions', false);
   const requestedTab = activeTab || 'overview';
   const requestedTabEl = document.querySelector(`.tab[data-tab="${requestedTab}"]`);
-  activateTab(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
+  activateTabByName(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
 }
 
 function configureRequirementTabs(hasArchitecturalDecisions, activeTab = 'overview') {
-  toggleTab('overview', true);
-  toggleTab('stories', false);
-  toggleTab('tasks', false);
-  toggleTab('decisions', false);
-  toggleTab('functional', true);
-  toggleTab('architectural-decisions', hasArchitecturalDecisions);
-  toggleTab('non-functional', true);
-  toggleTab('user-stories', true);
-  toggleTab('open-questions', true);
+  setTabVisibility('overview', true);
+  setTabVisibility('stories', false);
+  setTabVisibility('tasks', false);
+  setTabVisibility('decisions', false);
+  setTabVisibility('functional', true);
+  setTabVisibility('architectural-decisions', hasArchitecturalDecisions);
+  setTabVisibility('non-functional', true);
+  setTabVisibility('user-stories', true);
+  setTabVisibility('open-questions', true);
   const requestedTab = activeTab || 'overview';
   const requestedTabEl = document.querySelector(`.tab[data-tab="${requestedTab}"]`);
-  activateTab(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
-}
-
-function toggleTab(name, visible) {
-  const tab = document.querySelector(`.tab[data-tab="${name}"]`);
-  if (!tab) return;
-  tab.classList.toggle('hidden', !visible);
-}
-
-function activateTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
-  const tab = document.querySelector(`.tab[data-tab="${name}"]`);
-  if (tab && !tab.classList.contains('hidden')) {
-    tab.classList.add('active');
-    document.getElementById(`tab-${name}`)?.classList.add('show');
-  }
+  activateTabByName(requestedTabEl && !requestedTabEl.classList.contains('hidden') ? requestedTab : 'overview');
 }
 
 function showDetail() {
@@ -2070,6 +2082,7 @@ function showDetail() {
 function setSection(section) {
   if (!hasWorkspaceConfigured || !currentWorkspace) {
     currentSection = section || 'plans';
+    syncCoreState({ currentSection }, 'setSection:noWorkspace');
     document.querySelectorAll('.section-switch-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.section === currentSection));
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('show'));
@@ -2080,6 +2093,7 @@ function setSection(section) {
     return;
   }
   currentSection = section;
+  syncCoreState({ currentSection }, 'setSection');
   const welcomeIcon = document.getElementById('welcomeIcon');
   document.querySelectorAll('.section-switch-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.section === section);
@@ -2087,6 +2101,7 @@ function setSection(section) {
 
   currentPlan = null;
   currentRequirement = null;
+  syncCoreState({ currentPlan, currentRequirement }, 'setSection:resetSelection');
   editingTaskDodId = null;
   taskDodFocusTarget = null;
   isPlanNotesEditing = false;
@@ -2134,13 +2149,6 @@ function setSection(section) {
     renderStatusFilters();
     renderRequirementsList();
   }
-}
-
-function normalizeStoryStatus(status) {
-  const value = String(status || '').trim().toLowerCase();
-  if (value === 'completed' || value === 'done') return 'completed';
-  if (value === 'in_progress' || value === 'in progress') return 'in_progress';
-  return 'in_progress';
 }
 
 function handleTaskStatusChange(taskId, nextStatus, optionEl) {
@@ -2194,6 +2202,7 @@ async function updateTaskStatus(taskId, status, dropdownRoot) {
     }
 
     currentPlan = await planDetailRes.json();
+    syncCoreState({ currentPlan }, 'updateTaskStatus:refreshPlan');
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
   } catch (error) {
@@ -2353,6 +2362,7 @@ async function savePlanObjective() {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'savePlanObjectiveFromEvent:refreshPlan');
     isPlanObjectiveEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
@@ -2493,6 +2503,7 @@ async function savePlanPhases() {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'savePlanPhasesFromEvent:refreshPlan');
     isPlanPhasesEditing = false;
     editingPlanPhases = [];
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
@@ -2564,6 +2575,7 @@ async function savePlanNotes() {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'savePlanNotesFromEvent:refreshPlan');
     isPlanNotesEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
@@ -2665,6 +2677,7 @@ async function saveTaskField(planId, taskId, field) {
       }
 
       currentPlan = await updatedPlanRes.json();
+      syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:refreshPlan');
       editingTaskField = null;
       document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
       renderPlanDetail();
@@ -2738,6 +2751,7 @@ async function saveTaskField(planId, taskId, field) {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:metaRefreshPlan');
     editingTaskField = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
     renderPlanDetail();
@@ -2846,6 +2860,7 @@ async function saveTaskNotes(planId, taskId) {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'saveTaskNotesByEncodedIds:refreshPlan');
     openTaskNotesIds.add(taskId);
     editingTaskNotesId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
@@ -2905,6 +2920,7 @@ async function saveTaskImplementationNotes(planId, taskId) {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'saveTaskImplementationNotesByEncodedIds:refreshPlan');
     openTaskNotesIds.add(taskId);
     editingTaskImplementationNotesId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
@@ -2987,6 +3003,7 @@ async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
     }
 
     currentPlan = await updatedPlanRes.json();
+    syncCoreState({ currentPlan }, 'toggleTaskDodItemByEncodedIds:refreshPlan');
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Definition of Done aggiornata');
@@ -3073,6 +3090,7 @@ async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex,
     }
 
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'toggleAcceptanceCriterionByEncodedIds:refreshRequirement');
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Acceptance criterion salvato');
@@ -3179,6 +3197,7 @@ async function saveRequirementOverview() {
     }
 
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'saveRequirementOverviewFromEvent:refreshRequirement');
     isRequirementOverviewEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
@@ -3258,6 +3277,7 @@ async function saveRequirementCurrentState() {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after current state update');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'saveRequirementCurrentStateFromEvent:refreshRequirement');
     isRequirementCurrentStateEditing = false;
     renderRequirementDetail();
     showToast('Current state requirement salvato');
@@ -3358,6 +3378,7 @@ async function saveRequirementNotes() {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after notes update');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'saveRequirementNotesFromEvent:refreshRequirement');
     isRequirementNotesEditing = false;
     renderRequirementDetail();
     showToast('Notes requirement salvate');
@@ -3454,6 +3475,7 @@ async function saveOpenQuestion(requirementId, questionId) {
     }
 
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'saveOpenQuestionByEncodedIds:refreshRequirement');
     editingOpenQuestionId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
@@ -3553,6 +3575,7 @@ async function createOpenQuestionFromEvent(event) {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question create');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'createOpenQuestionFromEvent:refreshRequirement');
     creatingOpenQuestion = false;
     creatingOpenQuestionStep = 'id';
     newOpenQuestionId = '';
@@ -3614,6 +3637,7 @@ async function confirmDeleteOpenQuestionFromEvent(event) {
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question delete');
     currentRequirement = await updatedRequirementRes.json();
+    syncCoreState({ currentRequirement }, 'confirmDeleteOpenQuestionFromEvent:refreshRequirement');
     deletingOpenQuestionId = null;
     editingOpenQuestionId = null;
     renderRequirementDetail();
@@ -3742,30 +3766,6 @@ async function openSearchResult(encodedId, domain) {
   }
 }
 
-function formatStatus(status) {
-  const map = {
-    in_progress: 'In Progress',
-    completed: 'Completed',
-    pending: 'Pending',
-    skipped: 'Skipped',
-    cancelled: 'Cancelled',
-    draft: 'Draft',
-    in_review: 'In Review',
-    approved: 'Approved',
-    implemented: 'Implemented'
-  };
-  return map[status] || status;
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
 function setDesktopSidebarCollapsed(collapsed) {
   const shouldCollapse = Boolean(collapsed);
   document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
@@ -3846,7 +3846,7 @@ workspaceBrowseBtn?.addEventListener('click', async event => {
   event.stopPropagation();
   workspaceBrowseBtn.disabled = true;
   try {
-    const payload = await fetchJsonOrThrow('/api/workspaces/pick-folder', { method: 'POST' });
+    const payload = await pickWorkspaceFolder();
     const input = document.getElementById('workspaceRootInput');
     if (input && payload?.path) input.value = payload.path;
   } catch (error) {
