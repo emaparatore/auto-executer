@@ -7,7 +7,6 @@ function createPlanDetailsHandlers(deps) {
     showToast,
     getCurrentDateIso,
     buildPhasesForEditor,
-    loadPlans,
     formatStatus
   } = deps;
 
@@ -81,7 +80,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after notes update');
@@ -157,7 +156,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after objective update');
@@ -303,7 +302,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after phases update');
@@ -378,7 +377,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [planDetailRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!planDetailRes.ok) throw new Error('Unable to refresh plan after status update');
@@ -504,7 +503,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after Definition of Done update');
       const refreshedPlan = await updatedPlanRes.json();
@@ -605,7 +604,7 @@ function createPlanDetailsHandlers(deps) {
 
         const [updatedPlanRes] = await Promise.all([
           fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-          loadPlans()
+          deps.loadPlans()
         ]);
 
         if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after task field update');
@@ -676,7 +675,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after task field update');
@@ -786,7 +785,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after task notes update');
@@ -842,7 +841,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
 
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after task implementation notes update');
@@ -968,7 +967,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after create');
       const refreshedPlan = await updatedPlanRes.json();
@@ -1030,7 +1029,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update');
       const refreshedPlan = await updatedPlanRes.json();
@@ -1095,7 +1094,7 @@ function createPlanDetailsHandlers(deps) {
 
       const [updatedPlanRes] = await Promise.all([
         fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
+        deps.loadPlans()
       ]);
       if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete');
       const refreshedPlan = await updatedPlanRes.json();
