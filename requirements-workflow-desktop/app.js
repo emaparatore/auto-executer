@@ -33,35 +33,8 @@ let currentPlan = null;
 let currentRequirement = null;
 let currentSection = 'plans';
 let searchDebounceTimer = null;
-let editingAcceptanceStoryId = null;
-let isAcceptanceUpdating = false;
 let toastTimer = null;
-let acceptanceFocusTarget = null;
-let taskDodFocusTarget = null;
-let editingTaskField = null;
 uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
-let newOpenQuestionStatus = 'open';
-let deletingOpenQuestionId = null;
-let editingFunctionalRequirementId = null;
-let isFunctionalRequirementUpdating = false;
-let creatingFunctionalRequirement = false;
-let newFunctionalRequirementId = '';
-let creatingFunctionalRequirementStep = 'id';
-let newFunctionalRequirementTitle = '';
-let newFunctionalRequirementDescription = '';
-let deletingFunctionalRequirementId = null;
-let deleteModalReturnFocusEl = null;
-let deleteNonFunctionalModalReturnFocusEl = null;
-let deletePlanDecisionModalReturnFocusEl = null;
-let isStoryUpdating = false;
-let sectionStatusFilters = {
-  plans: new Set(),
-  requirements: new Set()
-};
-let sectionStatusCatalog = {
-  plans: new Set(),
-  requirements: new Set()
-};
 let currentWorkspace = null;
 let isSwitchingWorkspace = false;
 let hasWorkspaceConfigured = false;
@@ -241,7 +214,7 @@ function updateSidebarHeight() {
 }
 
 function isTaskFieldEditing(taskId, field) {
-  return editingTaskField?.taskId === taskId && editingTaskField?.field === field;
+  return uiState.taskField.editing?.taskId === taskId && uiState.taskField.editing?.field === field;
 }
 
 function buildPhasesForEditor(plan) {
@@ -453,11 +426,11 @@ function getStatusesForSection(section) {
 }
 
 function syncSectionFilterState(section, statuses) {
-  const current = sectionStatusFilters[section] || new Set();
-  const catalog = sectionStatusCatalog[section] || new Set();
+  const current = uiState.filters.getStatusFilters(section) || new Set();
+  const catalog = uiState.filters.getStatusCatalog(section) || new Set();
   if (!current.size) {
-    sectionStatusFilters[section] = new Set(statuses);
-    sectionStatusCatalog[section] = new Set(statuses);
+    uiState.filters.setStatusFilters(section, new Set(statuses));
+    uiState.filters.setStatusCatalog(section, new Set(statuses));
     return;
   }
 
@@ -466,16 +439,16 @@ function syncSectionFilterState(section, statuses) {
     if (!catalog.has(status)) next.add(status);
   });
 
-  sectionStatusCatalog[section] = new Set(statuses);
-  sectionStatusFilters[section] = next;
+  uiState.filters.setStatusCatalog(section, new Set(statuses));
+  uiState.filters.setStatusFilters(section, next);
 }
 
 function getFilteredItems(section) {
   if (section === 'plans') {
-    return plansController.getFilteredPlans(plans, sectionStatusFilters[section] || new Set());
+    return plansController.getFilteredPlans(plans, uiState.filters.getStatusFilters(section) || new Set());
   }
   if (section === 'requirements') {
-    return requirementsController.getFilteredRequirements(requirements, sectionStatusFilters[section] || new Set());
+    return requirementsController.getFilteredRequirements(requirements, uiState.filters.getStatusFilters(section) || new Set());
   }
   return [];
 }
@@ -487,7 +460,7 @@ function renderStatusFilters() {
   const statuses = getStatusesForSection(currentSection);
   syncSectionFilterState(currentSection, statuses);
 
-  const activeSet = sectionStatusFilters[currentSection] || new Set();
+  const activeSet = uiState.filters.getStatusFilters(currentSection) || new Set();
   renderStatusFiltersSection({
     filtersRoot,
     statuses,
@@ -717,22 +690,22 @@ function renderRequirementDetail() {
         <div class="task-context-row"><span class="task-context-label">I want</span><span class="task-context-values">${escapeHtml(story.iWant || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">So that</span><span class="task-context-values">${escapeHtml(story.soThat || '')}</span></div>`}
         ${uiState.story.editingId === story.id ? '' : `<div
-          class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}"
+          class="task-dod${uiState.acceptance.editingStoryId === story.id ? ' is-editing' : ''}${uiState.acceptance.isUpdating ? ' is-busy' : ''}"
           data-story-id="${encodeURIComponent(story.id)}"
           role="button"
           tabindex="0"
           aria-label="Apri modalita modifica acceptance criteria"
-          aria-expanded="${editingAcceptanceStoryId === story.id ? 'true' : 'false'}"
+          aria-expanded="${uiState.acceptance.editingStoryId === story.id ? 'true' : 'false'}"
           onclick="enableAcceptanceEditByEncodedId('${encodeURIComponent(story.id)}')"
           onkeydown="handleAcceptanceRegionKeydown(event, '${encodeURIComponent(story.id)}')">
           <div class="task-dod-title">
             <span>Acceptance Criteria:</span>
-            <span class="task-dod-hint">${editingAcceptanceStoryId === story.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span>
-            ${editingAcceptanceStoryId === story.id ? `<button type="button" class="task-dod-exit" onclick="disableAcceptanceEditFromEvent(event)">Fine modifica</button>` : ''}
+            <span class="task-dod-hint">${uiState.acceptance.editingStoryId === story.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span>
+            ${uiState.acceptance.editingStoryId === story.id ? `<button type="button" class="task-dod-exit" onclick="disableAcceptanceEditFromEvent(event)">Fine modifica</button>` : ''}
           </div>
-          ${(story.acceptanceCriteria || []).map((ac, index) => editingAcceptanceStoryId === story.id
+          ${(story.acceptanceCriteria || []).map((ac, index) => uiState.acceptance.editingStoryId === story.id
             ? `
-              <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" onkeydown="handleAcceptanceItemKeydown(event)" ${isAcceptanceUpdating ? 'disabled' : ''}>
+              <button type="button" class="task-dod-item task-dod-toggle${ac.checked ? ' is-completed' : ''}" onclick="toggleAcceptanceCriterionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(story.id)}', ${index}, ${ac.checked ? 'false' : 'true'})" onkeydown="handleAcceptanceItemKeydown(event)" ${uiState.acceptance.isUpdating ? 'disabled' : ''}>
                 <span class="task-dod-bullet">${ac.checked ? '✓' : '○'}</span>
                 <span>${escapeHtml(ac.text || '')}</span>
               </button>
@@ -818,29 +791,29 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
   const actions = isFunctional ? `
     <div class="section-title-row compact">
       <div class="section-title">Requisiti funzionali</div>
-      <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreateFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito funzionale" title="Aggiungi requisito funzionale" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
-    ${creatingFunctionalRequirement ? `
+    ${uiState.functionalRequirement.creating ? `
       <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuovo requisito funzionale</span></div>
         <div class="plan-notes-form">
-          ${creatingFunctionalRequirementStep === 'id' ? `
+          ${uiState.functionalRequirement.createStep === 'id' ? `
             <label class="open-question-label" for="new-functional-requirement-id">ID</label>
-            <input id="new-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newFunctionalRequirementId)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.functionalRequirement.newId)}" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="proceedCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Avanti</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="proceedCreateFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           ` : `
-            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newFunctionalRequirementId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.functionalRequirement.newId)}</span></div>
             <label class="open-question-label" for="new-functional-requirement-title">Titolo</label>
-            <input id="new-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newFunctionalRequirementTitle)}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.functionalRequirement.newTitle)}" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>
             <label class="open-question-label" for="new-functional-requirement-description">Descrizione</label>
-            <textarea id="new-functional-requirement-description" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(newFunctionalRequirementDescription)}</textarea>
+            <textarea id="new-functional-requirement-description" class="plan-notes-input" rows="3" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>${escapeHtml(uiState.functionalRequirement.newDescription)}</textarea>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="createFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="backCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Indietro</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="createFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreateFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           `}
         </div>
@@ -852,17 +825,17 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
     <div class="task-item" id="anchor-func-${escapeHtml(item.id || '')}">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
-        ${isFunctional && editingFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${isFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+        ${isFunctional && uiState.functionalRequirement.editingId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito funzionale" title="Modifica requisito funzionale" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito funzionale" title="Elimina requisito funzionale" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
       </div>
-      ${isFunctional && editingFunctionalRequirementId === item.id ? `
+      ${isFunctional && uiState.functionalRequirement.editingId === item.id ? `
         <div class="plan-notes-form">
           <label class="open-question-label" for="functional-title-${encodeURIComponent(item.id || '')}">Titolo</label>
-          <input id="functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>
+          <input id="functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>
           <label class="open-question-label" for="functional-description-${encodeURIComponent(item.id || '')}">Descrizione</label>
-          <textarea id="functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
+          <textarea id="functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelFunctionalRequirementEditFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelFunctionalRequirementEditFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
@@ -871,16 +844,16 @@ function renderRequirementItems(items, emptyText, isFunctional = false) {
 }
 
 function renderDeleteFunctionalRequirementModal() {
-  if (!deletingFunctionalRequirementId) return '';
+  if (!uiState.functionalRequirement.deletingId) return '';
   return `
     <div class="confirm-modal-overlay" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)">
       <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-functional-title" aria-describedby="delete-functional-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeleteFunctionalRequirementModalKeydown(event)">
         <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)">×</button>
         <div class="confirm-modal-title" id="delete-functional-title">Conferma eliminazione</div>
-        <div class="confirm-modal-text" id="delete-functional-text">Vuoi eliminare il requisito funzionale <strong>${escapeHtml(deletingFunctionalRequirementId)}</strong>?</div>
+        <div class="confirm-modal-text" id="delete-functional-text">Vuoi eliminare il requisito funzionale <strong>${escapeHtml(uiState.functionalRequirement.deletingId)}</strong>?</div>
         <div class="plan-notes-actions confirm-modal-actions">
-          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteFunctionalRequirementFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Elimina</button>
-          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)" ${isFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteFunctionalRequirementFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteFunctionalRequirementModalFromEvent(event)" ${uiState.functionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
         </div>
       </div>
     </div>
@@ -888,12 +861,12 @@ function renderDeleteFunctionalRequirementModal() {
 }
 
 function enableCreateFunctionalRequirement() {
-  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
-  creatingFunctionalRequirement = true;
-  newFunctionalRequirementId = 'RF-';
-  creatingFunctionalRequirementStep = 'id';
-  newFunctionalRequirementTitle = '';
-  newFunctionalRequirementDescription = '';
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.functionalRequirement.isUpdating) return;
+  uiState.functionalRequirement.creating = true;
+  uiState.functionalRequirement.newId = 'RF-';
+  uiState.functionalRequirement.createStep = 'id';
+  uiState.functionalRequirement.newTitle = '';
+  uiState.functionalRequirement.newDescription = '';
   renderRequirementDetail();
   setTimeout(() => {
     const idInput = document.getElementById('new-functional-requirement-id');
@@ -911,16 +884,16 @@ function enableCreateFunctionalRequirementFromEvent(event) {
 
 function cancelCreateFunctionalRequirementFromEvent(event) {
   event.stopPropagation();
-  creatingFunctionalRequirement = false;
-  newFunctionalRequirementId = '';
-  creatingFunctionalRequirementStep = 'id';
-  newFunctionalRequirementTitle = '';
-  newFunctionalRequirementDescription = '';
+  uiState.functionalRequirement.creating = false;
+  uiState.functionalRequirement.newId = '';
+  uiState.functionalRequirement.createStep = 'id';
+  uiState.functionalRequirement.newTitle = '';
+  uiState.functionalRequirement.newDescription = '';
   renderRequirementDetail();
 }
 
 function proceedCreateFunctionalRequirement() {
-  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.functionalRequirement.isUpdating) return;
   const idEl = document.getElementById('new-functional-requirement-id');
   const functionalId = String(idEl?.value || '').trim();
   if (!functionalId) {
@@ -931,8 +904,8 @@ function proceedCreateFunctionalRequirement() {
     showToast('ID gia presente', 'error');
     return;
   }
-  newFunctionalRequirementId = functionalId;
-  creatingFunctionalRequirementStep = 'details';
+  uiState.functionalRequirement.newId = functionalId;
+  uiState.functionalRequirement.createStep = 'details';
   renderRequirementDetail();
   setTimeout(() => document.getElementById('new-functional-requirement-title')?.focus(), 0);
 }
@@ -944,12 +917,12 @@ function proceedCreateFunctionalRequirementFromEvent(event) {
 
 function backCreateFunctionalRequirementFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.functionalRequirement.isUpdating) return;
   const titleEl = document.getElementById('new-functional-requirement-title');
   const descriptionEl = document.getElementById('new-functional-requirement-description');
-  newFunctionalRequirementTitle = String(titleEl?.value || '').trim();
-  newFunctionalRequirementDescription = String(descriptionEl?.value || '').trim();
-  creatingFunctionalRequirementStep = 'id';
+  uiState.functionalRequirement.newTitle = String(titleEl?.value || '').trim();
+  uiState.functionalRequirement.newDescription = String(descriptionEl?.value || '').trim();
+  uiState.functionalRequirement.createStep = 'id';
   renderRequirementDetail();
   setTimeout(() => {
     const idInput = document.getElementById('new-functional-requirement-id');
@@ -961,10 +934,10 @@ function backCreateFunctionalRequirementFromEvent(event) {
 }
 
 async function createFunctionalRequirement() {
-  if (!currentRequirement || currentSection !== 'requirements' || isFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.functionalRequirement.isUpdating) return;
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
-  const functionalId = String(newFunctionalRequirementId || '').trim();
+  const functionalId = String(uiState.functionalRequirement.newId || '').trim();
   if (!functionalId) {
     showToast('Inserisci un ID', 'error');
     return;
@@ -981,10 +954,10 @@ async function createFunctionalRequirement() {
     showToast('Titolo e descrizione sono obbligatori', 'error');
     return;
   }
-  newFunctionalRequirementTitle = title;
-  newFunctionalRequirementDescription = description;
+  uiState.functionalRequirement.newTitle = title;
+  uiState.functionalRequirement.newDescription = description;
 
-  isFunctionalRequirementUpdating = true;
+  uiState.functionalRequirement.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -1001,11 +974,11 @@ async function createFunctionalRequirement() {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'createFunctionalRequirementFromEvent:refreshRequirement');
-    creatingFunctionalRequirement = false;
-    newFunctionalRequirementId = '';
-    creatingFunctionalRequirementStep = 'id';
-    newFunctionalRequirementTitle = '';
-    newFunctionalRequirementDescription = '';
+    uiState.functionalRequirement.creating = false;
+    uiState.functionalRequirement.newId = '';
+    uiState.functionalRequirement.createStep = 'id';
+    uiState.functionalRequirement.newTitle = '';
+    uiState.functionalRequirement.newDescription = '';
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Requisito funzionale aggiunto');
@@ -1025,7 +998,7 @@ async function createFunctionalRequirement() {
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isFunctionalRequirementUpdating = false;
+    uiState.functionalRequirement.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -1036,19 +1009,19 @@ function createFunctionalRequirementFromEvent(event) {
 }
 
 function editFunctionalRequirement(functionalId) {
-  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
-  editingFunctionalRequirementId = functionalId;
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || uiState.functionalRequirement.isUpdating) return;
+  uiState.functionalRequirement.editingId = functionalId;
   renderRequirementDetail();
 }
 
 function cancelFunctionalRequirementEditFromEvent(event) {
   event.stopPropagation();
-  editingFunctionalRequirementId = null;
+  uiState.functionalRequirement.editingId = null;
   renderRequirementDetail();
 }
 
 async function saveFunctionalRequirement(functionalId) {
-  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || uiState.functionalRequirement.isUpdating) return;
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
   const titleEl = document.getElementById(`functional-title-${encodeURIComponent(functionalId)}`);
@@ -1056,7 +1029,7 @@ async function saveFunctionalRequirement(functionalId) {
   const title = String(titleEl?.value || '');
   const description = String(descriptionEl?.value || '');
 
-  isFunctionalRequirementUpdating = true;
+  uiState.functionalRequirement.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -1073,14 +1046,14 @@ async function saveFunctionalRequirement(functionalId) {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'saveFunctionalRequirementByEncodedId:refreshRequirement');
-    editingFunctionalRequirementId = null;
+    uiState.functionalRequirement.editingId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Requisito funzionale aggiornato');
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isFunctionalRequirementUpdating = false;
+    uiState.functionalRequirement.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -1096,11 +1069,11 @@ function saveFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
 }
 
 async function deleteFunctionalRequirement(functionalId) {
-  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || uiState.functionalRequirement.isUpdating) return;
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
 
-  isFunctionalRequirementUpdating = true;
+  uiState.functionalRequirement.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -1113,14 +1086,14 @@ async function deleteFunctionalRequirement(functionalId) {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'confirmDeleteFunctionalRequirementFromEvent:refreshRequirement');
-    if (editingFunctionalRequirementId === functionalId) editingFunctionalRequirementId = null;
+    if (uiState.functionalRequirement.editingId === functionalId) uiState.functionalRequirement.editingId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Requisito funzionale eliminato');
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isFunctionalRequirementUpdating = false;
+    uiState.functionalRequirement.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -1131,9 +1104,9 @@ function deleteFunctionalRequirementByEncodedId(event, encodedFunctionalId) {
 }
 
 function requestDeleteFunctionalRequirement(functionalId) {
-  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || isFunctionalRequirementUpdating) return;
-  deleteModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  deletingFunctionalRequirementId = functionalId;
+  if (!currentRequirement || currentSection !== 'requirements' || !functionalId || uiState.functionalRequirement.isUpdating) return;
+  uiState.functionalRequirement.modalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  uiState.functionalRequirement.deletingId = functionalId;
   renderRequirementDetail();
   setTimeout(() => {
     const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]');
@@ -1152,13 +1125,13 @@ function requestDeleteFunctionalRequirementByEncodedId(event, encodedFunctionalI
 }
 
 function closeDeleteFunctionalRequirementModal() {
-  if (isFunctionalRequirementUpdating) return;
-  deletingFunctionalRequirementId = null;
+  if (uiState.functionalRequirement.isUpdating) return;
+  uiState.functionalRequirement.deletingId = null;
   renderRequirementDetail();
-  if (deleteModalReturnFocusEl && typeof deleteModalReturnFocusEl.focus === 'function') {
-    setTimeout(() => deleteModalReturnFocusEl?.focus(), 0);
+  if (uiState.functionalRequirement.modalReturnFocusEl && typeof uiState.functionalRequirement.modalReturnFocusEl.focus === 'function') {
+    setTimeout(() => uiState.functionalRequirement.modalReturnFocusEl?.focus(), 0);
   }
-  deleteModalReturnFocusEl = null;
+  uiState.functionalRequirement.modalReturnFocusEl = null;
 }
 
 function closeDeleteFunctionalRequirementModalFromEvent(event) {
@@ -1168,14 +1141,14 @@ function closeDeleteFunctionalRequirementModalFromEvent(event) {
 
 function confirmDeleteFunctionalRequirementFromEvent(event) {
   event.stopPropagation();
-  const functionalId = deletingFunctionalRequirementId;
+  const functionalId = uiState.functionalRequirement.deletingId;
   if (!functionalId) return;
-  deletingFunctionalRequirementId = null;
+  uiState.functionalRequirement.deletingId = null;
   deleteFunctionalRequirement(functionalId);
 }
 
 function handleDeleteFunctionalRequirementModalKeydown(event) {
-  if (!deletingFunctionalRequirementId) return;
+  if (!uiState.functionalRequirement.deletingId) return;
   if (event.key === 'Escape') {
     event.preventDefault();
     closeDeleteFunctionalRequirementModal();
@@ -1338,8 +1311,8 @@ async function createPlanDecisionFromEvent(event) { event.stopPropagation(); if 
 function editPlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.editingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); }
 function cancelPlanDecisionEditFromEvent(event) { event.stopPropagation(); uiState.planDecision.editingId = null; renderPlanDetail(); }
 async function savePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = decodeURIComponent(encodedDecisionId); const planId = currentPlan.id; if (!planId || !decisionId) return; const description = String(document.getElementById(`plan-decision-description-${encodeURIComponent(decisionId)}`)?.value || ''); const rationale = String(document.getElementById(`plan-decision-rationale-${encodeURIComponent(decisionId)}`)?.value || ''); uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, rationale }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update'); currentPlan = await updatedPlanRes.json(); uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision aggiornata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
-function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; deletePlanDecisionModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.planDecision.deletingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
-function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (uiState.planDecision.isUpdating) return; uiState.planDecision.deletingId = null; renderPlanDetail(); if (deletePlanDecisionModalReturnFocusEl && typeof deletePlanDecisionModalReturnFocusEl.focus === 'function') setTimeout(() => deletePlanDecisionModalReturnFocusEl?.focus(), 0); deletePlanDecisionModalReturnFocusEl = null; }
+function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.modalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.planDecision.deletingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (uiState.planDecision.isUpdating) return; uiState.planDecision.deletingId = null; renderPlanDetail(); if (uiState.planDecision.modalReturnFocusEl && typeof uiState.planDecision.modalReturnFocusEl.focus === 'function') setTimeout(() => uiState.planDecision.modalReturnFocusEl?.focus(), 0); uiState.planDecision.modalReturnFocusEl = null; }
 async function confirmDeletePlanDecisionFromEvent(event) { event.stopPropagation(); if (!uiState.planDecision.deletingId || !currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = uiState.planDecision.deletingId; uiState.planDecision.deletingId = null; const planId = currentPlan.id; if (!planId) return; uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete'); currentPlan = await updatedPlanRes.json(); if (uiState.planDecision.editingId === decisionId) uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision eliminata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
 function handleDeletePlanDecisionModalKeydown(event) { if (!uiState.planDecision.deletingId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeletePlanDecisionModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
@@ -1424,8 +1397,8 @@ async function createNonFunctionalRequirementFromEvent(event) {
 function editNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.editingId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); }
 function cancelNonFunctionalRequirementEditFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); }
 async function saveNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); const nonFunctionalId = decodeURIComponent(encodedNonFunctionalId); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const title = String(document.getElementById(`non-functional-title-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); const description = String(document.getElementById(`non-functional-description-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); uiState.nonFunctionalRequirement.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update'); currentRequirement = await updatedRequirementRes.json(); uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); showToast('Requisito non funzionale aggiornato'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.nonFunctionalRequirement.isUpdating = false; renderRequirementDetail(); } }
-function requestDeleteNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; deleteNonFunctionalModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.nonFunctionalRequirement.deletingId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
-function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPropagation(); if (uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.deletingId = null; renderRequirementDetail(); if (deleteNonFunctionalModalReturnFocusEl && typeof deleteNonFunctionalModalReturnFocusEl.focus === 'function') setTimeout(() => deleteNonFunctionalModalReturnFocusEl?.focus(), 0); deleteNonFunctionalModalReturnFocusEl = null; }
+function requestDeleteNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.modalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.nonFunctionalRequirement.deletingId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPropagation(); if (uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.deletingId = null; renderRequirementDetail(); if (uiState.nonFunctionalRequirement.modalReturnFocusEl && typeof uiState.nonFunctionalRequirement.modalReturnFocusEl.focus === 'function') setTimeout(() => uiState.nonFunctionalRequirement.modalReturnFocusEl?.focus(), 0); uiState.nonFunctionalRequirement.modalReturnFocusEl = null; }
 async function confirmDeleteNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); const nonFunctionalId = uiState.nonFunctionalRequirement.deletingId; if (!nonFunctionalId || !currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.deletingId = null; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; uiState.nonFunctionalRequirement.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete'); currentRequirement = await updatedRequirementRes.json(); if (uiState.nonFunctionalRequirement.editingId === nonFunctionalId) uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); showToast('Requisito non funzionale eliminato'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.nonFunctionalRequirement.isUpdating = false; renderRequirementDetail(); } }
 function handleDeleteNonFunctionalRequirementModalKeydown(event) { if (!uiState.nonFunctionalRequirement.deletingId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeleteNonFunctionalRequirementModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
@@ -1438,38 +1411,38 @@ function renderStoryEditForm(story) {
         class="plan-notes-input compact-input"
         data-criterion-input="${encodeURIComponent(story.id)}"
         value="${escapeHtml(c?.text || '')}"
-        ${isStoryUpdating ? 'disabled' : ''}>
+        ${uiState.story.isUpdating ? 'disabled' : ''}>
       <button
         type="button"
         class="open-question-btn is-secondary"
         onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')"
-        ${isStoryUpdating ? 'disabled' : ''}>Rimuovi</button>
+        ${uiState.story.isUpdating ? 'disabled' : ''}>Rimuovi</button>
     </div>
   `).join('');
 
   return `
     <div class="plan-notes-form">
       <label class="open-question-label" for="story-title-${encodeURIComponent(story.id)}">Titolo</label>
-      <input id="story-title-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.title || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <input id="story-title-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.title || '')}" ${uiState.story.isUpdating ? 'disabled' : ''}>
       <label class="open-question-label" for="story-asa-${encodeURIComponent(story.id)}">As a</label>
-      <input id="story-asa-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.asA || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <input id="story-asa-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.asA || '')}" ${uiState.story.isUpdating ? 'disabled' : ''}>
       <label class="open-question-label" for="story-iwant-${encodeURIComponent(story.id)}">I want</label>
-      <input id="story-iwant-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.iWant || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <input id="story-iwant-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.iWant || '')}" ${uiState.story.isUpdating ? 'disabled' : ''}>
       <label class="open-question-label" for="story-sothat-${encodeURIComponent(story.id)}">So that</label>
-      <input id="story-sothat-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.soThat || '')}" ${isStoryUpdating ? 'disabled' : ''}>
+      <input id="story-sothat-${encodeURIComponent(story.id)}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(story.soThat || '')}" ${uiState.story.isUpdating ? 'disabled' : ''}>
       <div class="task-dod-title"><span>Acceptance Criteria</span></div>
       <div id="story-criteria-${encodeURIComponent(story.id)}">${criteriaRows}</div>
-      <button type="button" class="open-question-btn is-secondary" onclick="addStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>+ Criterio</button>
+      <button type="button" class="open-question-btn is-secondary" onclick="addStoryCriterionFromEvent(event, '${encodeURIComponent(story.id)}')" ${uiState.story.isUpdating ? 'disabled' : ''}>+ Criterio</button>
       <div class="plan-notes-actions">
-        <button type="button" class="open-question-btn" onclick="saveStoryByEncodedId(event, '${encodeURIComponent(story.id)}')" ${isStoryUpdating ? 'disabled' : ''}>Salva</button>
-        <button type="button" class="open-question-btn is-secondary" onclick="cancelStoryEditFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button>
+        <button type="button" class="open-question-btn" onclick="saveStoryByEncodedId(event, '${encodeURIComponent(story.id)}')" ${uiState.story.isUpdating ? 'disabled' : ''}>Salva</button>
+        <button type="button" class="open-question-btn is-secondary" onclick="cancelStoryEditFromEvent(event)" ${uiState.story.isUpdating ? 'disabled' : ''}>Annulla</button>
       </div>
     </div>
   `;
 }
 
 function renderStoryCreateBox() {
-  return `<div class="section-title-row compact"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${uiState.story.creating ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${uiState.story.createStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.story.newId)}" ${isStoryUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.story.newId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div class="spacer-20"></div>` : ''}`;
+  return `<div class="section-title-row compact"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${uiState.story.isUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${uiState.story.creating ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${uiState.story.createStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.story.newId)}" ${uiState.story.isUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${uiState.story.isUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${uiState.story.isUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.story.newId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div class="spacer-20"></div>` : ''}`;
 }
 function enableStoryCreateFromEvent(event) { event.stopPropagation(); uiState.story.creating = true; uiState.story.createStep = 'id'; uiState.story.newId = 'US-'; renderRequirementDetail(); setTimeout(() => { const el = document.getElementById('new-story-id'); if (!el) return; el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 0); }
 function cancelStoryCreateFromEvent(event) { event.stopPropagation(); uiState.story.creating = false; uiState.story.createStep = 'id'; uiState.story.newId = ''; renderRequirementDetail(); }
@@ -1484,7 +1457,7 @@ function addStoryCriterionFromEvent(event, encodedStoryId) {
   container.insertAdjacentHTML('beforeend', `<div class="criterion-row"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(id)}" value=""><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(id)}')">Rimuovi</button></div>`);
 }
 function removeStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const row = event.currentTarget?.closest('div'); const container = document.getElementById(`story-criteria-${encodedStoryId}`); if (!row || !container) return; const rows = container.querySelectorAll('[data-criterion-input]'); if (rows.length <= 1) return showToast('Deve rimanere almeno un criterio', 'error'); row.remove(); }
-async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); uiState.story.editingId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
+async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; uiState.story.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); uiState.story.editingId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { uiState.story.isUpdating = false; renderRequirementDetail(); } }
 async function createStoryFromEvent(event) {
   event.stopPropagation();
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
@@ -1500,7 +1473,7 @@ async function createStoryFromEvent(event) {
   const criteria = Array.from(document.querySelectorAll('#story-criteria-new [data-criterion-input]')).map(el => String(el.value || '').trim()).filter(Boolean);
   if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error');
   payload.acceptanceCriteria = criteria;
-  isStoryUpdating = true;
+  uiState.story.isUpdating = true;
   renderRequirementDetail();
   try {
     const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1528,14 +1501,14 @@ async function createStoryFromEvent(event) {
   } catch (e) {
     showToast(e.message, 'error');
   } finally {
-    isStoryUpdating = false;
+    uiState.story.isUpdating = false;
     renderRequirementDetail();
   }
 }
 function requestDeleteStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); uiState.story.deletingId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
 function renderDeleteStoryModal() { if (!uiState.story.deletingId) return ''; return `<div class="confirm-modal-overlay" onclick="closeDeleteStoryModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteStoryModalFromEvent(event)">×</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la user story <strong>${escapeHtml(uiState.story.deletingId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteStoryFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteStoryModalFromEvent(event)">Annulla</button></div></div></div>`; }
 function closeDeleteStoryModalFromEvent(event) { event.stopPropagation(); uiState.story.deletingId = null; renderRequirementDetail(); }
-async function confirmDeleteStoryFromEvent(event) { event.stopPropagation(); const storyId = uiState.story.deletingId; if (!storyId) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; uiState.story.deletingId = null; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); showToast('User story eliminata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
+async function confirmDeleteStoryFromEvent(event) { event.stopPropagation(); const storyId = uiState.story.deletingId; if (!storyId) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; uiState.story.deletingId = null; uiState.story.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); showToast('User story eliminata'); } catch (e) { showToast(e.message, 'error'); } finally { uiState.story.isUpdating = false; renderRequirementDetail(); } }
 
 function configurePlanTabs(activeTab = 'overview') {
   setTabVisibility('overview', true);
@@ -1596,7 +1569,7 @@ function setSection(section) {
   currentRequirement = null;
   syncCoreState({ currentPlan, currentRequirement }, 'setSection:resetSelection');
   uiState.taskDod.editingId = null;
-  taskDodFocusTarget = null;
+  uiState.taskDod.focusTarget = null;
   uiState.planNotes.isEditing = false;
   uiState.planNotes.isUpdating = false;
   uiState.planObjective.isEditing = false;
@@ -1609,7 +1582,7 @@ function setSection(section) {
   uiState.taskImplementationNotes.editingId = null;
   uiState.taskImplementationNotes.isUpdating = false;
   uiState.taskNotes.openIds = new Set();
-  editingTaskField = null;
+  uiState.taskField.editing = null;
   uiState.taskField.isUpdating = false;
   uiState.requirementOverview.isEditing = false;
   uiState.requirementOverview.isUpdating = false;
@@ -1781,7 +1754,7 @@ function disableTaskDodEdit() {
   if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
   if (!uiState.taskDod.editingId) return;
   uiState.taskDod.editingId = null;
-  taskDodFocusTarget = null;
+  uiState.taskDod.focusTarget = null;
   renderPlanDetail();
 }
 
@@ -2095,7 +2068,7 @@ function enableTaskFieldEdit(taskId, field) {
     showToast('Nessuna phase disponibile nel piano', 'error');
     return;
   }
-  editingTaskField = { taskId, field };
+  uiState.taskField.editing = { taskId, field };
   renderPlanDetail();
 }
 
@@ -2105,8 +2078,8 @@ function enableTaskFieldEditByEncodedId(event, encodedTaskId, field) {
 }
 
 function cancelTaskFieldEdit() {
-  if (!editingTaskField || uiState.taskField.isUpdating) return;
-  editingTaskField = null;
+  if (!uiState.taskField.editing || uiState.taskField.isUpdating) return;
+  uiState.taskField.editing = null;
   renderPlanDetail();
 }
 
@@ -2171,7 +2144,7 @@ async function saveTaskField(planId, taskId, field) {
 
       currentPlan = await updatedPlanRes.json();
       syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:refreshPlan');
-      editingTaskField = null;
+      uiState.taskField.editing = null;
       document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
       renderPlanDetail();
       showToast('Campi task salvati');
@@ -2245,7 +2218,7 @@ async function saveTaskField(planId, taskId, field) {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:metaRefreshPlan');
-    editingTaskField = null;
+    uiState.taskField.editing = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Campo task salvato');
@@ -2469,7 +2442,7 @@ async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
   if (!task || !criterion) return;
 
   const previousCompleted = Boolean(criterion.completed);
-  taskDodFocusTarget = { taskId, criterionIndex };
+  uiState.taskDod.focusTarget = { taskId, criterionIndex };
   criterion.completed = completed;
   uiState.taskDod.isUpdating = true;
   renderPlanDetail();
@@ -2519,16 +2492,16 @@ function toggleTaskDodItemByEncodedIds(event, encodedPlanId, encodedTaskId, crit
 
 function enableAcceptanceEdit(storyId) {
   if (!currentRequirement || currentSection !== 'requirements') return;
-  if (editingAcceptanceStoryId === storyId) return;
-  editingAcceptanceStoryId = storyId;
+  if (uiState.acceptance.editingStoryId === storyId) return;
+  uiState.acceptance.editingStoryId = storyId;
   renderRequirementDetail();
 }
 
 function disableAcceptanceEdit() {
   if (!currentRequirement || currentSection !== 'requirements') return;
-  if (!editingAcceptanceStoryId) return;
-  editingAcceptanceStoryId = null;
-  acceptanceFocusTarget = null;
+  if (!uiState.acceptance.editingStoryId) return;
+  uiState.acceptance.editingStoryId = null;
+  uiState.acceptance.focusTarget = null;
   renderRequirementDetail();
 }
 
@@ -2549,16 +2522,16 @@ function handleAcceptanceRegionKeydown(event, encodedStoryId) {
 }
 
 async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex, checked) {
-  if (!currentRequirement || currentSection !== 'requirements' || isAcceptanceUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.acceptance.isUpdating) return;
 
   const story = (currentRequirement.userStories || []).find(item => item.id === storyId);
   const criterion = story?.acceptanceCriteria?.[criterionIndex];
   if (!story || !criterion) return;
 
   const previousChecked = Boolean(criterion.checked);
-  acceptanceFocusTarget = { storyId, criterionIndex };
+  uiState.acceptance.focusTarget = { storyId, criterionIndex };
   criterion.checked = checked;
-  isAcceptanceUpdating = true;
+  uiState.acceptance.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -2592,7 +2565,7 @@ async function toggleAcceptanceCriterion(requirementId, storyId, criterionIndex,
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isAcceptanceUpdating = false;
+    uiState.acceptance.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -2999,7 +2972,7 @@ function enableOpenQuestionCreateFromEvent(event) {
   uiState.openQuestion.newId = 'OQ-';
   uiState.openQuestion.newQuestion = '';
   uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
-  newOpenQuestionStatus = 'open';
+  uiState.openQuestion.newStatus = 'open';
   uiState.openQuestion.editingId = null;
   renderRequirementDetail();
   requestAnimationFrame(() => {
@@ -3029,7 +3002,7 @@ function backCreateOpenQuestionFromEvent(event) {
   const questionEl = document.getElementById('new-open-question-question');
   uiState.openQuestion.newQuestion = String(questionEl?.value || '').trim();
   uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
-  newOpenQuestionStatus = 'open';
+  uiState.openQuestion.newStatus = 'open';
   uiState.openQuestion.createStep = 'id';
   renderRequirementDetail();
 }
@@ -3042,7 +3015,7 @@ function cancelCreateOpenQuestionFromEvent(event) {
   uiState.openQuestion.newId = '';
   uiState.openQuestion.newQuestion = '';
   uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
-  newOpenQuestionStatus = 'open';
+  uiState.openQuestion.newStatus = 'open';
   renderRequirementDetail();
 }
 
@@ -3074,7 +3047,7 @@ async function createOpenQuestionFromEvent(event) {
     uiState.openQuestion.newId = '';
     uiState.openQuestion.newQuestion = '';
     uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
-    newOpenQuestionStatus = 'open';
+    uiState.openQuestion.newStatus = 'open';
     renderRequirementDetail();
     showToast('Open question creata');
     setTimeout(() => {
@@ -3104,23 +3077,23 @@ function requestDeleteOpenQuestionByEncodedIds(event, encodedRequirementId, enco
   const requirementId = decodeURIComponent(encodedRequirementId);
   const questionId = decodeURIComponent(encodedQuestionId);
   if (!requirementId || !questionId) return;
-  deletingOpenQuestionId = questionId;
-  deleteModalReturnFocusEl = event.currentTarget || null;
+  uiState.openQuestion.deletingId = questionId;
+  uiState.functionalRequirement.modalReturnFocusEl = event.currentTarget || null;
   renderRequirementDetail();
 }
 
 function closeDeleteOpenQuestionModalFromEvent(event) {
   event.stopPropagation();
-  deletingOpenQuestionId = null;
+  uiState.openQuestion.deletingId = null;
   renderRequirementDetail();
-  if (deleteModalReturnFocusEl && typeof deleteModalReturnFocusEl.focus === 'function') deleteModalReturnFocusEl.focus();
+  if (uiState.functionalRequirement.modalReturnFocusEl && typeof uiState.functionalRequirement.modalReturnFocusEl.focus === 'function') uiState.functionalRequirement.modalReturnFocusEl.focus();
 }
 
 async function confirmDeleteOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || !deletingOpenQuestionId || uiState.openQuestion.isUpdating) return;
+  if (!currentRequirement || !uiState.openQuestion.deletingId || uiState.openQuestion.isUpdating) return;
   const requirementId = currentRequirement.document?.id;
-  const questionId = deletingOpenQuestionId;
+  const questionId = uiState.openQuestion.deletingId;
   if (!requirementId) return;
   uiState.openQuestion.isUpdating = true;
   renderRequirementDetail();
@@ -3131,7 +3104,7 @@ async function confirmDeleteOpenQuestionFromEvent(event) {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question delete');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'confirmDeleteOpenQuestionFromEvent:refreshRequirement');
-    deletingOpenQuestionId = null;
+    uiState.openQuestion.deletingId = null;
     uiState.openQuestion.editingId = null;
     renderRequirementDetail();
     showToast('Open question eliminata');
@@ -3144,8 +3117,8 @@ async function confirmDeleteOpenQuestionFromEvent(event) {
 }
 
 function renderDeleteOpenQuestionModal() {
-  if (!deletingOpenQuestionId) return '';
-  return `<div class="confirm-modal-overlay" onclick="closeDeleteOpenQuestionModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteOpenQuestionModalFromEvent(event)">x</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la open question <strong>${escapeHtml(deletingOpenQuestionId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteOpenQuestionFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteOpenQuestionModalFromEvent(event)">Annulla</button></div></div></div>`;
+  if (!uiState.openQuestion.deletingId) return '';
+  return `<div class="confirm-modal-overlay" onclick="closeDeleteOpenQuestionModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteOpenQuestionModalFromEvent(event)">x</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la open question <strong>${escapeHtml(uiState.openQuestion.deletingId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteOpenQuestionFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteOpenQuestionModalFromEvent(event)">Annulla</button></div></div></div>`;
 }
 
 function ensureToastEl() {
@@ -3175,10 +3148,10 @@ function showToast(message, type = 'success') {
 }
 
 function restoreAcceptanceFocusIfNeeded() {
-  if (!acceptanceFocusTarget || !editingAcceptanceStoryId) return;
-  if (editingAcceptanceStoryId !== acceptanceFocusTarget.storyId) return;
+  if (!uiState.acceptance.focusTarget || !uiState.acceptance.editingStoryId) return;
+  if (uiState.acceptance.editingStoryId !== uiState.acceptance.focusTarget.storyId) return;
 
-  const { storyId, criterionIndex } = acceptanceFocusTarget;
+  const { storyId, criterionIndex } = uiState.acceptance.focusTarget;
   requestAnimationFrame(() => {
     const editingRegion = document.querySelector('.task-dod.is-editing');
     if (!editingRegion) return;
@@ -3197,10 +3170,10 @@ function restoreAcceptanceFocusIfNeeded() {
 }
 
 function restoreTaskDodFocusIfNeeded() {
-  if (!taskDodFocusTarget || !uiState.taskDod.editingId) return;
-  if (uiState.taskDod.editingId !== taskDodFocusTarget.taskId) return;
+  if (!uiState.taskDod.focusTarget || !uiState.taskDod.editingId) return;
+  if (uiState.taskDod.editingId !== uiState.taskDod.focusTarget.taskId) return;
 
-  const { taskId, criterionIndex } = taskDodFocusTarget;
+  const { taskId, criterionIndex } = uiState.taskDod.focusTarget;
   requestAnimationFrame(() => {
     const editingRegion = document.querySelector('.task-dod.is-editing');
     if (!editingRegion) return;
@@ -3403,13 +3376,13 @@ statusFiltersElement?.addEventListener('change', event => {
   const status = String(target.dataset.status || '').trim();
   if (!status) return;
 
-  const currentSet = sectionStatusFilters[currentSection] || new Set();
+  const currentSet = uiState.filters.getStatusFilters(currentSection) || new Set();
   if (target.checked) {
     currentSet.add(status);
   } else {
     currentSet.delete(status);
   }
-  sectionStatusFilters[currentSection] = currentSet;
+  uiState.filters.setStatusFilters(currentSection, currentSet);
 
   if (currentSection === 'requirements') {
     renderRequirementsList();

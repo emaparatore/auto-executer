@@ -304,7 +304,8 @@ const uiState = {
     set editingId(v) { state.taskEditing.editingTaskNotesId = v; },
     get isUpdating() { return state.taskEditing.isTaskNotesUpdating; },
     set isUpdating(v) { state.taskEditing.isTaskNotesUpdating = v; },
-    get openIds() { return state.taskEditing.openTaskNotesIds; }
+    get openIds() { return state.taskEditing.openTaskNotesIds; },
+    set openIds(v) { state.taskEditing.openTaskNotesIds = v; }
   },
   taskImplementationNotes: {
     get editingId() { return state.taskEditing.editingTaskImplementationNotesId; },

@@ -6,7 +6,7 @@
   "targetArchitecture": "Struttura target: app.js ridotta a bootstrap/wiring. src/state/uiState.js (stato editing centralizzato). src/ui/renderers/planDetail.renderer.js e requirementDetail.renderer.js (template+render dettaglio). src/features/*/handlers.js ampliati con tutti i CRUD handlers. Eventuali sottogruppi: src/features/plans/planDetails.handlers.js, src/features/requirements/stories.handlers.js, requirements.functional.handlers.js, etc.",
   "status": "in_progress",
   "created": "2026-05-05",
-    "lastUpdated": "2026-05-05T19:30:00.000Z",
+  "lastUpdated": "2026-05-05T19:45:00.000Z",
   "notes": "Piano orientato a migrazione aggressiva ma incrementale. Ogni task deve mantenere app avviabile. Le funzioni devono essere spostate OUT di app.js, non duplicate.",
   "phases": [
     {
@@ -83,7 +83,7 @@
       "id": "US-008",
       "description": "Stato UI editing centralizzato in uiState module",
       "tasks": "T-01, T-02",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-009",
