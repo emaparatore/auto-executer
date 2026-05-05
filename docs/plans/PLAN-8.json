@@ -6,7 +6,7 @@
   "targetArchitecture": "Struttura target: app.js ridotta a bootstrap/wiring. src/state/uiState.js (stato editing centralizzato). src/ui/renderers/planDetail.renderer.js e requirementDetail.renderer.js (template+render dettaglio). src/features/*/handlers.js ampliati con tutti i CRUD handlers. Eventuali sottogruppi: src/features/plans/planDetails.handlers.js, src/features/requirements/stories.handlers.js, requirements.functional.handlers.js, etc.",
   "status": "in_progress",
   "created": "2026-05-05",
-  "lastUpdated": "2026-05-05T19:45:00.000Z",
+  "lastUpdated": "2026-05-05T16:29:18.000Z",
   "notes": "Piano orientato a migrazione aggressiva ma incrementale. Ogni task deve mantenere app avviabile. Le funzioni devono essere spostate OUT di app.js, non duplicate.",
   "phases": [
     {
@@ -89,7 +89,7 @@
       "id": "US-009",
       "description": "Renderer dettaglio plan estratto da app.js",
       "tasks": "T-03, T-05",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "US-010",
@@ -276,7 +276,7 @@
         "US-011"
       ],
       "size": "Large",
-      "status": "pending",
+      "status": "completed",
       "dependsOn": [
         "T-03"
       ],
@@ -302,19 +302,19 @@
       "definitionOfDone": [
         {
           "description": "planDetails.handlers.js esiste con tutti i CRUD handlers plan",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Handlers usano uiState per stato editing",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Controller espone i metodi e app.js li wiring su window",
-          "completed": false
+          "completed": true
         },
         {
           "description": "Editing plan (notes, objective, phases, decisions, task status, task fields, task DoD, task notes) funzionano come prima",
-          "completed": false
+          "completed": true
         }
       ],
       "decision": "DEC-3",

@@ -85,7 +85,7 @@ function activateRequirementListItem(id) {
   document.querySelector(`.plan-item[data-id="${CSS.escape(id)}"]`)?.classList.add('active');
 }
 
-const plansController = createPlansController({
+const plansDeps = {
   listPlans,
   getPlanById,
   readState: readCoreState,
@@ -95,8 +95,18 @@ const plansController = createPlansController({
   renderPlanDetail: () => renderPlanDetail(),
   scrollWorkspaceToTop,
   resetPlanUiEditingState,
-  activatePlanListItem
-});
+  activatePlanListItem,
+  uiState,
+  showToast,
+  getCurrentDateIso,
+  buildPhasesForEditor,
+  loadPlans: null,
+  TASK_STATUSES: null,
+  formatStatus
+};
+
+const plansController = createPlansController(plansDeps);
+plansDeps.loadPlans = () => plansController.loadPlans();
 
 const requirementsController = createRequirementsController({
   listRequirements,
@@ -183,6 +193,8 @@ const ADD_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'skipped', 'cancelled'];
 const STATUS_SORT_ORDER = ['pending', 'draft', 'in_progress', 'in_review', 'approved', 'implemented', 'completed', 'skipped', 'cancelled'];
+
+plansDeps.TASK_STATUSES = TASK_STATUSES;
 
 const WELCOME_PLAN_ICON = `
   <svg class="welcome-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -902,18 +914,6 @@ function renderDeletePlanDecisionModal() {
   `;
 }
 
-function enableCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.creating = true; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = 'DEC-'; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); setTimeout(() => { const input = document.getElementById('new-plan-decision-id'); if (!input) return; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0); }
-function cancelCreatePlanDecisionFromEvent(event) { event.stopPropagation(); uiState.planDecision.creating = false; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = ''; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); }
-function proceedCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = String(document.getElementById('new-plan-decision-id')?.value || '').trim(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if ((currentPlan.decisions || []).some(item => (item.id || item.decision) === decisionId)) return showToast('ID gia presente', 'error'); uiState.planDecision.newId = decisionId; uiState.planDecision.createStep = 'details'; renderPlanDetail(); setTimeout(() => document.getElementById('new-plan-decision-description')?.focus(), 0); }
-function backCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.newDescription = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); uiState.planDecision.newRationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); uiState.planDecision.createStep = 'id'; renderPlanDetail(); }
-async function createPlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const planId = currentPlan.id; if (!planId) return; const decisionId = String(uiState.planDecision.newId || '').trim(); const description = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); const rationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); const date = getCurrentDateIso(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if (!description || !rationale) return showToast('Descrizione e rationale sono obbligatori', 'error'); uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decisionId, description, rationale, date }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after create'); currentPlan = await updatedPlanRes.json(); uiState.planDecision.creating = false; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = ''; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); showToast('Decision aggiunta'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
-function editPlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.editingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); }
-function cancelPlanDecisionEditFromEvent(event) { event.stopPropagation(); uiState.planDecision.editingId = null; renderPlanDetail(); }
-async function savePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = decodeURIComponent(encodedDecisionId); const planId = currentPlan.id; if (!planId || !decisionId) return; const description = String(document.getElementById(`plan-decision-description-${encodeURIComponent(decisionId)}`)?.value || ''); const rationale = String(document.getElementById(`plan-decision-rationale-${encodeURIComponent(decisionId)}`)?.value || ''); uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, rationale }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update'); currentPlan = await updatedPlanRes.json(); uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision aggiornata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
-function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.modalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.planDecision.deletingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
-function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (uiState.planDecision.isUpdating) return; uiState.planDecision.deletingId = null; renderPlanDetail(); if (uiState.planDecision.modalReturnFocusEl && typeof uiState.planDecision.modalReturnFocusEl.focus === 'function') setTimeout(() => uiState.planDecision.modalReturnFocusEl?.focus(), 0); uiState.planDecision.modalReturnFocusEl = null; }
-async function confirmDeletePlanDecisionFromEvent(event) { event.stopPropagation(); if (!uiState.planDecision.deletingId || !currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = uiState.planDecision.deletingId; uiState.planDecision.deletingId = null; const planId = currentPlan.id; if (!planId) return; uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete'); currentPlan = await updatedPlanRes.json(); if (uiState.planDecision.editingId === decisionId) uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision eliminata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
-function handleDeletePlanDecisionModalKeydown(event) { if (!uiState.planDecision.deletingId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeletePlanDecisionModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
 function enableCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.creating = true; uiState.nonFunctionalRequirement.newId = 'RNF-'; uiState.nonFunctionalRequirement.createStep = 'id'; uiState.nonFunctionalRequirement.newTitle = ''; uiState.nonFunctionalRequirement.newDescription = ''; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
 function cancelCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.creating = false; uiState.nonFunctionalRequirement.newId = ''; uiState.nonFunctionalRequirement.createStep = 'id'; uiState.nonFunctionalRequirement.newTitle = ''; uiState.nonFunctionalRequirement.newDescription = ''; renderRequirementDetail(); }
@@ -1156,877 +1156,12 @@ function setSection(section) {
   }
 }
 
-function handleTaskStatusChange(taskId, nextStatus, optionEl) {
-  const dropdownRoot = optionEl.closest('.task-status-dropdown');
-  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
-
-  dropdownRoot.classList.remove('is-open');
-  setStatusSelectClass(dropdownRoot, nextStatus);
-  updateTaskStatus(taskId, nextStatus, dropdownRoot);
-}
-
-function handleTaskStatusChangeByEncodedId(encodedTaskId, nextStatus, optionEl) {
-  handleTaskStatusChange(decodeURIComponent(encodedTaskId), nextStatus, optionEl);
-}
-
 function selectPlanByEncodedId(encodedPlanId) {
   return selectPlan(decodeURIComponent(encodedPlanId));
 }
 
 function selectRequirementByEncodedId(encodedRequirementId) {
   return selectRequirement(decodeURIComponent(encodedRequirementId));
-}
-
-async function updateTaskStatus(taskId, status, dropdownRoot) {
-  if (!currentPlan || currentSection !== 'plans') return;
-
-  const previousStatus = currentPlan.tasks?.find(t => t.id === taskId)?.status;
-  dropdownRoot.classList.add('is-updating');
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/tasks/${encodeURIComponent(taskId)}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update task status');
-    }
-
-    await res.json();
-
-    const [planDetailRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!planDetailRes.ok) {
-      throw new Error('Unable to refresh plan after status update');
-    }
-
-    currentPlan = await planDetailRes.json();
-    syncCoreState({ currentPlan }, 'updateTaskStatus:refreshPlan');
-    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
-    renderPlanDetail();
-  } catch (error) {
-    if (previousStatus) setStatusSelectClass(dropdownRoot, previousStatus);
-    alert(error.message);
-  } finally {
-    dropdownRoot.classList.remove('is-updating');
-  }
-}
-
-function setStatusSelectClass(controlRoot, status) {
-  if (!controlRoot) return;
-
-  const trigger = controlRoot.querySelector('.task-status-trigger');
-  const label = controlRoot.querySelector('.task-status-label');
-  const options = controlRoot.querySelectorAll('.task-status-option');
-
-  TASK_STATUSES.forEach(taskStatus => {
-    controlRoot.classList.remove(`status-${taskStatus}`);
-    trigger?.classList.remove(`status-${taskStatus}`);
-  });
-
-  controlRoot.classList.add(`status-${status}`);
-  trigger?.classList.add(`status-${status}`);
-  if (label) label.textContent = formatStatus(status);
-
-  options.forEach(option => {
-    option.classList.toggle('is-current', option.classList.contains(`status-${status}`));
-  });
-}
-
-function toggleTaskStatusDropdown(triggerEl) {
-  const dropdownRoot = triggerEl.closest('.task-status-dropdown');
-  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
-
-  const willOpen = !dropdownRoot.classList.contains('is-open');
-  closeAllTaskStatusDropdowns();
-  if (willOpen) dropdownRoot.classList.add('is-open');
-}
-
-function closeAllTaskStatusDropdowns() {
-  document.querySelectorAll('.task-status-dropdown.is-open').forEach(dropdown => {
-    dropdown.classList.remove('is-open');
-  });
-}
-
-function toggleTaskPhaseDropdown(triggerEl) {
-  const dropdownRoot = triggerEl.closest('.task-phase-dropdown');
-  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
-
-  const willOpen = !dropdownRoot.classList.contains('is-open');
-  closeAllTaskStatusDropdowns();
-  if (willOpen) dropdownRoot.classList.add('is-open');
-}
-
-function handleTaskPhaseSelect(taskId, phaseTitle, optionEl) {
-  const dropdownRoot = optionEl.closest('.task-phase-dropdown');
-  if (!dropdownRoot || dropdownRoot.classList.contains('is-updating')) return;
-
-  const hiddenInput = document.getElementById(`task-phase-${taskId}`);
-  const label = dropdownRoot.querySelector('.task-status-label');
-  if (!hiddenInput || !label) return;
-
-  hiddenInput.value = phaseTitle;
-  label.textContent = phaseTitle;
-  dropdownRoot.classList.remove('is-open');
-  dropdownRoot.querySelectorAll('.task-status-option').forEach(option => option.classList.remove('is-current'));
-  optionEl.classList.add('is-current');
-}
-
-function handleTaskPhaseSelectByEncodedId(encodedTaskId, encodedPhaseTitle, optionEl) {
-  handleTaskPhaseSelect(decodeURIComponent(encodedTaskId), decodeURIComponent(encodedPhaseTitle), optionEl);
-}
-
-function enableTaskDodEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
-  if (uiState.taskDod.editingId === taskId) return;
-  uiState.taskDod.editingId = taskId;
-  renderPlanDetail();
-}
-
-function disableTaskDodEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
-  if (!uiState.taskDod.editingId) return;
-  uiState.taskDod.editingId = null;
-  uiState.taskDod.focusTarget = null;
-  renderPlanDetail();
-}
-
-function disableTaskDodEditFromEvent(event) {
-  event.stopPropagation();
-  disableTaskDodEdit();
-}
-
-function enablePlanNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planNotes.isUpdating) return;
-  if (uiState.planNotes.isEditing) return;
-  uiState.planNotes.isEditing = true;
-  renderPlanDetail();
-}
-
-function enablePlanObjectiveEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planObjective.isUpdating) return;
-  if (uiState.planObjective.isEditing) return;
-  uiState.planObjective.isEditing = true;
-  renderPlanDetail();
-}
-
-function enablePlanObjectiveEditFromEvent(event) {
-  event.stopPropagation();
-  enablePlanObjectiveEdit();
-}
-
-function cancelPlanObjectiveEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planObjective.isUpdating) return;
-  if (!uiState.planObjective.isEditing) return;
-  uiState.planObjective.isEditing = false;
-  renderPlanDetail();
-}
-
-function cancelPlanObjectiveEditFromEvent(event) {
-  event.stopPropagation();
-  cancelPlanObjectiveEdit();
-}
-
-async function savePlanObjective() {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planObjective.isEditing || uiState.planObjective.isUpdating) return;
-  const objectiveEl = document.getElementById('plan-objective-input');
-  if (!objectiveEl) return;
-
-  const objective = String(objectiveEl.value || '');
-  const previousObjective = currentPlan.objective || '';
-
-  currentPlan.objective = objective;
-  uiState.planObjective.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/objective`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ objective })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update plan objective');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after objective update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'savePlanObjectiveFromEvent:refreshPlan');
-    uiState.planObjective.isEditing = false;
-    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Objective piano salvato');
-  } catch (error) {
-    currentPlan.objective = previousObjective;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.planObjective.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function savePlanObjectiveFromEvent(event) {
-  event.stopPropagation();
-  savePlanObjective();
-}
-
-function enablePlanPhasesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planPhases.isUpdating) return;
-  if (uiState.planPhases.isEditing) return;
-  uiState.planPhases.items = buildPhasesForEditor(currentPlan);
-  if (!uiState.planPhases.items.length) {
-    uiState.planPhases.items = [{ title: '', tasks: [] }];
-  }
-  uiState.planPhases.isEditing = true;
-  renderPlanDetail();
-}
-
-function addPlanPhase() {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
-  uiState.planPhases.items = [...uiState.planPhases.items, { title: '', tasks: [] }];
-  renderPlanDetail();
-}
-
-function addPlanPhaseFromEvent(event) {
-  event.stopPropagation();
-  addPlanPhase();
-}
-
-function removePlanPhase(index) {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
-  uiState.planPhases.items = uiState.planPhases.items.filter((_, currentIndex) => currentIndex !== index);
-  if (!uiState.planPhases.items.length) uiState.planPhases.items = [{ title: '', tasks: [] }];
-  renderPlanDetail();
-}
-
-function removePlanPhaseFromEvent(event, index) {
-  event.stopPropagation();
-  removePlanPhase(index);
-}
-
-function updatePlanPhaseTitle(index, value) {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
-  if (!uiState.planPhases.items[index]) return;
-  uiState.planPhases.items[index].title = String(value || '');
-}
-
-function updatePlanPhaseTitleFromEvent(event, index) {
-  event.stopPropagation();
-  updatePlanPhaseTitle(index, event.target.value);
-}
-
-function togglePlanPhaseTask(index, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
-  const phase = uiState.planPhases.items[index];
-  if (!phase) return;
-  const selectedTaskIds = Array.isArray(phase.tasks) ? phase.tasks : [];
-  if (selectedTaskIds.includes(taskId)) {
-    phase.tasks = selectedTaskIds.filter(id => id !== taskId);
-  } else {
-    phase.tasks = [...selectedTaskIds, taskId];
-  }
-}
-
-function togglePlanPhaseTaskByEncodedId(event, index, encodedTaskId) {
-  event.stopPropagation();
-  togglePlanPhaseTask(index, decodeURIComponent(encodedTaskId));
-}
-
-function enablePlanPhasesEditFromEvent(event) {
-  event.stopPropagation();
-  enablePlanPhasesEdit();
-}
-
-function cancelPlanPhasesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planPhases.isUpdating) return;
-  if (!uiState.planPhases.isEditing) return;
-  uiState.planPhases.isEditing = false;
-  uiState.planPhases.items = [];
-  renderPlanDetail();
-}
-
-function cancelPlanPhasesEditFromEvent(event) {
-  event.stopPropagation();
-  cancelPlanPhasesEdit();
-}
-
-async function savePlanPhases() {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
-  const previousPhases = Array.isArray(currentPlan.phases) ? currentPlan.phases : [];
-  const phases = uiState.planPhases.items
-    .map(phase => ({
-      title: String(phase?.title || '').trim(),
-      tasks: Array.isArray(phase?.tasks) ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean) : []
-    }))
-    .filter(phase => phase.title);
-
-  if (!phases.length) {
-    showToast('Aggiungi almeno una fase con titolo', 'error');
-    return;
-  }
-
-  currentPlan.phases = phases;
-  uiState.planPhases.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/phases`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phases })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update plan phases');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after phases update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'savePlanPhasesFromEvent:refreshPlan');
-    uiState.planPhases.isEditing = false;
-    uiState.planPhases.items = [];
-    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Phases piano salvate');
-  } catch (error) {
-    currentPlan.phases = previousPhases;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.planPhases.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function savePlanPhasesFromEvent(event) {
-  event.stopPropagation();
-  savePlanPhases();
-}
-
-function enablePlanNotesEditFromEvent(event) {
-  event.stopPropagation();
-  enablePlanNotesEdit();
-}
-
-function cancelPlanNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.planNotes.isUpdating) return;
-  if (!uiState.planNotes.isEditing) return;
-  uiState.planNotes.isEditing = false;
-  renderPlanDetail();
-}
-
-function cancelPlanNotesEditFromEvent(event) {
-  event.stopPropagation();
-  cancelPlanNotesEdit();
-}
-
-async function savePlanNotes() {
-  if (!currentPlan || currentSection !== 'plans' || !uiState.planNotes.isEditing || uiState.planNotes.isUpdating) return;
-  const notesEl = document.getElementById('plan-notes-input');
-  if (!notesEl) return;
-
-  const notes = String(notesEl.value || '');
-  const previousNotes = currentPlan.notes || '';
-
-  currentPlan.notes = notes;
-  uiState.planNotes.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}/notes`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update plan notes');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(currentPlan.id)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after notes update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'savePlanNotesFromEvent:refreshPlan');
-    uiState.planNotes.isEditing = false;
-    document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Note piano salvate');
-  } catch (error) {
-    currentPlan.notes = previousNotes;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.planNotes.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function savePlanNotesFromEvent(event) {
-  event.stopPropagation();
-  savePlanNotes();
-}
-
-function enableTaskFieldEdit(taskId, field) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskField.isUpdating) return;
-  if (!taskId || !field) return;
-  if (field === 'phase' && !(Array.isArray(currentPlan.phases) && currentPlan.phases.some(phase => String(phase?.title || '').trim()))) {
-    showToast('Nessuna phase disponibile nel piano', 'error');
-    return;
-  }
-  uiState.taskField.editing = { taskId, field };
-  renderPlanDetail();
-}
-
-function enableTaskFieldEditByEncodedId(event, encodedTaskId, field) {
-  event.stopPropagation();
-  enableTaskFieldEdit(decodeURIComponent(encodedTaskId), field);
-}
-
-function cancelTaskFieldEdit() {
-  if (!uiState.taskField.editing || uiState.taskField.isUpdating) return;
-  uiState.taskField.editing = null;
-  renderPlanDetail();
-}
-
-function cancelTaskFieldEditFromEvent(event) {
-  event.stopPropagation();
-  cancelTaskFieldEdit();
-}
-
-async function saveTaskField(planId, taskId, field) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskField.isUpdating) return;
-  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
-  if (!task) return;
-
-  let endpoint = '';
-  let body = {};
-  const previousValue = task[field];
-
-  if (field === 'primary') {
-    const titleInputEl = document.getElementById(`task-title-${taskId}`);
-    const whatToDoTextareaEl = document.getElementById(`task-whatToDo-${taskId}`);
-    if (!titleInputEl || !whatToDoTextareaEl) return;
-
-    const title = String(titleInputEl.value || '');
-    const whatToDo = String(whatToDoTextareaEl.value || '');
-    const previousTitle = task.title;
-    const previousWhatToDo = task.whatToDo;
-
-    task.title = title;
-    task.whatToDo = whatToDo;
-
-    uiState.taskField.isUpdating = true;
-    renderPlanDetail();
-
-    try {
-      const [titleRes, whatToDoRes] = await Promise.all([
-        fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/title`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title })
-        }),
-        fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/what-to-do`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ whatToDo })
-        })
-      ]);
-
-      if (!titleRes.ok || !whatToDoRes.ok) {
-        const titleErr = !titleRes.ok ? await titleRes.json().catch(() => ({})) : null;
-        const whatErr = !whatToDoRes.ok ? await whatToDoRes.json().catch(() => ({})) : null;
-        throw new Error(titleErr?.error || whatErr?.error || 'Unable to update task fields');
-      }
-
-      const [updatedPlanRes] = await Promise.all([
-        fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-        loadPlans()
-      ]);
-
-      if (!updatedPlanRes.ok) {
-        throw new Error('Unable to refresh plan after task field update');
-      }
-
-      currentPlan = await updatedPlanRes.json();
-      syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:refreshPlan');
-      uiState.taskField.editing = null;
-      document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
-      renderPlanDetail();
-      showToast('Campi task salvati');
-    } catch (error) {
-      task.title = previousTitle;
-      task.whatToDo = previousWhatToDo;
-      renderPlanDetail();
-      showToast(error.message, 'error');
-    } finally {
-      uiState.taskField.isUpdating = false;
-      renderPlanDetail();
-    }
-    return;
-  } else if (field === 'title' || field === 'phase') {
-    const inputEl = document.getElementById(`task-${field}-${taskId}`);
-    if (!inputEl) return;
-    body[field] = String(inputEl.value || '');
-    task[field] = body[field];
-    endpoint = field;
-  } else if (field === 'whatToDo') {
-    const textareaEl = document.getElementById(`task-whatToDo-${taskId}`);
-    if (!textareaEl) return;
-    body.whatToDo = String(textareaEl.value || '');
-    task.whatToDo = body.whatToDo;
-    endpoint = 'what-to-do';
-  } else if (field === 'files') {
-    const textareaEl = document.getElementById(`task-files-${taskId}`);
-    if (!textareaEl) return;
-    body.files = String(textareaEl.value || '').split('\n').map(value => value.trim()).filter(Boolean);
-    task.files = body.files;
-    endpoint = 'files';
-  } else if (field === 'endpoints') {
-    const textareaEl = document.getElementById(`task-endpoints-${taskId}`);
-    if (!textareaEl) return;
-    body.endpoints = String(textareaEl.value || '').split('\n').map(value => value.trim()).filter(Boolean);
-    task.endpoints = body.endpoints;
-    endpoint = 'endpoints';
-  } else if (field === 'dependsOn') {
-    const editorEl = document.getElementById(`task-depends-on-editor-${taskId}`);
-    if (!editorEl) return;
-    body.dependsOn = Array.from(editorEl.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
-    task.dependsOn = body.dependsOn;
-    endpoint = 'depends-on';
-  } else {
-    return;
-  }
-
-  uiState.taskField.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/${endpoint}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update task field');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after task field update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'saveTaskFieldByEncodedIds:metaRefreshPlan');
-    uiState.taskField.editing = null;
-    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Campo task salvato');
-  } catch (error) {
-    task[field] = previousValue;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.taskField.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function saveTaskFieldByEncodedIds(event, encodedPlanId, encodedTaskId, field) {
-  event.stopPropagation();
-  const planId = decodeURIComponent(encodedPlanId);
-  const taskId = decodeURIComponent(encodedTaskId);
-  saveTaskField(planId, taskId, field);
-}
-
-function enableTaskNotesEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
-  if (!taskId || uiState.taskNotes.editingId === taskId) return;
-  uiState.taskNotes.editingId = taskId;
-  uiState.taskNotes.openIds.add(taskId);
-  renderPlanDetail();
-}
-
-function enableTaskImplementationNotesEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
-  if (!taskId || uiState.taskImplementationNotes.editingId === taskId) return;
-  uiState.taskImplementationNotes.editingId = taskId;
-  uiState.taskNotes.openIds.add(taskId);
-  renderPlanDetail();
-}
-
-function enableTaskImplementationNotesEditByEncodedId(event, encodedTaskId) {
-  event.stopPropagation();
-  enableTaskImplementationNotesEdit(decodeURIComponent(encodedTaskId));
-}
-
-function enableTaskNotesEditByEncodedId(event, encodedTaskId) {
-  event.stopPropagation();
-  enableTaskNotesEdit(decodeURIComponent(encodedTaskId));
-}
-
-function cancelTaskNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
-  if (!uiState.taskNotes.editingId) return;
-  uiState.taskNotes.editingId = null;
-  renderPlanDetail();
-}
-
-function cancelTaskNotesEditFromEvent(event) {
-  event.stopPropagation();
-  cancelTaskNotesEdit();
-}
-
-function cancelTaskImplementationNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
-  if (!uiState.taskImplementationNotes.editingId) return;
-  uiState.taskImplementationNotes.editingId = null;
-  renderPlanDetail();
-}
-
-function cancelTaskImplementationNotesEditFromEvent(event) {
-  event.stopPropagation();
-  cancelTaskImplementationNotesEdit();
-}
-
-async function saveTaskNotes(planId, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
-  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
-  if (!task) return;
-
-  const notesEl = document.getElementById(`task-notes-${taskId}`);
-  if (!notesEl) return;
-
-  const notes = String(notesEl.value || '');
-  const previousNotes = task.notes || '';
-
-  task.notes = notes;
-  uiState.taskNotes.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/notes`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update task notes');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after task notes update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'saveTaskNotesByEncodedIds:refreshPlan');
-    uiState.taskNotes.openIds.add(taskId);
-    uiState.taskNotes.editingId = null;
-    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Note task salvate');
-  } catch (error) {
-    task.notes = previousNotes;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.taskNotes.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function saveTaskNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
-  event.stopPropagation();
-  const planId = decodeURIComponent(encodedPlanId);
-  const taskId = decodeURIComponent(encodedTaskId);
-  saveTaskNotes(planId, taskId);
-}
-
-async function saveTaskImplementationNotes(planId, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
-  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
-  if (!task) return;
-
-  const implementationNotesEl = document.getElementById(`task-implementation-notes-${taskId}`);
-  if (!implementationNotesEl) return;
-
-  const implementationNotes = String(implementationNotesEl.value || '');
-  const previousImplementationNotes = task.implementationNotes || '';
-
-  task.implementationNotes = implementationNotes;
-  uiState.taskImplementationNotes.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/implementation-notes`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ implementationNotes })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update task implementation notes');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after task implementation notes update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'saveTaskImplementationNotesByEncodedIds:refreshPlan');
-    uiState.taskNotes.openIds.add(taskId);
-    uiState.taskImplementationNotes.editingId = null;
-    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Implementation notes task salvate');
-  } catch (error) {
-    task.implementationNotes = previousImplementationNotes;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.taskImplementationNotes.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function saveTaskImplementationNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
-  event.stopPropagation();
-  const planId = decodeURIComponent(encodedPlanId);
-  const taskId = decodeURIComponent(encodedTaskId);
-  saveTaskImplementationNotes(planId, taskId);
-}
-
-function handleTaskNotesDetailsToggle(taskId, detailsEl) {
-  if (!taskId || !detailsEl) return;
-  if (detailsEl.open) {
-    uiState.taskNotes.openIds.add(taskId);
-  } else {
-    uiState.taskNotes.openIds.delete(taskId);
-  }
-}
-
-function handleTaskNotesDetailsToggleByEncodedId(event, encodedTaskId) {
-  const taskId = decodeURIComponent(encodedTaskId);
-  handleTaskNotesDetailsToggle(taskId, event.currentTarget);
-}
-
-function enableTaskDodEditByEncodedId(encodedTaskId) {
-  enableTaskDodEdit(decodeURIComponent(encodedTaskId));
-}
-
-function handleTaskDodRegionKeydown(event, encodedTaskId) {
-  if (event.target !== event.currentTarget) return;
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  event.preventDefault();
-  enableTaskDodEditByEncodedId(encodedTaskId);
-}
-
-async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
-  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
-
-  const task = (currentPlan.tasks || []).find(item => item.id === taskId);
-  const criterion = task?.definitionOfDone?.[criterionIndex];
-  if (!task || !criterion) return;
-
-  const previousCompleted = Boolean(criterion.completed);
-  uiState.taskDod.focusTarget = { taskId, criterionIndex };
-  criterion.completed = completed;
-  uiState.taskDod.isUpdating = true;
-  renderPlanDetail();
-
-  try {
-    const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}/dod/${criterionIndex}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Unable to update Definition of Done item');
-    }
-
-    const [updatedPlanRes] = await Promise.all([
-      fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }),
-      loadPlans()
-    ]);
-
-    if (!updatedPlanRes.ok) {
-      throw new Error('Unable to refresh plan after Definition of Done update');
-    }
-
-    currentPlan = await updatedPlanRes.json();
-    syncCoreState({ currentPlan }, 'toggleTaskDodItemByEncodedIds:refreshPlan');
-    document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
-    renderPlanDetail();
-    showToast('Definition of Done aggiornata');
-  } catch (error) {
-    criterion.completed = previousCompleted;
-    renderPlanDetail();
-    showToast(error.message, 'error');
-  } finally {
-    uiState.taskDod.isUpdating = false;
-    renderPlanDetail();
-  }
-}
-
-function toggleTaskDodItemByEncodedIds(event, encodedPlanId, encodedTaskId, criterionIndex, completed) {
-  event.stopPropagation();
-  const planId = decodeURIComponent(encodedPlanId);
-  const taskId = decodeURIComponent(encodedTaskId);
-  toggleTaskDodItem(planId, taskId, Number(criterionIndex), completed);
 }
 
 function enableAcceptanceEdit(storyId) {
@@ -2931,7 +2066,7 @@ document.addEventListener('click', e => {
   }
 
   if (!e.target.closest('.task-status-dropdown')) {
-    closeAllTaskStatusDropdowns();
+    plansController.closeAllTaskStatusDropdowns();
   }
 
   if (!e.target.closest('.workspace-select')) {
@@ -2949,38 +2084,50 @@ document.addEventListener('keydown', e => {
 window.selectPlan = selectPlan;
 window.selectPlanByEncodedId = selectPlanByEncodedId;
 window.selectRequirementByEncodedId = selectRequirementByEncodedId;
-window.handleTaskStatusChangeByEncodedId = handleTaskStatusChangeByEncodedId;
-window.toggleTaskStatusDropdown = toggleTaskStatusDropdown;
-window.toggleTaskPhaseDropdown = toggleTaskPhaseDropdown;
-window.handleTaskPhaseSelectByEncodedId = handleTaskPhaseSelectByEncodedId;
+window.handleTaskStatusChangeByEncodedId = plansController.handleTaskStatusChangeByEncodedId;
+window.toggleTaskStatusDropdown = plansController.toggleTaskStatusDropdown;
+window.toggleTaskPhaseDropdown = plansController.toggleTaskPhaseDropdown;
+window.handleTaskPhaseSelectByEncodedId = plansController.handleTaskPhaseSelectByEncodedId;
 window.openSearchResult = openSearchResult;
-window.enableTaskDodEditByEncodedId = enableTaskDodEditByEncodedId;
-window.disableTaskDodEditFromEvent = disableTaskDodEditFromEvent;
-window.handleTaskDodRegionKeydown = handleTaskDodRegionKeydown;
-window.toggleTaskDodItemByEncodedIds = toggleTaskDodItemByEncodedIds;
-window.enablePlanNotesEditFromEvent = enablePlanNotesEditFromEvent;
-window.cancelPlanNotesEditFromEvent = cancelPlanNotesEditFromEvent;
-window.savePlanNotesFromEvent = savePlanNotesFromEvent;
-window.enablePlanObjectiveEditFromEvent = enablePlanObjectiveEditFromEvent;
-window.cancelPlanObjectiveEditFromEvent = cancelPlanObjectiveEditFromEvent;
-window.savePlanObjectiveFromEvent = savePlanObjectiveFromEvent;
-window.enablePlanPhasesEditFromEvent = enablePlanPhasesEditFromEvent;
-window.cancelPlanPhasesEditFromEvent = cancelPlanPhasesEditFromEvent;
-window.savePlanPhasesFromEvent = savePlanPhasesFromEvent;
-window.addPlanPhaseFromEvent = addPlanPhaseFromEvent;
-window.removePlanPhaseFromEvent = removePlanPhaseFromEvent;
-window.updatePlanPhaseTitleFromEvent = updatePlanPhaseTitleFromEvent;
-window.togglePlanPhaseTaskByEncodedId = togglePlanPhaseTaskByEncodedId;
-window.enableTaskFieldEditByEncodedId = enableTaskFieldEditByEncodedId;
-window.cancelTaskFieldEditFromEvent = cancelTaskFieldEditFromEvent;
-window.saveTaskFieldByEncodedIds = saveTaskFieldByEncodedIds;
-window.enableTaskNotesEditByEncodedId = enableTaskNotesEditByEncodedId;
-window.cancelTaskNotesEditFromEvent = cancelTaskNotesEditFromEvent;
-window.saveTaskNotesByEncodedIds = saveTaskNotesByEncodedIds;
-window.enableTaskImplementationNotesEditByEncodedId = enableTaskImplementationNotesEditByEncodedId;
-window.cancelTaskImplementationNotesEditFromEvent = cancelTaskImplementationNotesEditFromEvent;
-window.saveTaskImplementationNotesByEncodedIds = saveTaskImplementationNotesByEncodedIds;
-window.handleTaskNotesDetailsToggleByEncodedId = handleTaskNotesDetailsToggleByEncodedId;
+window.enableTaskDodEditByEncodedId = plansController.enableTaskDodEditByEncodedId;
+window.disableTaskDodEditFromEvent = plansController.disableTaskDodEditFromEvent;
+window.handleTaskDodRegionKeydown = plansController.handleTaskDodRegionKeydown;
+window.toggleTaskDodItemByEncodedIds = plansController.toggleTaskDodItemByEncodedIds;
+window.enablePlanNotesEditFromEvent = plansController.enablePlanNotesEditFromEvent;
+window.cancelPlanNotesEditFromEvent = plansController.cancelPlanNotesEditFromEvent;
+window.savePlanNotesFromEvent = plansController.savePlanNotesFromEvent;
+window.enablePlanObjectiveEditFromEvent = plansController.enablePlanObjectiveEditFromEvent;
+window.cancelPlanObjectiveEditFromEvent = plansController.cancelPlanObjectiveEditFromEvent;
+window.savePlanObjectiveFromEvent = plansController.savePlanObjectiveFromEvent;
+window.enablePlanPhasesEditFromEvent = plansController.enablePlanPhasesEditFromEvent;
+window.cancelPlanPhasesEditFromEvent = plansController.cancelPlanPhasesEditFromEvent;
+window.savePlanPhasesFromEvent = plansController.savePlanPhasesFromEvent;
+window.addPlanPhaseFromEvent = plansController.addPlanPhaseFromEvent;
+window.removePlanPhaseFromEvent = plansController.removePlanPhaseFromEvent;
+window.updatePlanPhaseTitleFromEvent = plansController.updatePlanPhaseTitleFromEvent;
+window.togglePlanPhaseTaskByEncodedId = plansController.togglePlanPhaseTaskByEncodedId;
+window.enableTaskFieldEditByEncodedId = plansController.enableTaskFieldEditByEncodedId;
+window.cancelTaskFieldEditFromEvent = plansController.cancelTaskFieldEditFromEvent;
+window.saveTaskFieldByEncodedIds = plansController.saveTaskFieldByEncodedIds;
+window.enableTaskNotesEditByEncodedId = plansController.enableTaskNotesEditByEncodedId;
+window.cancelTaskNotesEditFromEvent = plansController.cancelTaskNotesEditFromEvent;
+window.saveTaskNotesByEncodedIds = plansController.saveTaskNotesByEncodedIds;
+window.enableTaskImplementationNotesEditByEncodedId = plansController.enableTaskImplementationNotesEditByEncodedId;
+window.cancelTaskImplementationNotesEditFromEvent = plansController.cancelTaskImplementationNotesEditFromEvent;
+window.saveTaskImplementationNotesByEncodedIds = plansController.saveTaskImplementationNotesByEncodedIds;
+window.handleTaskNotesDetailsToggleByEncodedId = plansController.handleTaskNotesDetailsToggleByEncodedId;
+window.enableCreatePlanDecisionFromEvent = plansController.enableCreatePlanDecisionFromEvent;
+window.cancelCreatePlanDecisionFromEvent = plansController.cancelCreatePlanDecisionFromEvent;
+window.proceedCreatePlanDecisionFromEvent = plansController.proceedCreatePlanDecisionFromEvent;
+window.backCreatePlanDecisionFromEvent = plansController.backCreatePlanDecisionFromEvent;
+window.createPlanDecisionFromEvent = plansController.createPlanDecisionFromEvent;
+window.editPlanDecisionByEncodedId = plansController.editPlanDecisionByEncodedId;
+window.cancelPlanDecisionEditFromEvent = plansController.cancelPlanDecisionEditFromEvent;
+window.savePlanDecisionByEncodedId = plansController.savePlanDecisionByEncodedId;
+window.requestDeletePlanDecisionByEncodedId = plansController.requestDeletePlanDecisionByEncodedId;
+window.closeDeletePlanDecisionModalFromEvent = plansController.closeDeletePlanDecisionModalFromEvent;
+window.confirmDeletePlanDecisionFromEvent = plansController.confirmDeletePlanDecisionFromEvent;
+window.handleDeletePlanDecisionModalKeydown = plansController.handleDeletePlanDecisionModalKeydown;
 window.enableAcceptanceEditByEncodedId = enableAcceptanceEditByEncodedId;
 window.toggleAcceptanceCriterionByEncodedIds = toggleAcceptanceCriterionByEncodedIds;
 window.disableAcceptanceEditFromEvent = disableAcceptanceEditFromEvent;
