@@ -1,0 +1,630 @@
+{
+  "id": "PLAN-8",
+  "title": "Completamento refactoring: estrazione renderer dettaglio, stato UI e handlers inline",
+  "requirements": "docs/requirements/FEAT-9482-refactoring.json",
+  "objective": "Completare il refactoring iniziato con PLAN-7 estraendo da app.js (3768 righe) i renderer di dettaglio, lo stato UI editing (~70 variabili globali) e gli handlers CRUD inline. Obiettivo finale: app.js < 400 righe, usato solo come bootstrap e orchestrazione.",
+  "targetArchitecture": "Struttura target: app.js ridotta a bootstrap/wiring. src/state/uiState.js (stato editing centralizzato). src/ui/renderers/planDetail.renderer.js e requirementDetail.renderer.js (template+render dettaglio). src/features/*/handlers.js ampliati con tutti i CRUD handlers. Eventuali sottogruppi: src/features/plans/planDetails.handlers.js, src/features/requirements/stories.handlers.js, requirements.functional.handlers.js, etc.",
+  "status": "in_progress",
+  "created": "2026-05-05",
+    "lastUpdated": "2026-05-05T19:30:00.000Z",
+  "notes": "Piano orientato a migrazione aggressiva ma incrementale. Ogni task deve mantenere app avviabile. Le funzioni devono essere spostate OUT di app.js, non duplicate.",
+  "phases": [
+    {
+      "id": "A",
+      "title": "UI State Consolidation",
+      "tasks": [
+        "T-01",
+        "T-02"
+      ]
+    },
+    {
+      "id": "B",
+      "title": "Detail Renderers Extraction",
+      "tasks": [
+        "T-03",
+        "T-04"
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Plans Feature Handlers Extraction",
+      "tasks": [
+        "T-05",
+        "T-06"
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Requirements Feature Handlers Extraction",
+      "tasks": [
+        "T-07",
+        "T-08",
+        "T-09",
+        "T-10"
+      ]
+    },
+    {
+      "id": "E",
+      "title": "Cleanup & Consolidation",
+      "tasks": [
+        "T-11",
+        "T-12"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DEC-1",
+      "description": "uiState come modulo singleton con getters/setters",
+      "rationale": "Consente di centralizzare le ~70 variabili di editing state in un unico oggetto gestibile, sostituendo progressivamente le variabili globali.",
+      "date": "2026-05-05"
+    },
+    {
+      "id": "DEC-2",
+      "description": "Detail renderer separati per feature",
+      "rationale": "renderPlanDetail (~400 righe) e renderRequirementDetail (~300 righe) sono i blocchi piu grandi in app.js. Vanno estratti in renderer dedicati.",
+      "date": "2026-05-05"
+    },
+    {
+      "id": "DEC-3",
+      "description": "Handlers CRUD nei moduli feature, non in app.js",
+      "rationale": "Tutti gli handler inline (enableX, saveX, deleteX, createX) appartengono alla feature di dominio e vanno nei rispettivi moduli handlers.",
+      "date": "2026-05-05"
+    },
+    {
+      "id": "DEC-4",
+      "description": "Esposizione handler globali tramite window per onclick inline",
+      "rationale": "Molti template usano onclick='handlerName()'. Gli handler vanno esposti su window dopo wiring in app.js per mantenere compatibilita.",
+      "date": "2026-05-05"
+    }
+  ],
+  "stories": [
+    {
+      "id": "US-008",
+      "description": "Stato UI editing centralizzato in uiState module",
+      "tasks": "T-01, T-02",
+      "status": "pending"
+    },
+    {
+      "id": "US-009",
+      "description": "Renderer dettaglio plan estratto da app.js",
+      "tasks": "T-03, T-05",
+      "status": "pending"
+    },
+    {
+      "id": "US-010",
+      "description": "Renderer dettaglio requirement estratto da app.js",
+      "tasks": "T-04, T-07, T-08, T-09, T-10",
+      "status": "pending"
+    },
+    {
+      "id": "US-011",
+      "description": "CRUD handlers plans spostati nel feature module",
+      "tasks": "T-05, T-06",
+      "status": "pending"
+    },
+    {
+      "id": "US-012",
+      "description": "CRUD handlers requirements spostati nel feature module",
+      "tasks": "T-07, T-08, T-09, T-10",
+      "status": "pending"
+    },
+    {
+      "id": "US-013",
+      "description": "app.js ridotta a bootstrap e wiring",
+      "tasks": "T-11, T-12",
+      "status": "pending"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-01",
+      "title": "Creare src/state/uiState.js per stato editing centralizzato",
+      "phase": "UI State Consolidation",
+      "stories": [
+        "US-008"
+      ],
+      "size": "Medium",
+      "status": "completed",
+      "dependsOn": [],
+      "files": [
+        "requirements-workflow-desktop/src/state/uiState.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Creare un modulo uiState che centralizzi tutte le ~70 variabili globali di editing in un unico oggetto. Fornire API: getState(), setState(patch), resetFeature(featureName), e singoli getter/setter per gruppi logici (planEditing, requirementEditing, taskEditing, storyEditing, modalState, etc).",
+      "definitionOfDone": [
+        {
+          "description": "uiState.js esiste con API getState/setState/resetFeature",
+          "completed": true
+        },
+        {
+          "description": "Tutte le variabili editing sono mappate nel modulo",
+          "completed": true
+        },
+        {
+          "description": "app.js continua a funzionare usando uiState invece di variabili globali",
+          "completed": true
+        }
+      ],
+      "decision": "DEC-1",
+      "implementationNotes": "Gruppi logici: 1) planEditing (isPlanNotesEditing, isPlanNotesUpdating, isPlanObjectiveEditing, isPlanObjectiveUpdating, isPlanPhasesEditing, isPlanPhasesUpdating, editingPlanPhases, editingPlanDecisionId, isPlanDecisionUpdating, creatingPlanDecision, creatingPlanDecisionStep, newPlanDecisionId, newPlanDecisionDescription, newPlanDecisionRationale, deletingPlanDecisionId). 2) requirementEditing (isRequirementOverviewEditing, isRequirementOverviewUpdating, isRequirementCurrentStateEditing, isRequirementCurrentStateUpdating, isRequirementNotesEditing, isRequirementNotesUpdating, editingFunctionalRequirementId, isFunctionalRequirementUpdating, creatingFunctionalRequirement, creatingFunctionalRequirementStep, newFunctionalRequirementId, newFunctionalRequirementTitle, newFunctionalRequirementDescription, deletingFunctionalRequirementId, editingNonFunctionalRequirementId, isNonFunctionalRequirementUpdating, creatingNonFunctionalRequirement, creatingNonFunctionalRequirementStep, newNonFunctionalRequirementId, newNonFunctionalRequirementTitle, newNonFunctionalRequirementDescription, deletingNonFunctionalRequirementId). 3) storyEditing (editingStoryId, isStoryUpdating, creatingStory, creatingStoryStep, newStoryId, deletingStoryId, editingAcceptanceStoryId, isAcceptanceUpdating, acceptanceFocusTarget). 4) taskEditing (editingTaskDodId, isTaskDodUpdating, taskDodFocusTarget, editingTaskNotesId, isTaskNotesUpdating, editingTaskImplementationNotesId, isTaskImplementationNotesUpdating, editingTaskField, isTaskFieldUpdating, openTaskNotesIds, taskDodFocusTarget, taskFocusTarget). 5) openQuestionEditing (editingOpenQuestionId, isOpenQuestionUpdating, creatingOpenQuestion, creatingOpenQuestionStep, newOpenQuestionId, newOpenQuestionQuestion, newOpenQuestionAnswer, newOpenQuestionStatus, deletingOpenQuestionId). 6) modalState (deleteModalReturnFocusEl, deletePlanDecisionModalReturnFocusEl, deleteNonFunctionalModalReturnFocusEl).",
+      "notes": "Il modulo deve essere backward-compatible: app.js puo usare uiState.read() e uiState.write() per transizione graduale."
+    },
+    {
+      "id": "T-02",
+      "title": "Migrare app.js da variabili globali a uiState",
+      "phase": "UI State Consolidation",
+      "stories": [
+        "US-008"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-01"
+      ],
+      "files": [
+        "requirements-workflow-desktop/app.js",
+        "requirements-workflow-desktop/src/state/uiState.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Sostituire TUTTE le occorrenze delle variabili di editing globali in app.js con letture/scritture da uiState. Rimuovere le dichiarazioni let globali corrispondenti. Mantenere solo le variabili core (plans, requirements, currentPlan, currentRequirement, currentSection, currentWorkspace, ecc.) fino alla fase di cleanup.",
+      "definitionOfDone": [
+        {
+          "description": "Zero variabili globali di editing in app.js",
+          "completed": true
+        },
+        {
+          "description": "Tutti i riferimenti usano uiState API",
+          "completed": true
+        },
+        {
+          "description": "Smoke test: editing plan/requirement/story/task funziona come prima",
+          "completed": true
+        }
+      ],
+      "decision": "DEC-1",
+      "implementationNotes": "Usare search/replace sistematico: es. isPlanNotesEditing -> uiState.get('isPlanNotesEditing'), isPlanNotesEditing = true -> uiState.set('isPlanNotesEditing', true). I reset di stato in setSection() e nei resetPlanUiEditingState/resetRequirementUiEditingState devono usare uiState.resetFeature().",
+      "notes": "Questo task riduce significativamente le prime ~100 righe di app.js."
+    },
+    {
+      "id": "T-03",
+      "title": "Estrarre renderPlanDetail in renderer dedicato",
+      "phase": "Detail Renderers Extraction",
+      "stories": [
+        "US-009"
+      ],
+      "size": "Large",
+      "status": "completed",
+      "dependsOn": [
+        "T-02"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/ui/renderers/planDetail.renderer.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Estrarre l'intera funzione renderPlanDetail() da app.js in un nuovo modulo src/ui/renderers/planDetail.renderer.js. La funzione deve ricevere plan, stato ui e helper (escapeHtml, formatStatus, ecc.) come parametri. Deve includere anche le funzioni ausiliarie usate solo dal renderer: renderPlanDecisionItems, buildRightNav (se usato solo qui).",
+      "definitionOfDone": [
+        {
+          "description": "planDetail.renderer.js esiste con export renderPlanDetail",
+          "completed": true
+        },
+        {
+          "description": "renderPlanDetail riceve tutti i dati come parametri (no dipendenze globali implicite)",
+          "completed": true
+        },
+        {
+          "description": "app.js importa e usa il renderer - output HTML identico",
+          "completed": true
+        },
+        {
+          "description": "Le funzioni helper inline (renderPlanDecisionItems) sono nel renderer o in templates",
+          "completed": true
+        }
+      ],
+      "decision": "DEC-2",
+      "implementationNotes": "Signature proposta: renderPlanDetail({ plan, uiState, counts, escapeHtml, formatStatus, normalizeStoryStatus, ADD_ICON_SVG, TASK_STATUSES, isTaskFieldEditing, onEnablePlanNotesEdit, onSavePlanNotes, onCancelPlanNotesEdit, ...callbacks }). Il renderer deve essere puro: riceve dati e callbacks, restituisce HTML. Gli onclick inline continueranno a funzionare perche gli handler sono esposti su window.",
+      "notes": "~400 righe da spostare. La funzione buildRightNav() potrebbe essere condivisa - verificare se serve anche per requirement."
+    },
+    {
+      "id": "T-04",
+      "title": "Estrarre renderRequirementDetail in renderer dedicato",
+      "phase": "Detail Renderers Extraction",
+      "stories": [
+        "US-010"
+      ],
+      "size": "Large",
+      "status": "pending",
+      "dependsOn": [
+        "T-02"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/ui/renderers/requirementDetail.renderer.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Estrarre l'intera funzione renderRequirementDetail() e le funzioni correlate (renderRequirementItems, renderNonFunctionalRequirementItems, renderStoryEditForm, renderStoryCreateBox, renderDeleteStoryModal, renderDeleteFunctionalRequirementModal, renderDeleteNonFunctionalRequirementModal) in src/ui/renderers/requirementDetail.renderer.js.",
+      "definitionOfDone": [
+        {
+          "description": "requirementDetail.renderer.js esiste con export renderRequirementDetail",
+          "completed": false
+        },
+        {
+          "description": "Funzioni ausiliarie (renderRequirementItems, renderNonFunctionalRequirementItems, ecc.) sono nel modulo",
+          "completed": false
+        },
+        {
+          "description": "renderRequirementDetail riceve tutti i dati come parametri",
+          "completed": false
+        },
+        {
+          "description": "app.js importa e usa il renderer - output HTML identico",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-2",
+      "implementationNotes": "Signature proposta: renderRequirementDetail({ requirement, uiState, escapeHtml, formatStatus, ADD_ICON_SVG, OPEN_QUESTION_STATUSES, ...callbacks }). Include anche renderRequirementItems, renderNonFunctionalRequirementItems, renderStoryEditForm, renderStoryCreateBox, e le funzioni di modal delete.",
+      "notes": "~300+ righe da spostare. Questo renderer e piu complesso perche include molti sub-renderers."
+    },
+    {
+      "id": "T-05",
+      "title": "Estrarre plan detail handlers nel feature module plans",
+      "phase": "Plans Feature Handlers Extraction",
+      "stories": [
+        "US-009",
+        "US-011"
+      ],
+      "size": "Large",
+      "status": "pending",
+      "dependsOn": [
+        "T-03"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/plans/planDetails.handlers.js",
+        "requirements-workflow-desktop/src/features/plans/plans.controller.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "PATCH /api/plans/:id/notes",
+        "PATCH /api/plans/:id/objective",
+        "PATCH /api/plans/:id/phases",
+        "POST /api/plans/:id/decisions",
+        "PATCH /api/plans/:id/decisions/:decisionId",
+        "DELETE /api/plans/:id/decisions/:decisionId",
+        "PATCH /api/plans/:id/tasks/:taskId/status",
+        "PATCH /api/plans/:id/tasks/:taskId",
+        "PATCH /api/plans/:id/tasks/:taskId/dod",
+        "PATCH /api/plans/:id/tasks/:taskId/notes",
+        "PATCH /api/plans/:id/tasks/:taskId/implementation-notes"
+      ],
+      "whatToDo": "Spostare tutti gli handler di dettaglio plan da app.js al feature module: enablePlanNotesEdit/savePlanNotes/cancelPlanNotesEdit, enablePlanObjectiveEdit/savePlanObjective/cancelPlanObjectiveEdit, enablePlanPhasesEdit/addPlanPhase/removePlanPhase/updatePlanPhaseTitle/savePlanPhases/cancelPlanPhasesEdit, CRUD decisions (enableCreatePlanDecision, createPlanDecision, editPlanDecision, savePlanDecision, requestDeletePlanDecision, confirmDeletePlanDecision), task handlers (handleTaskStatusChange, updateTaskStatus, enableTaskDodEdit/disableTaskDodEdit, enableTaskFieldEdit/saveTaskField/cancelTaskFieldEdit, enableTaskNotesEdit/saveTaskNotes/cancelTaskNotesEdit, enableTaskImplementationNotesEdit/saveTaskImplementationNotes/cancelTaskImplementationNotesEdit, toggleTaskStatusDropdown, toggleTaskPhaseDropdown, handleTaskPhaseSelect), e tutti i varianti con encodedId.",
+      "definitionOfDone": [
+        {
+          "description": "planDetails.handlers.js esiste con tutti i CRUD handlers plan",
+          "completed": false
+        },
+        {
+          "description": "Handlers usano uiState per stato editing",
+          "completed": false
+        },
+        {
+          "description": "Controller espone i metodi e app.js li wiring su window",
+          "completed": false
+        },
+        {
+          "description": "Editing plan (notes, objective, phases, decisions, task status, task fields, task DoD, task notes) funzionano come prima",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "Creare createPlanDetailsHandlers(deps) con deps: { api: { updatePlanNotes, updatePlanObjective, updatePlanPhases, createDecision, updateDecision, deleteDecision, updateTaskStatus, updateTask, updateTaskDoD, updateTaskNotes, updateTaskImplementationNotes }, state: uiState, render: renderPlanDetail, showToast, getCurrentDateIso, loadPlans }. Esporre ogni handler come metodo del controller. In app.js, wiring: window.savePlanNotesFromEvent = (e) => plansController.savePlanNotes(e).",
+      "notes": "Questo e il task piu grande per i plans. ~600+ righe da spostare da app.js."
+    },
+    {
+      "id": "T-06",
+      "title": "Spostare plan-related constants e helper nei moduli appropriati",
+      "phase": "Plans Feature Handlers Extraction",
+      "stories": [
+        "US-011"
+      ],
+      "size": "Small",
+      "status": "pending",
+      "dependsOn": [
+        "T-05"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/plans/plans.selectors.js",
+        "requirements-workflow-desktop/src/utils/constants.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Spostare TASK_STATUSES, STATUS_SORT_ORDER, WELCOME_PLAN_ICON e buildPhasesForEditor nei moduli appropriati. TASK_STATUSES/STATUS_SORTORY vanno in utils/constants.js o plans.selectors.js. buildPhasesForEditor va in plans.selectors.js. WELCOME_PLAN_ICON puo restare in app.js o andare in un constants UI.",
+      "definitionOfDone": [
+        {
+          "description": "TASK_STATUSES e STATUS_SORT_ORDER sono in utils/constants.js o plans.selectors.js",
+          "completed": false
+        },
+        {
+          "description": "buildPhasesForEditor e in plans.selectors.js",
+          "completed": false
+        },
+        {
+          "description": "app.js non contiene piu queste costanti/helper",
+          "completed": false
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Utils/constants.js e preferibile per TASK_STATUSES/STATUS_SORTORY perche potrebbero servire anche altrove. buildPhasesForEditor appartiene logicamente a plans.selectors.js perche e logica di selezione/trasformazione dati plan.",
+      "notes": "Task piccolo ma importante per pulizia."
+    },
+    {
+      "id": "T-07",
+      "title": "Estrarre requirement stories handlers nel feature module requirements",
+      "phase": "Requirements Feature Handlers Extraction",
+      "stories": [
+        "US-010",
+        "US-012"
+      ],
+      "size": "Large",
+      "status": "pending",
+      "dependsOn": [
+        "T-04"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/requirements/stories.handlers.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.controller.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "POST /api/requirements/:id/stories",
+        "PATCH /api/requirements/:id/stories/:storyId",
+        "DELETE /api/requirements/:id/stories/:storyId"
+      ],
+      "whatToDo": "Spostare tutti gli handler CRUD user stories da app.js: enableStoryCreate, createStory, proceedStoryCreate, cancelStoryCreate, enableStoryEdit, saveStory, cancelStoryEdit, addStoryCriterion, removeStoryCriterion, requestDeleteStory, confirmDeleteStory, closeDeleteStoryModal, renderDeleteStoryModal. Includere anche acceptance criteria handlers: enableAcceptanceEdit, toggleAcceptanceCriterion, disableAcceptanceEdit, saveAcceptanceCriteria.",
+      "definitionOfDone": [
+        {
+          "description": "stories.handlers.js esiste con tutti i CRUD story handlers",
+          "completed": false
+        },
+        {
+          "description": "Handlers usano uiState per stato editing",
+          "completed": false
+        },
+        {
+          "description": "Controller espone i metodi e app.js li wiring su window",
+          "completed": false
+        },
+        {
+          "description": "CRUD stories e acceptance criteria funzionano come prima",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "Creare createStoriesHandlers(deps) con deps: { api, state: uiState, render: renderRequirementDetail, showToast, loadRequirements }. Pattern simile a T-05.",
+      "notes": "~250 righe da spostare."
+    },
+    {
+      "id": "T-08",
+      "title": "Estrarre requirement functional/non-functional handlers",
+      "phase": "Requirements Feature Handlers Extraction",
+      "stories": [
+        "US-010",
+        "US-012"
+      ],
+      "size": "Large",
+      "status": "pending",
+      "dependsOn": [
+        "T-04"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/requirements/subRequirements.handlers.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.controller.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "POST /api/requirements/:id/functional-requirements",
+        "PATCH /api/requirements/:id/functional-requirements/:functionalId",
+        "DELETE /api/requirements/:id/functional-requirements/:functionalId",
+        "POST /api/requirements/:id/non-functional-requirements",
+        "PATCH /api/requirements/:id/non-functional-requirements/:nonFunctionalId",
+        "DELETE /api/requirements/:id/non-functional-requirements/:nonFunctionalId"
+      ],
+      "whatToDo": "Spostare tutti gli handler CRUD per functional requirements e non-functional requirements da app.js: enableCreateFunctionalRequirement, createFunctionalRequirement, editFunctionalRequirement, saveFunctionalRequirement, cancelFunctionalRequirementEdit, requestDeleteFunctionalRequirement, confirmDeleteFunctionalRequirement, closeDeleteFunctionalRequirementModal, renderDeleteFunctionalRequirementModal + equivalenti per non-functional. Includere handleDeleteFunctionalRequirementModalKeydown e handleDeleteNonFunctionalRequirementModalKeydown.",
+      "definitionOfDone": [
+        {
+          "description": "subRequirements.handlers.js esiste con CRUD functional e non-functional",
+          "completed": false
+        },
+        {
+          "description": "Handlers usano uiState per stato editing",
+          "completed": false
+        },
+        {
+          "description": "Controller espone i metodi e app.js li wiring su window",
+          "completed": false
+        },
+        {
+          "description": "CRUD functional e non-functional funzionano come prima",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "Unire functional e non-functional nello stesso file perche sono pattern identici (CRUD con ID -> details -> save). ~400 righe da spostare.",
+      "notes": "Molto boilerplate - i due flussi sono quasi identici. Valutare una factory handler generica."
+    },
+    {
+      "id": "T-09",
+      "title": "Estrarre requirement open questions handlers",
+      "phase": "Requirements Feature Handlers Extraction",
+      "stories": [
+        "US-010",
+        "US-012"
+      ],
+      "size": "Medium",
+      "status": "pending",
+      "dependsOn": [
+        "T-04"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/requirements/openQuestions.handlers.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.controller.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "POST /api/requirements/:id/open-questions",
+        "PATCH /api/requirements/:id/open-questions/:questionId",
+        "DELETE /api/requirements/:id/open-questions/:questionId"
+      ],
+      "whatToDo": "Spostare tutti gli handler CRUD open questions da app.js: enableOpenQuestionCreate, proceedCreateOpenQuestion, cancelCreateOpenQuestion, backCreateOpenQuestion, createOpenQuestion, enableOpenQuestionEdit, saveOpenQuestion, cancelOpenQuestionEdit, requestDeleteOpenQuestion, confirmDeleteOpenQuestion, closeDeleteOpenQuestionModal, renderDeleteOpenQuestionModal, handleOpenQuestionCardKeydown.",
+      "definitionOfDone": [
+        {
+          "description": "openQuestions.handlers.js esiste con tutti i CRUD handlers",
+          "completed": false
+        },
+        {
+          "description": "Handlers usano uiState per stato editing",
+          "completed": false
+        },
+        {
+          "description": "Controller espone i metodi e app.js li wiring su window",
+          "completed": false
+        },
+        {
+          "description": "CRUD open questions funzionano come prima",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "Creare createOpenQuestionsHandlers(deps). ~150 righe da spostare.",
+      "notes": "Task di dimensione media."
+    },
+    {
+      "id": "T-10",
+      "title": "Estrarre requirement overview/currentState/notes handlers",
+      "phase": "Requirements Feature Handlers Extraction",
+      "stories": [
+        "US-010",
+        "US-012"
+      ],
+      "size": "Medium",
+      "status": "pending",
+      "dependsOn": [
+        "T-04"
+      ],
+      "files": [
+        "requirements-workflow-desktop/src/features/requirements/requirementDetail.handlers.js",
+        "requirements-workflow-desktop/src/features/requirements/requirements.controller.js",
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [
+        "PATCH /api/requirements/:id/overview",
+        "PATCH /api/requirements/:id/current-state",
+        "PATCH /api/requirements/:id/notes"
+      ],
+      "whatToDo": "Spostare gli handler per editing overview, current state table, e notes del requirement: enableRequirementOverviewEdit, saveRequirementOverview, cancelRequirementOverviewEdit, enableRequirementCurrentStateEdit, addRequirementCurrentStateRow, removeRequirementCurrentStateRow, saveRequirementCurrentState, cancelRequirementCurrentStateEdit, enableRequirementNotesEdit, saveRequirementNotes, cancelRequirementNotesEdit.",
+      "definitionOfDone": [
+        {
+          "description": "requirementDetail.handlers.js esiste con editing handlers",
+          "completed": false
+        },
+        {
+          "description": "Handlers usano uiState per stato editing",
+          "completed": false
+        },
+        {
+          "description": "Controller espone i metodi e app.js li wiring su window",
+          "completed": false
+        },
+        {
+          "description": "Editing overview, current state, notes funzionano come prima",
+          "completed": false
+        }
+      ],
+      "decision": "DEC-3",
+      "implementationNotes": "Creare createRequirementDetailHandlers(deps). ~100 righe da spostare.",
+      "notes": "Task medio. La current state table ha logica di righe dinamiche."
+    },
+    {
+      "id": "T-11",
+      "title": "Ridurre app.js a bootstrap e wiring",
+      "phase": "Cleanup & Consolidation",
+      "stories": [
+        "US-013"
+      ],
+      "size": "Large",
+      "status": "pending",
+      "dependsOn": [
+        "T-05",
+        "T-06",
+        "T-07",
+        "T-08",
+        "T-09",
+        "T-10"
+      ],
+      "files": [
+        "requirements-workflow-desktop/app.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Rimuovere da app.js tutto cio che e stato spostato nei moduli. Mantenere solo: 1) Import statements, 2) Variabili core state (plans, requirements, currentPlan, currentRequirement, currentSection, currentWorkspace, hasWorkspaceConfigured), 3) core state read/write, 4) init appStore, 5) Wiring controllers su window, 6) setSection(), 7) loadWorkspaceState + reloadCurrentWorkspaceData, 8) Workspace handlers (già nel workspacesController), 9) Event listener globali (DOMContentLoaded), 10) showToast, 11) configurePlanTabs/configureRequirementTabs, 12) showDetail. Rimuovere: workspace option/render helpers duplicati, filter/status helper gia nei controllers, tutte le funzioni spostate nei T-05/T-10.",
+      "definitionOfDone": [
+        {
+          "description": "app.js ha < 400 righe",
+          "completed": false
+        },
+        {
+          "description": "app.js contiene solo bootstrap, wiring, e funzioni di orchestrazione globale",
+          "completed": false
+        },
+        {
+          "description": "Nessuna funzionalita e rotta - smoke test completo",
+          "completed": false
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Dopo questo task, app.js dovrebbe essere principalmente: imports -> state init -> store init -> controllers init -> window wiring -> setSection -> workspace handlers -> event listeners -> showToast utility.",
+      "notes": "Questo e il task che da visibilita del miglioramento. Obiettivo: da 3768 a < 400 righe."
+    },
+    {
+      "id": "T-12",
+      "title": "Verifica finale, pulizia e chiusura piano",
+      "phase": "Cleanup & Consolidation",
+      "stories": [
+        "US-013"
+      ],
+      "size": "Small",
+      "status": "pending",
+      "dependsOn": [
+        "T-11"
+      ],
+      "files": [
+        "docs/plans/PLAN-8.json",
+        "requirements-workflow-desktop/app.js",
+        "requirements-workflow-desktop/src/**/*.js"
+      ],
+      "endpoints": [],
+      "whatToDo": "Eseguire smoke test completo su tutte le feature: 1) Load plans/requirements, 2) Select plan, 3) Edit plan notes/objective/phases/decisions, 4) Task status change, 5) Task field edit, 6) Task DoD edit, 7) Task notes edit, 8) Select requirement, 9) Edit requirement overview/currentState/notes, 10) CRUD functional/non-functional requirements, 11) CRUD stories + acceptance criteria, 12) CRUD open questions, 13) Workspace switch/create/rename/delete. Verificare coerenza import/export. Aggiornare stati tasks/stories nel piano.",
+      "definitionOfDone": [
+        {
+          "description": "Smoke test manuale completo su tutte le feature",
+          "completed": false
+        },
+        {
+          "description": "Stato tasks e stories aggiornato nel piano",
+          "completed": false
+        },
+        {
+          "description": "Nessun import/export rotto",
+          "completed": false
+        },
+        {
+          "description": "app.js < 400 righe confermato",
+          "completed": false
+        }
+      ],
+      "decision": null,
+      "implementationNotes": "Aggiornare tutti i campi status nei tasks e stories del piano. Documentare eventuali deviazioni o note importanti.",
+      "notes": "Chiusura piano. Valutare se aprire nuovo piano per migrazione Vue se richiesto."
+    }
+  ]
+}

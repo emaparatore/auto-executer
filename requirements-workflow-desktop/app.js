@@ -21,6 +21,8 @@ import { renderPlansListSection } from '/src/ui/renderers/plans.renderer.js';
 import { renderRequirementsListSection, renderStatusFiltersSection } from '/src/ui/renderers/requirements.renderer.js';
 import { renderWorkspaceOptionsSection, renderWorkspaceManageListSection } from '/src/ui/renderers/workspaces.renderer.js';
 import { setTabVisibility, activateTabByName } from '/src/ui/renderers/tabs.renderer.js';
+import { renderPlanDetailRenderer } from '/src/ui/renderers/planDetail.renderer.js';
+import { uiState } from '/src/state/uiState.js';
 import { createPlansController } from '/src/features/plans/plans.controller.js';
 import { createRequirementsController } from '/src/features/requirements/requirements.controller.js';
 import { createWorkspacesController } from '/src/features/workspaces/workspaces.controller.js';
@@ -35,38 +37,11 @@ let editingAcceptanceStoryId = null;
 let isAcceptanceUpdating = false;
 let toastTimer = null;
 let acceptanceFocusTarget = null;
-let editingTaskDodId = null;
-let isTaskDodUpdating = false;
 let taskDodFocusTarget = null;
-let isPlanNotesEditing = false;
-let isPlanNotesUpdating = false;
-let isPlanObjectiveEditing = false;
-let isPlanObjectiveUpdating = false;
-let isPlanPhasesEditing = false;
-let isPlanPhasesUpdating = false;
-let editingPlanPhases = [];
-let editingTaskNotesId = null;
-let isTaskNotesUpdating = false;
-let editingTaskImplementationNotesId = null;
-let isTaskImplementationNotesUpdating = false;
-let openTaskNotesIds = new Set();
 let editingTaskField = null;
-let isTaskFieldUpdating = false;
-let editingOpenQuestionId = null;
-let isOpenQuestionUpdating = false;
-let creatingOpenQuestion = false;
-let creatingOpenQuestionStep = 'id';
-let newOpenQuestionId = '';
-let newOpenQuestionQuestion = '';
-let newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
 let newOpenQuestionStatus = 'open';
 let deletingOpenQuestionId = null;
-let isRequirementOverviewEditing = false;
-let isRequirementOverviewUpdating = false;
-let isRequirementCurrentStateEditing = false;
-let isRequirementCurrentStateUpdating = false;
-let isRequirementNotesEditing = false;
-let isRequirementNotesUpdating = false;
 let editingFunctionalRequirementId = null;
 let isFunctionalRequirementUpdating = false;
 let creatingFunctionalRequirement = false;
@@ -76,30 +51,9 @@ let newFunctionalRequirementTitle = '';
 let newFunctionalRequirementDescription = '';
 let deletingFunctionalRequirementId = null;
 let deleteModalReturnFocusEl = null;
-let editingNonFunctionalRequirementId = null;
-let isNonFunctionalRequirementUpdating = false;
-let creatingNonFunctionalRequirement = false;
-let newNonFunctionalRequirementId = '';
-let creatingNonFunctionalRequirementStep = 'id';
-let newNonFunctionalRequirementTitle = '';
-let newNonFunctionalRequirementDescription = '';
-let deletingNonFunctionalRequirementId = null;
 let deleteNonFunctionalModalReturnFocusEl = null;
-let editingPlanDecisionId = null;
-let isPlanDecisionUpdating = false;
-let creatingPlanDecision = false;
-let creatingPlanDecisionStep = 'id';
-let newPlanDecisionId = '';
-let newPlanDecisionDescription = '';
-let newPlanDecisionRationale = '';
-let deletingPlanDecisionId = null;
 let deletePlanDecisionModalReturnFocusEl = null;
-let editingStoryId = null;
 let isStoryUpdating = false;
-let creatingStory = false;
-let creatingStoryStep = 'id';
-let newStoryId = '';
-let deletingStoryId = null;
 let sectionStatusFilters = {
   plans: new Set(),
   requirements: new Set()
@@ -140,30 +94,7 @@ function writeCoreState(patch) {
 }
 
 function resetPlanUiEditingState() {
-  editingTaskDodId = null;
-  taskDodFocusTarget = null;
-  isPlanNotesEditing = false;
-  isPlanNotesUpdating = false;
-  isPlanObjectiveEditing = false;
-  isPlanObjectiveUpdating = false;
-  isPlanPhasesEditing = false;
-  isPlanPhasesUpdating = false;
-  editingPlanPhases = [];
-  editingTaskNotesId = null;
-  isTaskNotesUpdating = false;
-  editingTaskImplementationNotesId = null;
-  isTaskImplementationNotesUpdating = false;
-  openTaskNotesIds = new Set();
-  editingTaskField = null;
-  isTaskFieldUpdating = false;
-  editingPlanDecisionId = null;
-  isPlanDecisionUpdating = false;
-  creatingPlanDecision = false;
-  creatingPlanDecisionStep = 'id';
-  newPlanDecisionId = '';
-  newPlanDecisionDescription = '';
-  newPlanDecisionRationale = '';
-  deletingPlanDecisionId = null;
+  uiState.resetFeature('planEditing');
 }
 
 function activatePlanListItem(id) {
@@ -172,44 +103,7 @@ function activatePlanListItem(id) {
 }
 
 function resetRequirementUiEditingState() {
-  editingAcceptanceStoryId = null;
-  acceptanceFocusTarget = null;
-  editingOpenQuestionId = null;
-  isRequirementOverviewEditing = false;
-  isRequirementOverviewUpdating = false;
-  isRequirementCurrentStateEditing = false;
-  isRequirementCurrentStateUpdating = false;
-  isRequirementNotesEditing = false;
-  isRequirementNotesUpdating = false;
-  editingFunctionalRequirementId = null;
-  isFunctionalRequirementUpdating = false;
-  creatingFunctionalRequirement = false;
-  newFunctionalRequirementId = '';
-  creatingFunctionalRequirementStep = 'id';
-  newFunctionalRequirementTitle = '';
-  newFunctionalRequirementDescription = '';
-  deletingFunctionalRequirementId = null;
-  editingNonFunctionalRequirementId = null;
-  isNonFunctionalRequirementUpdating = false;
-  creatingNonFunctionalRequirement = false;
-  newNonFunctionalRequirementId = '';
-  creatingNonFunctionalRequirementStep = 'id';
-  newNonFunctionalRequirementTitle = '';
-  newNonFunctionalRequirementDescription = '';
-  deletingNonFunctionalRequirementId = null;
-  editingStoryId = null;
-  isStoryUpdating = false;
-  creatingStory = false;
-  creatingStoryStep = 'id';
-  newStoryId = '';
-  deletingStoryId = null;
-  creatingOpenQuestion = false;
-  creatingOpenQuestionStep = 'id';
-  newOpenQuestionId = '';
-  newOpenQuestionQuestion = '';
-  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
-  newOpenQuestionStatus = 'open';
-  deletingOpenQuestionId = null;
+  uiState.resetFeature('requirementEditing');
 }
 
 function activateRequirementListItem(id) {
@@ -608,419 +502,18 @@ async function selectPlan(id) {
 
 function renderPlanDetail() {
   syncCoreState({ currentPlan }, 'renderPlanDetail');
-  const p = currentPlan;
-  const tasks = Array.isArray(p.tasks) ? p.tasks : [];
-  const effectivePlanStatus = p.status || 'pending';
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'overview';
-
-  showDetail();
-  configurePlanTabs(activeTab);
-
-  document.getElementById('detailId').textContent = p.id;
-  document.getElementById('detailTitle').textContent = p.title;
-  document.getElementById('detailStatus').textContent = formatStatus(effectivePlanStatus);
-  document.getElementById('detailStatus').className = `plan-item-status status-${effectivePlanStatus}`;
-  document.getElementById('detailCreated').textContent = p.created || 'N/A';
-  document.getElementById('detailLastUpdated').textContent = p.lastUpdated || 'N/A';
-  document.getElementById('detailRequirementsLabel').textContent = 'Requirements: ';
-  document.getElementById('detailRequirements').textContent = p.requirements || 'None';
-
-  const storiesDone = p.stories?.filter(s => normalizeStoryStatus(s.status) === 'completed').length || 0;
-  const tasksDone = tasks.filter(t => t.status === 'completed').length;
-  const tasksTotal = tasks.length;
-
-  document.getElementById('overviewCount').textContent = `${storiesDone}/${p.stories?.length || 0}`;
-  document.getElementById('storiesCount').textContent = p.stories?.length || 0;
-  document.getElementById('tasksCount').textContent = `${tasksDone}/${tasksTotal}`;
-  document.getElementById('decisionsCount').textContent = p.decisions?.length || 0;
-
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card stat-stories"><div class="stat-value">${p.stories?.length || 0}</div><div class="stat-label">Stories</div></div>
-    <div class="stat-card stat-stories-done"><div class="stat-value">${storiesDone}</div><div class="stat-label">Stories Done</div></div>
-    <div class="stat-card stat-tasks"><div class="stat-value">${tasksTotal}</div><div class="stat-label">Tasks</div></div>
-    <div class="stat-card stat-tasks-done"><div class="stat-value">${tasksDone}</div><div class="stat-label">Tasks Done</div></div>
-  `;
-
-  const tasksById = new Map(tasks.map(task => [task.id, task]));
-  const phases = Array.isArray(p.phases) ? p.phases : [];
-  const phasesChips = phases.length
-    ? `<div class="chips">${phases.map(ph => {
-      const title = (ph?.title || '').trim();
-      const ids = Array.isArray(ph?.tasks) ? ph.tasks : [];
-      const done = ids.length ? ids.filter(id => tasksById.get(id)?.status === 'completed').length : 0;
-      return `<span class="chip">${escapeHtml(title)}${ids.length ? ` (${done}/${ids.length})` : ''}</span>`;
-    }).join('')}</div>`
-    : '';
-  const planPhasesSection = isPlanPhasesEditing
-    ? `
-      <div class="section-card">
-        <div class="task-dod-title">
-          <span>Phases</span>
-          <span class="task-dod-hint">Edit mode attiva</span>
-        </div>
-        <div class="plan-phases-form">
-          ${editingPlanPhases.map((phase, phaseIndex) => {
-            const selectedTaskIds = Array.isArray(phase.tasks) ? phase.tasks : [];
-            const taskOptions = tasks.map(task => `
-              <label class="task-depends-on-option">
-                <input
-                  type="checkbox"
-                  ${selectedTaskIds.includes(task.id) ? 'checked' : ''}
-                  ${isPlanPhasesUpdating ? 'disabled' : ''}
-                  onchange="togglePlanPhaseTaskByEncodedId(event, ${phaseIndex}, '${encodeURIComponent(task.id)}')">
-                <span><code>${escapeHtml(task.id)}</code>${task.title ? ` - ${escapeHtml(task.title)}` : ''}</span>
-              </label>
-            `).join('');
-
-            return `
-              <div class="plan-phase-editor-row">
-                <div class="plan-phase-editor-head">
-                  <label class="open-question-label" for="plan-phase-title-${phaseIndex}">Fase ${phaseIndex + 1}</label>
-                  <button type="button" class="icon-action-btn" onclick="removePlanPhaseFromEvent(event, ${phaseIndex})" ${isPlanPhasesUpdating ? 'disabled' : ''} aria-label="Rimuovi fase" title="Rimuovi fase">−</button>
-                </div>
-                <input
-                  id="plan-phase-title-${phaseIndex}"
-                  class="task-inline-input"
-                  type="text"
-                  value="${escapeHtml(phase.title || '')}"
-                  ${isPlanPhasesUpdating ? 'disabled' : ''}
-                  oninput="updatePlanPhaseTitleFromEvent(event, ${phaseIndex})"
-                >
-                <div class="task-depends-on-options">
-                  ${taskOptions || '<div class="empty-state">Nessun task disponibile</div>'}
-                </div>
-              </div>
-            `;
-          }).join('')}
-          <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn is-secondary" onclick="addPlanPhaseFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>+ Fase</button>
-            <button type="button" class="open-question-btn" onclick="savePlanPhasesFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanPhasesEditFromEvent(event)" ${isPlanPhasesUpdating ? 'disabled' : ''}>Annulla</button>
-          </div>
-        </div>
-      </div>
-    `
-    : `
-      <div class="section-card">
-        <div class="section-title-row">
-          <div class="section-title">Phases</div>
-          <button type="button" class="icon-action-btn${phases.length ? '' : ' is-add'}" onclick="enablePlanPhasesEditFromEvent(event)" aria-label="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}" title="${phases.length ? 'Modifica phases piano' : 'Aggiungi phases piano'}">${phases.length ? '✎' : ADD_ICON_SVG}</button>
-        </div>
-        ${phasesChips || ''}
-      </div>
-    `;
-
-  const currentNotes = typeof p.notes === 'string' ? p.notes : '';
-  const currentObjective = typeof p.objective === 'string' ? p.objective : '';
-  const planObjectiveSection = isPlanObjectiveEditing
-    ? `
-      <div class="section-card">
-        <div class="task-dod-title">
-          <span>Objective</span>
-          <span class="task-dod-hint">Edit mode attiva</span>
-        </div>
-        <div class="plan-notes-form">
-          <textarea id="plan-objective-input" class="plan-notes-input" rows="5" ${isPlanObjectiveUpdating ? 'disabled' : ''}>${escapeHtml(currentObjective)}</textarea>
-          <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="savePlanObjectiveFromEvent(event)" ${isPlanObjectiveUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanObjectiveEditFromEvent(event)" ${isPlanObjectiveUpdating ? 'disabled' : ''}>Annulla</button>
-          </div>
-        </div>
-      </div>
-    `
-    : `
-      <div class="section-card">
-        <div class="section-title-row">
-          <div class="section-title">Objective</div>
-          <button type="button" class="icon-action-btn${currentObjective ? '' : ' is-add'}" onclick="enablePlanObjectiveEditFromEvent(event)" aria-label="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}" title="${currentObjective ? 'Modifica objective piano' : 'Aggiungi objective piano'}">${currentObjective ? '✎' : ADD_ICON_SVG}</button>
-        </div>
-        ${currentObjective ? `<div class="section-body">${escapeHtml(currentObjective)}</div>` : ''}
-      </div>
-    `;
-  const planNotesSection = isPlanNotesEditing
-    ? `
-      <div class="section-card">
-        <div class="task-dod-title">
-          <span>Notes</span>
-          <span class="task-dod-hint">Edit mode attiva</span>
-        </div>
-        <div class="plan-notes-form">
-          <textarea id="plan-notes-input" class="plan-notes-input" rows="6" ${isPlanNotesUpdating ? 'disabled' : ''}>${escapeHtml(currentNotes)}</textarea>
-          <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="savePlanNotesFromEvent(event)" ${isPlanNotesUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanNotesEditFromEvent(event)" ${isPlanNotesUpdating ? 'disabled' : ''}>Annulla</button>
-          </div>
-        </div>
-      </div>
-    `
-    : `
-      <div class="section-card">
-        <div class="section-title-row">
-          <div class="section-title">Notes</div>
-          <button type="button" class="icon-action-btn${currentNotes ? '' : ' is-add'}" onclick="enablePlanNotesEditFromEvent(event)" aria-label="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}" title="${currentNotes ? 'Modifica note piano' : 'Aggiungi note piano'}">${currentNotes ? '✎' : ADD_ICON_SVG}</button>
-        </div>
-        ${currentNotes ? `<div class="section-body">${escapeHtml(currentNotes)}</div>` : ''}
-      </div>
-    `;
-
-  document.getElementById('overviewContent').innerHTML = `
-    <div class="overview-sections reading-flow">
-      <div id="anchor-overview-objective">${planObjectiveSection}</div>
-      ${p.targetArchitecture ? `<div id="anchor-overview-architecture"><div class="section-card"><div class="section-title">Target Architecture</div><div class="section-body">${escapeHtml(p.targetArchitecture)}</div></div></div>` : ''}
-      <div id="anchor-overview-phases">${planPhasesSection}</div>
-      <div id="anchor-overview-notes">${planNotesSection}</div>
-    </div>
-  `;
-
-  const storiesContent = p.stories?.map(s => {
-    const storyStatus = normalizeStoryStatus(s.status);
-    const taskList = Array.isArray(s.tasks) ? s.tasks.join(', ') : String(s.tasks || '');
-    return `
-      <div class="story-item" id="anchor-story-${escapeHtml(s.id)}">
-        <div class="story-header">
-          <span class="story-id">${escapeHtml(s.id)}</span>
-          <span class="story-status status-${storyStatus}">${formatStatus(storyStatus)}</span>
-        </div>
-        <div class="story-description">${escapeHtml(s.description || '')}</div>
-        <div class="story-tasks">Tasks: ${escapeHtml(taskList)}</div>
-      </div>
-    `;
-  }).join('') || '<p class="empty-state">No stories defined</p>';
-  document.getElementById('storiesList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Stories</div></div>${storiesContent}`;
-
-  const tasksContent = tasks.map(t => {
-    const titleValue = String(t.title || '');
-    const phaseValue = String(t.phase || '');
-    const whatToDoValue = String(t.whatToDo || '');
-    const filesValue = Array.isArray(t.files) ? t.files : [];
-    const dependsOnValue = Array.isArray(t.dependsOn) ? t.dependsOn : [];
-    const dependsOptions = tasks
-      .filter(candidate => candidate.id !== t.id)
-      .map(candidate => `
-        <label class="task-depends-on-option">
-          <input type="checkbox" value="${escapeHtml(candidate.id)}" ${dependsOnValue.includes(candidate.id) ? 'checked' : ''} ${isTaskFieldUpdating ? 'disabled' : ''}>
-          <span><code>${escapeHtml(candidate.id)}</code>${candidate.title ? ` - ${escapeHtml(candidate.title)}` : ''}</span>
-        </label>
-      `)
-      .join('');
-
-    return `
-    <div class="task-item" id="anchor-task-${escapeHtml(t.id)}">
-      <div class="task-header">
-        <span class="task-id">${escapeHtml(t.id)}</span>
-        <div class="task-meta">
-          <span class="task-size">${escapeHtml(t.size || '-')}</span>
-          <div class="task-status-dropdown status-${escapeHtml(t.status)}">
-            <button type="button" class="task-status-trigger status-${escapeHtml(t.status)}" onclick="toggleTaskStatusDropdown(this)">
-              <span class="task-status-label">${formatStatus(t.status)}</span>
-              <span class="task-status-caret">▾</span>
-            </button>
-            <div class="task-status-menu">
-              ${TASK_STATUSES.map(status => `
-                <button
-                  type="button"
-                  class="task-status-option status-${status}${status === t.status ? ' is-current' : ''}"
-                  onclick="handleTaskStatusChangeByEncodedId('${encodeURIComponent(t.id)}', '${status}', this)">
-                  ${formatStatus(status)}
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="task-primary-section">
-        ${isTaskFieldEditing(t.id, 'primary')
-          ? `
-            <div class="task-notes-form" onclick="event.stopPropagation()">
-              <label class="open-question-label" for="task-title-${escapeHtml(t.id)}">Title</label>
-              <input id="task-title-${escapeHtml(t.id)}" class="task-inline-input" type="text" value="${escapeHtml(titleValue)}" ${isTaskFieldUpdating ? 'disabled' : ''}>
-              <label class="open-question-label" for="task-whatToDo-${escapeHtml(t.id)}">What to do</label>
-              <textarea id="task-whatToDo-${escapeHtml(t.id)}" class="task-notes-input" rows="5" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(whatToDoValue)}</textarea>
-              <div class="task-notes-actions">
-                <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'primary')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-                <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-              </div>
-            </div>
-          `
-          : `
-            <div class="task-primary-header">
-              ${titleValue ? `<div class="task-title">${escapeHtml(titleValue)}</div>` : '<div class="task-title task-title-empty">Titolo non impostato</div>'}
-              <button type="button" class="icon-action-btn" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'primary')" aria-label="Modifica titolo e what to do task" title="Modifica titolo e what to do task">✎</button>
-            </div>
-            <div class="task-meta-label">What to do</div>
-            ${whatToDoValue ? `<div class="task-what">${escapeHtml(whatToDoValue)}</div>` : '<div class="task-what task-meta-empty">Nessun what to do impostato</div>'}
-          `}
-      </div>
-
-      <div class="task-meta-section">
-        <div class="task-meta-title">Task context</div>
-        <div class="task-meta-row">
-          <span class="task-meta-label">Phase</span>
-          <div class="task-meta-value">
-            ${isTaskFieldEditing(t.id, 'phase')
-              ? `
-                <div class="task-meta-editor">
-                  <input id="task-phase-${escapeHtml(t.id)}" type="hidden" value="${escapeHtml(phaseValue)}">
-                  <div class="task-status-dropdown task-phase-dropdown${isTaskFieldUpdating ? ' is-updating' : ''}">
-                    <button type="button" class="task-status-trigger task-phase-trigger" onclick="toggleTaskPhaseDropdown(this)" ${isTaskFieldUpdating ? 'disabled' : ''}>
-                      <span class="task-status-label">${escapeHtml(phaseValue || 'Select phase')}</span>
-                      <span class="task-status-caret">▾</span>
-                    </button>
-                    <div class="task-status-menu">
-                      ${(Array.isArray(p.phases) ? p.phases : []).map(phase => {
-                        const title = String(phase?.title || '').trim();
-                        if (!title) return '';
-                        return `<button type="button" class="task-status-option${title === phaseValue ? ' is-current' : ''}" onclick="handleTaskPhaseSelectByEncodedId('${encodeURIComponent(t.id)}', '${encodeURIComponent(title)}', this)">${escapeHtml(title)}</button>`;
-                      }).join('')}
-                    </div>
-                  </div>
-                  <div class="task-notes-actions">
-                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'phase')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-                  </div>
-                </div>
-              `
-              : `${phaseValue ? `<code>${escapeHtml(phaseValue)}</code>` : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${phaseValue ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'phase')">${phaseValue ? '✎' : ADD_ICON_SVG}</button>`}
-          </div>
-        </div>
-        <div class="task-meta-row">
-          <span class="task-meta-label">Depends on</span>
-          <div class="task-meta-value">
-            ${isTaskFieldEditing(t.id, 'dependsOn')
-              ? `
-                <div class="task-meta-editor">
-                  <div id="task-depends-on-editor-${escapeHtml(t.id)}" class="task-depends-on-options">${dependsOptions || '<div class="task-notes">Nessun task disponibile</div>'}</div>
-                  <div class="task-notes-actions">
-                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'dependsOn')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-                  </div>
-                </div>
-              `
-              : `${dependsOnValue.length ? dependsOnValue.map(item => `<code>${escapeHtml(item)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${dependsOnValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'dependsOn')">${dependsOnValue.length ? '✎' : ADD_ICON_SVG}</button>`}
-          </div>
-        </div>
-        <div class="task-meta-row">
-          <span class="task-meta-label">Files</span>
-          <div class="task-meta-value">
-            ${isTaskFieldEditing(t.id, 'files')
-              ? `
-                <div class="task-meta-editor">
-                  <textarea id="task-files-${escapeHtml(t.id)}" class="task-notes-input" rows="4" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml(filesValue.join('\n'))}</textarea>
-                  <div class="task-notes-actions">
-                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'files')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-                  </div>
-                </div>
-              `
-              : `${filesValue.length ? filesValue.map(f => `<code>${escapeHtml(f)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${filesValue.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'files')">${filesValue.length ? '✎' : ADD_ICON_SVG}</button>`}
-          </div>
-        </div>
-        <div class="task-meta-row">
-          <span class="task-meta-label">Endpoints</span>
-          <div class="task-meta-value">
-            ${isTaskFieldEditing(t.id, 'endpoints')
-              ? `
-                <div class="task-meta-editor">
-                  <textarea id="task-endpoints-${escapeHtml(t.id)}" class="task-notes-input" rows="4" ${isTaskFieldUpdating ? 'disabled' : ''}>${escapeHtml((Array.isArray(t.endpoints) ? t.endpoints : []).join('\n'))}</textarea>
-                  <div class="task-notes-actions">
-                    <button type="button" class="open-question-btn" onclick="saveTaskFieldByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', 'endpoints')" ${isTaskFieldUpdating ? 'disabled' : ''}>Salva</button>
-                    <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskFieldEditFromEvent(event)" ${isTaskFieldUpdating ? 'disabled' : ''}>Annulla</button>
-                  </div>
-                </div>
-              `
-              : `${t.endpoints?.length ? t.endpoints.map(e => `<code>${escapeHtml(e)}</code>`).join(' ') : '<span class="task-meta-empty">-</span>'}<button type="button" class="icon-action-btn${t.endpoints?.length ? '' : ' is-add'}" onclick="enableTaskFieldEditByEncodedId(event, '${encodeURIComponent(t.id)}', 'endpoints')">${t.endpoints?.length ? '✎' : ADD_ICON_SVG}</button>`}
-          </div>
-        </div>
-      </div>
-
-
-
-      ${t.definitionOfDone?.length ? `
-        <div
-          class="task-dod${editingTaskDodId === t.id ? ' is-editing' : ''}${isTaskDodUpdating ? ' is-busy' : ''}"
-          data-task-id="${encodeURIComponent(t.id)}"
-          role="button"
-          tabindex="0"
-          aria-label="Apri modalita modifica definition of done"
-          aria-expanded="${editingTaskDodId === t.id ? 'true' : 'false'}"
-          onclick="enableTaskDodEditByEncodedId('${encodeURIComponent(t.id)}')"
-          onkeydown="handleTaskDodRegionKeydown(event, '${encodeURIComponent(t.id)}')">
-          <div class="task-dod-title">
-            <span>Definition of Done:</span>
-            <span class="task-dod-hint">${editingTaskDodId === t.id ? 'Edit mode attiva' : 'Clicca per modificare'}</span>
-            ${editingTaskDodId === t.id ? `<button type="button" class="task-dod-exit" onclick="disableTaskDodEditFromEvent(event)">Fine modifica</button>` : ''}
-          </div>
-          ${t.definitionOfDone.map((d, index) => editingTaskDodId === t.id
-            ? `
-              <button type="button" class="task-dod-item task-dod-toggle${d.completed ? ' is-completed' : ''}" onclick="toggleTaskDodItemByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}', ${index}, ${d.completed ? 'false' : 'true'})" onkeydown="handleAcceptanceItemKeydown(event)" ${isTaskDodUpdating ? 'disabled' : ''}>
-                <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
-                <span>${escapeHtml(d.description || '')}</span>
-              </button>
-            `
-            : `
-              <div class="task-dod-item${d.completed ? ' is-completed' : ''}">
-                <span class="task-dod-bullet">${d.completed ? '✓' : '○'}</span>
-                <span>${escapeHtml(d.description || '')}</span>
-              </div>
-            `
-          ).join('')}
-        </div>
-      ` : ''}
-      <details class="summary-block" ${openTaskNotesIds.has(t.id) || editingTaskNotesId === t.id || editingTaskImplementationNotesId === t.id ? 'open' : ''} ontoggle="handleTaskNotesDetailsToggleByEncodedId(event, '${encodeURIComponent(t.id)}')">
-        <summary>Notes</summary>
-        ${editingTaskImplementationNotesId === t.id ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-implementation-notes-${escapeHtml(t.id)}">Implementation Notes</label>
-            <textarea
-              id="task-implementation-notes-${escapeHtml(t.id)}"
-              class="task-notes-input"
-              rows="5"
-              ${isTaskImplementationNotesUpdating ? 'disabled' : ''}
-            >${escapeHtml(t.implementationNotes || '')}</textarea>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskImplementationNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskImplementationNotesUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskImplementationNotesEditFromEvent(event)" ${isTaskImplementationNotesUpdating ? 'disabled' : ''}>Annulla</button>
-            </div>
-          </div>
-        ` : `
-          <div class="task-notes-title-row">
-            <strong>Implementation Notes</strong>
-            <button type="button" class="icon-action-btn${t.implementationNotes ? '' : ' is-add'}" onclick="enableTaskImplementationNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}" title="${t.implementationNotes ? 'Modifica implementation notes' : 'Aggiungi implementation notes'}">${t.implementationNotes ? '✎' : ADD_ICON_SVG}</button>
-          </div>
-          ${t.implementationNotes ? `<div class="task-notes">${escapeHtml(t.implementationNotes)}</div>` : ''}
-        `}
-        ${editingTaskNotesId === t.id ? `
-          <div class="task-notes-form" onclick="event.stopPropagation()">
-            <label class="open-question-label" for="task-notes-${escapeHtml(t.id)}">Task Notes</label>
-            <textarea
-              id="task-notes-${escapeHtml(t.id)}"
-              class="task-notes-input"
-              rows="5"
-              ${isTaskNotesUpdating ? 'disabled' : ''}
-            >${escapeHtml(t.notes || '')}</textarea>
-            <div class="task-notes-actions">
-              <button type="button" class="open-question-btn" onclick="saveTaskNotesByEncodedIds(event, '${encodeURIComponent(p.id)}', '${encodeURIComponent(t.id)}')" ${isTaskNotesUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelTaskNotesEditFromEvent(event)" ${isTaskNotesUpdating ? 'disabled' : ''}>Annulla</button>
-            </div>
-          </div>
-        ` : `
-          <div class="task-notes-title-row">
-            <strong>Task Notes</strong>
-            <button type="button" class="icon-action-btn${t.notes ? '' : ' is-add'}" onclick="enableTaskNotesEditByEncodedId(event, '${encodeURIComponent(t.id)}')" aria-label="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}" title="${t.notes ? 'Modifica task notes' : 'Aggiungi task notes'}">${t.notes ? '✎' : ADD_ICON_SVG}</button>
-          </div>
-          ${t.notes ? `<div class="task-notes">${escapeHtml(t.notes)}</div>` : ''}
-        `}
-      </details>
-    </div>
-  `;
-  }).join('') || '<p class="empty-state">No tasks defined</p>';
-  document.getElementById('tasksList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Tasks</div></div>${tasksContent}`;
-
-  document.getElementById('decisionsList').innerHTML = renderPlanDecisionItems(Array.isArray(p.decisions) ? p.decisions : []);
-
-  restoreTaskDodFocusIfNeeded();
-  buildRightNav();
+  renderPlanDetailRenderer({
+    plan: currentPlan,
+    escapeHtml,
+    formatStatus,
+    normalizeStoryStatus,
+    ADD_ICON_SVG,
+    TASK_STATUSES,
+    showDetail,
+    configurePlanTabs,
+    restoreTaskDodFocusIfNeeded,
+    buildRightNav
+  });
 }
 
 async function selectRequirement(id) {
@@ -1070,7 +563,7 @@ function renderRequirementDetail() {
   `;
 
   const currentOverview = typeof data.overview === 'string' ? data.overview : '';
-  const overviewSection = isRequirementOverviewEditing
+  const overviewSection = uiState.requirementOverview.isEditing
     ? `
       <div class="section-card">
         <div class="task-dod-title">
@@ -1078,10 +571,10 @@ function renderRequirementDetail() {
           <span class="task-dod-hint">Edit mode attiva</span>
         </div>
         <div class="plan-notes-form">
-          <textarea id="requirement-overview-input" class="plan-notes-input" rows="6" ${isRequirementOverviewUpdating ? 'disabled' : ''}>${escapeHtml(currentOverview)}</textarea>
+          <textarea id="requirement-overview-input" class="plan-notes-input" rows="6" ${uiState.requirementOverview.isUpdating ? 'disabled' : ''}>${escapeHtml(currentOverview)}</textarea>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveRequirementOverviewFromEvent(event)" ${isRequirementOverviewUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementOverviewEditFromEvent(event)" ${isRequirementOverviewUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveRequirementOverviewFromEvent(event)" ${uiState.requirementOverview.isUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementOverviewEditFromEvent(event)" ${uiState.requirementOverview.isUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       </div>
@@ -1098,7 +591,7 @@ function renderRequirementDetail() {
 
   const overviewChunks = [`<div id="anchor-overview-overview">${overviewSection}</div>`];
   const currentState = Array.isArray(data.currentState) ? data.currentState : [];
-  const currentStateSection = isRequirementCurrentStateEditing
+  const currentStateSection = uiState.requirementCurrentState.isEditing
     ? `
       <div class="section-card">
         <div class="task-dod-title">
@@ -1119,11 +612,11 @@ function renderRequirementDetail() {
               <tbody id="requirement-current-state-body">
                 ${(currentState.length ? currentState : [{}]).map(row => `
                   <tr>
-                    <td><input type="text" class="plan-notes-input current-state-input" data-field="area" value="${escapeHtml(row?.area || '')}" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}></td>
-                    <td><input type="text" class="plan-notes-input current-state-input" data-field="status" value="${escapeHtml(row?.status || '')}" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}></td>
-                    <td><textarea class="plan-notes-input current-state-input current-state-notes-input" data-field="notes" rows="2" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>${escapeHtml(row?.notes || '')}</textarea></td>
+                    <td><input type="text" class="plan-notes-input current-state-input" data-field="area" value="${escapeHtml(row?.area || '')}" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}></td>
+                    <td><input type="text" class="plan-notes-input current-state-input" data-field="status" value="${escapeHtml(row?.status || '')}" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}></td>
+                    <td><textarea class="plan-notes-input current-state-input current-state-notes-input" data-field="notes" rows="2" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}>${escapeHtml(row?.notes || '')}</textarea></td>
                     <td class="current-state-row-actions">
-                      <button type="button" class="open-question-btn is-secondary current-state-row-remove" onclick="removeRequirementCurrentStateRowFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Rimuovi</button>
+                      <button type="button" class="open-question-btn is-secondary current-state-row-remove" onclick="removeRequirementCurrentStateRowFromEvent(event)" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}>Rimuovi</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -1131,11 +624,11 @@ function renderRequirementDetail() {
             </table>
           </div>
           <div class="current-state-toolbar">
-            <button type="button" class="open-question-btn is-secondary" onclick="addRequirementCurrentStateRowFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>+ Riga</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="addRequirementCurrentStateRowFromEvent(event)" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}>+ Riga</button>
           </div>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveRequirementCurrentStateFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementCurrentStateEditFromEvent(event)" ${isRequirementCurrentStateUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveRequirementCurrentStateFromEvent(event)" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementCurrentStateEditFromEvent(event)" ${uiState.requirementCurrentState.isUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       </div>
@@ -1174,17 +667,17 @@ function renderRequirementDetail() {
 
   const requirementNotes = typeof data.notes === 'string' ? data.notes : '';
   const hasRequirementNotes = requirementNotes.trim().length > 0;
-  const requirementNotesSection = isRequirementNotesEditing
+  const requirementNotesSection = uiState.requirementNotes.isEditing
     ? `
       <div class="section-card">
         <div class="task-dod-title">
           <span>Notes</span>
         </div>
         <div class="plan-notes-form">
-          <textarea id="requirement-notes-input" class="plan-notes-input" rows="10" ${isRequirementNotesUpdating ? 'disabled' : ''}>${escapeHtml(requirementNotes)}</textarea>
+          <textarea id="requirement-notes-input" class="plan-notes-input" rows="10" ${uiState.requirementNotes.isUpdating ? 'disabled' : ''}>${escapeHtml(requirementNotes)}</textarea>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveRequirementNotesFromEvent(event)" ${isRequirementNotesUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementNotesEditFromEvent(event)" ${isRequirementNotesUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveRequirementNotesFromEvent(event)" ${uiState.requirementNotes.isUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelRequirementNotesEditFromEvent(event)" ${uiState.requirementNotes.isUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       </div>
@@ -1218,12 +711,12 @@ function renderRequirementDetail() {
   document.getElementById('userStoriesRequirementsList').innerHTML = `${renderStoryCreateBox()}${stories.length
     ? stories.map(story => `
       <div class="task-item" id="anchor-userstory-${escapeHtml(story.id)}">
-        <div class="task-header"><span class="task-id">${escapeHtml(story.id)}</span>${editingStoryId !== story.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="enableStoryEditByEncodedId(event, '${encodeURIComponent(story.id)}')">✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteStoryByEncodedId(event, '${encodeURIComponent(story.id)}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}</div>
-        ${editingStoryId === story.id ? renderStoryEditForm(story) : `<div class="task-title">${escapeHtml(story.title || '')}</div>
+        <div class="task-header"><span class="task-id">${escapeHtml(story.id)}</span>${uiState.story.editingId !== story.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="enableStoryEditByEncodedId(event, '${encodeURIComponent(story.id)}')">✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteStoryByEncodedId(event, '${encodeURIComponent(story.id)}')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}</div>
+        ${uiState.story.editingId === story.id ? renderStoryEditForm(story) : `<div class="task-title">${escapeHtml(story.title || '')}</div>
         <div class="task-context-row"><span class="task-context-label">As a</span><span class="task-context-values">${escapeHtml(story.asA || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">I want</span><span class="task-context-values">${escapeHtml(story.iWant || '')}</span></div>
         <div class="task-context-row"><span class="task-context-label">So that</span><span class="task-context-values">${escapeHtml(story.soThat || '')}</span></div>`}
-        ${editingStoryId === story.id ? '' : `<div
+        ${uiState.story.editingId === story.id ? '' : `<div
           class="task-dod${editingAcceptanceStoryId === story.id ? ' is-editing' : ''}${isAcceptanceUpdating ? ' is-busy' : ''}"
           data-story-id="${encodeURIComponent(story.id)}"
           role="button"
@@ -1256,19 +749,19 @@ function renderRequirementDetail() {
     `).join('')
     : '<p class="empty-state">No user stories</p>'}${renderDeleteStoryModal()}`;
 
-  document.getElementById('openQuestionsList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Open questions</div><button type="button" class="icon-action-btn is-add" onclick="enableOpenQuestionCreateFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingOpenQuestion ? `
+  document.getElementById('openQuestionsList').innerHTML = `<div class="section-title-row compact"><div class="section-title">Open questions</div><button type="button" class="icon-action-btn is-add" onclick="enableOpenQuestionCreateFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${uiState.openQuestion.creating ? `
       <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuova open question</span></div>
         <div class="plan-notes-form">
-          ${creatingOpenQuestionStep === 'id' ? `
+          ${uiState.openQuestion.createStep === 'id' ? `
             <label class="open-question-label" for="new-open-question-id">ID</label>
-            <input id="new-open-question-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionId)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
-            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
+            <input id="new-open-question-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.openQuestion.newId)}" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedCreateOpenQuestionFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Annulla</button></div>
           ` : `
-            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newOpenQuestionId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.openQuestion.newId)}</span></div>
             <label class="open-question-label" for="new-open-question-question">Question</label>
-            <input id="new-open-question-question" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newOpenQuestionQuestion)}" ${isOpenQuestionUpdating ? 'disabled' : ''}>
-            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="createOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Salva</button><button type="button" class="open-question-btn is-secondary" onclick="backCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Indietro</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button></div>
+            <input id="new-open-question-question" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.openQuestion.newQuestion)}" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>
+            <div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="createOpenQuestionFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Salva</button><button type="button" class="open-question-btn is-secondary" onclick="backCreateOpenQuestionFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Indietro</button><button type="button" class="open-question-btn is-secondary" onclick="cancelCreateOpenQuestionFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Annulla</button></div>
           `}
         </div>
       </div>
@@ -1276,40 +769,40 @@ function renderRequirementDetail() {
     ? openQuestions.map(q => `
       <div
         id="anchor-openq-${escapeHtml(q.id || '')}"
-        class="task-item open-question-item${editingOpenQuestionId === q.id ? ' is-editing' : ''}${isOpenQuestionUpdating ? ' is-busy' : ''}"
+        class="task-item open-question-item${uiState.openQuestion.editingId === q.id ? ' is-editing' : ''}${uiState.openQuestion.isUpdating ? ' is-busy' : ''}"
         role="button"
         tabindex="0"
         aria-label="Apri modalita modifica open question"
-        aria-expanded="${editingOpenQuestionId === q.id ? 'true' : 'false'}"
+        aria-expanded="${uiState.openQuestion.editingId === q.id ? 'true' : 'false'}"
         onclick="enableOpenQuestionEditByEncodedId('${encodeURIComponent(q.id || '')}')"
         onkeydown="handleOpenQuestionCardKeydown(event, '${encodeURIComponent(q.id || '')}')">
         <div class="task-header">
           <span class="task-id">${escapeHtml(q.id || '-')}</span>
           <span class="inline-actions">
-            ${editingOpenQuestionId !== q.id ? `<button type="button" class="icon-action-btn" onclick="requestDeleteOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" aria-label="Elimina open question" title="Elimina open question" ${isOpenQuestionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>` : ''}
+            ${uiState.openQuestion.editingId !== q.id ? `<button type="button" class="icon-action-btn" onclick="requestDeleteOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" aria-label="Elimina open question" title="Elimina open question" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>` : ''}
             <span class="plan-item-status status-${q.status === 'resolved' ? 'completed' : 'pending'}">${q.status === 'resolved' ? 'Resolved' : 'Open'}</span>
           </span>
         </div>
         <div class="task-title">${escapeHtml(q.question || '')}</div>
-        ${editingOpenQuestionId === q.id ? `
+        ${uiState.openQuestion.editingId === q.id ? `
           <div class="open-question-form" onclick="event.stopPropagation()">
             <label class="open-question-label" for="open-question-answer-${escapeHtml(q.id || '')}">Answer</label>
             <textarea
               id="open-question-answer-${escapeHtml(q.id || '')}"
               class="open-question-answer"
               rows="4"
-              ${isOpenQuestionUpdating ? 'disabled' : ''}
+              ${uiState.openQuestion.isUpdating ? 'disabled' : ''}
             >${escapeHtml(q.answer || '')}</textarea>
             <label class="open-question-label" for="open-question-status-${escapeHtml(q.id || '')}">Status</label>
             <select
               id="open-question-status-${escapeHtml(q.id || '')}"
               class="open-question-status"
-              ${isOpenQuestionUpdating ? 'disabled' : ''}>
+              ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>
               ${OPEN_QUESTION_STATUSES.map(status => `<option value="${status}"${status === q.status ? ' selected' : ''}>${status === 'resolved' ? 'Resolved' : 'Open'}</option>`).join('')}
             </select>
             <div class="open-question-actions">
-              <button type="button" class="open-question-btn" onclick="saveOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" ${isOpenQuestionUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelOpenQuestionEditFromEvent(event)" ${isOpenQuestionUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="saveOpenQuestionByEncodedIds(event, '${encodeURIComponent(doc.id || '')}', '${encodeURIComponent(q.id || '')}')" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelOpenQuestionEditFromEvent(event)" ${uiState.openQuestion.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           </div>
         ` : `<div class="task-what">${escapeHtml(q.answer || '')}</div>`}
@@ -1709,29 +1202,29 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
   const actions = `
     <div class="section-title-row compact">
       <div class="section-title">Requisiti non funzionali</div>
-      <button type="button" class="icon-action-btn is-add" onclick="enableCreateNonFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito non funzionale" title="Aggiungi requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreateNonFunctionalRequirementFromEvent(event)" aria-label="Aggiungi requisito non funzionale" title="Aggiungi requisito non funzionale" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
-    ${creatingNonFunctionalRequirement ? `
+    ${uiState.nonFunctionalRequirement.creating ? `
       <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuovo requisito non funzionale</span></div>
         <div class="plan-notes-form">
-          ${creatingNonFunctionalRequirementStep === 'id' ? `
+          ${uiState.nonFunctionalRequirement.createStep === 'id' ? `
             <label class="open-question-label" for="new-non-functional-requirement-id">ID</label>
-            <input id="new-non-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newNonFunctionalRequirementId)}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-non-functional-requirement-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.nonFunctionalRequirement.newId)}" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="proceedCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Avanti</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="proceedCreateNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           ` : `
-            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newNonFunctionalRequirementId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.nonFunctionalRequirement.newId)}</span></div>
             <label class="open-question-label" for="new-non-functional-requirement-title">Titolo</label>
-            <input id="new-non-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newNonFunctionalRequirementTitle)}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+            <input id="new-non-functional-requirement-title" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.nonFunctionalRequirement.newTitle)}" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>
             <label class="open-question-label" for="new-non-functional-requirement-description">Descrizione</label>
-            <textarea id="new-non-functional-requirement-description" class="plan-notes-input" rows="3" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(newNonFunctionalRequirementDescription)}</textarea>
+            <textarea id="new-non-functional-requirement-description" class="plan-notes-input" rows="3" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>${escapeHtml(uiState.nonFunctionalRequirement.newDescription)}</textarea>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="createNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="backCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Indietro</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="createNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreateNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreateNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           `}
         </div>
@@ -1743,17 +1236,17 @@ function renderNonFunctionalRequirementItems(items, emptyText) {
     <div class="task-item" id="anchor-nonfunc-${escapeHtml(item.id || '')}">
       <div class="task-header">
         <span class="task-id">${escapeHtml(item.id || '-')}</span>
-        ${editingNonFunctionalRequirementId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+        ${uiState.nonFunctionalRequirement.editingId !== item.id ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Modifica requisito non funzionale" title="Modifica requisito non funzionale" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeleteNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" aria-label="Elimina requisito non funzionale" title="Elimina requisito non funzionale" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
       </div>
-      ${editingNonFunctionalRequirementId === item.id ? `
+      ${uiState.nonFunctionalRequirement.editingId === item.id ? `
         <div class="plan-notes-form">
           <label class="open-question-label" for="non-functional-title-${encodeURIComponent(item.id || '')}">Titolo</label>
-          <input id="non-functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>
+          <input id="non-functional-title-${encodeURIComponent(item.id || '')}" type="text" class="plan-notes-input compact-input" value="${escapeHtml(item.title || '')}" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>
           <label class="open-question-label" for="non-functional-description-${encodeURIComponent(item.id || '')}">Descrizione</label>
-          <textarea id="non-functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
+          <textarea id="non-functional-description-${encodeURIComponent(item.id || '')}" class="plan-notes-input" rows="3" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>${escapeHtml(item.description || '')}</textarea>
           <div class="plan-notes-actions">
-            <button type="button" class="open-question-btn" onclick="saveNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Salva</button>
-            <button type="button" class="open-question-btn is-secondary" onclick="cancelNonFunctionalRequirementEditFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+            <button type="button" class="open-question-btn" onclick="saveNonFunctionalRequirementByEncodedId(event, '${encodeURIComponent(item.id || '')}')" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Salva</button>
+            <button type="button" class="open-question-btn is-secondary" onclick="cancelNonFunctionalRequirementEditFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
           </div>
         </div>
       ` : `<div class="task-title">${escapeHtml(item.title || '')}</div><div class="task-what">${escapeHtml(item.description || '')}</div>`}
@@ -1765,29 +1258,29 @@ function renderPlanDecisionItems(items) {
   const actions = `
     <div class="section-title-row compact">
       <div class="section-title">Decisions</div>
-      <button type="button" class="icon-action-btn is-add" onclick="enableCreatePlanDecisionFromEvent(event)" aria-label="Aggiungi decision" title="Aggiungi decision" ${isPlanDecisionUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
+      <button type="button" class="icon-action-btn is-add" onclick="enableCreatePlanDecisionFromEvent(event)" aria-label="Aggiungi decision" title="Aggiungi decision" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button>
     </div>
-    ${creatingPlanDecision ? `
+    ${uiState.planDecision.creating ? `
       <div class="task-item compact">
         <div class="task-header"><span class="task-id">Nuova decision</span></div>
         <div class="plan-notes-form">
-          ${creatingPlanDecisionStep === 'id' ? `
+          ${uiState.planDecision.createStep === 'id' ? `
             <label class="open-question-label" for="new-plan-decision-id">ID</label>
-            <input id="new-plan-decision-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newPlanDecisionId)}" ${isPlanDecisionUpdating ? 'disabled' : ''}>
+            <input id="new-plan-decision-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.planDecision.newId)}" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="proceedCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Avanti</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="proceedCreatePlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Avanti</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           ` : `
-            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newPlanDecisionId)}</span></div>
+            <div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.planDecision.newId)}</span></div>
             <label class="open-question-label" for="new-plan-decision-description">Description / Choice</label>
-            <textarea id="new-plan-decision-description" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(newPlanDecisionDescription)}</textarea>
+            <textarea id="new-plan-decision-description" class="plan-notes-input" rows="3" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>${escapeHtml(uiState.planDecision.newDescription)}</textarea>
             <label class="open-question-label" for="new-plan-decision-rationale">Rationale</label>
-            <textarea id="new-plan-decision-rationale" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(newPlanDecisionRationale)}</textarea>
+            <textarea id="new-plan-decision-rationale" class="plan-notes-input" rows="3" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>${escapeHtml(uiState.planDecision.newRationale)}</textarea>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="createPlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="backCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Indietro</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="createPlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="backCreatePlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Indietro</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelCreatePlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           `}
         </div>
@@ -1801,17 +1294,17 @@ function renderPlanDecisionItems(items) {
       <div class="task-item" id="anchor-decision-${escapeHtml(itemId)}">
         <div class="task-header">
           <span class="task-id">${escapeHtml(itemId || '-')}</span>
-          ${editingPlanDecisionId !== itemId ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editPlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Modifica decision" title="Modifica decision" ${isPlanDecisionUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeletePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Elimina decision" title="Elimina decision" ${isPlanDecisionUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
+          ${uiState.planDecision.editingId !== itemId ? `<span class="inline-actions"><button type="button" class="icon-action-btn" onclick="editPlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Modifica decision" title="Modifica decision" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>✎</button><button type="button" class="icon-action-btn" onclick="requestDeletePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" aria-label="Elimina decision" title="Elimina decision" ${uiState.planDecision.isUpdating ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></span>` : ''}
         </div>
-        ${editingPlanDecisionId === itemId ? `
+        ${uiState.planDecision.editingId === itemId ? `
           <div class="plan-notes-form">
             <label class="open-question-label" for="plan-decision-description-${encodeURIComponent(itemId)}">Description / Choice</label>
-            <textarea id="plan-decision-description-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(item.description || item.choice || '')}</textarea>
+            <textarea id="plan-decision-description-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>${escapeHtml(item.description || item.choice || '')}</textarea>
             <label class="open-question-label" for="plan-decision-rationale-${encodeURIComponent(itemId)}">Rationale</label>
-            <textarea id="plan-decision-rationale-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${isPlanDecisionUpdating ? 'disabled' : ''}>${escapeHtml(item.rationale || item.motivation || '')}</textarea>
+            <textarea id="plan-decision-rationale-${encodeURIComponent(itemId)}" class="plan-notes-input" rows="3" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>${escapeHtml(item.rationale || item.motivation || '')}</textarea>
             <div class="plan-notes-actions">
-              <button type="button" class="open-question-btn" onclick="savePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" ${isPlanDecisionUpdating ? 'disabled' : ''}>Salva</button>
-              <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanDecisionEditFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+              <button type="button" class="open-question-btn" onclick="savePlanDecisionByEncodedId(event, '${encodeURIComponent(itemId)}')" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Salva</button>
+              <button type="button" class="open-question-btn is-secondary" onclick="cancelPlanDecisionEditFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Annulla</button>
             </div>
           </div>
         ` : `<div class="task-title">${escapeHtml(item.description || item.choice || '')}</div><div class="task-what">${escapeHtml(item.rationale || item.motivation || '')}</div>${item.date ? `<div class="task-notes"><strong>Date:</strong> ${escapeHtml(item.date)}</div>` : ''}`}
@@ -1821,69 +1314,69 @@ function renderPlanDecisionItems(items) {
 }
 
 function renderDeletePlanDecisionModal() {
-  if (!deletingPlanDecisionId) return '';
+  if (!uiState.planDecision.deletingId) return '';
   return `
     <div class="confirm-modal-overlay" onclick="closeDeletePlanDecisionModalFromEvent(event)">
       <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-plan-decision-title" aria-describedby="delete-plan-decision-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeletePlanDecisionModalKeydown(event)">
         <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeletePlanDecisionModalFromEvent(event)">×</button>
         <div class="confirm-modal-title" id="delete-plan-decision-title">Conferma eliminazione</div>
-        <div class="confirm-modal-text" id="delete-plan-decision-text">Vuoi eliminare la decision <strong>${escapeHtml(deletingPlanDecisionId)}</strong>?</div>
+        <div class="confirm-modal-text" id="delete-plan-decision-text">Vuoi eliminare la decision <strong>${escapeHtml(uiState.planDecision.deletingId)}</strong>?</div>
         <div class="plan-notes-actions confirm-modal-actions">
-          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeletePlanDecisionFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Elimina</button>
-          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeletePlanDecisionModalFromEvent(event)" ${isPlanDecisionUpdating ? 'disabled' : ''}>Annulla</button>
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeletePlanDecisionFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeletePlanDecisionModalFromEvent(event)" ${uiState.planDecision.isUpdating ? 'disabled' : ''}>Annulla</button>
         </div>
       </div>
     </div>
   `;
 }
 
-function enableCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; creatingPlanDecision = true; creatingPlanDecisionStep = 'id'; newPlanDecisionId = 'DEC-'; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); setTimeout(() => { const input = document.getElementById('new-plan-decision-id'); if (!input) return; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0); }
-function cancelCreatePlanDecisionFromEvent(event) { event.stopPropagation(); creatingPlanDecision = false; creatingPlanDecisionStep = 'id'; newPlanDecisionId = ''; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); }
-function proceedCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = String(document.getElementById('new-plan-decision-id')?.value || '').trim(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if ((currentPlan.decisions || []).some(item => (item.id || item.decision) === decisionId)) return showToast('ID gia presente', 'error'); newPlanDecisionId = decisionId; creatingPlanDecisionStep = 'details'; renderPlanDetail(); setTimeout(() => document.getElementById('new-plan-decision-description')?.focus(), 0); }
-function backCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; newPlanDecisionDescription = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); newPlanDecisionRationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); creatingPlanDecisionStep = 'id'; renderPlanDetail(); }
-async function createPlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const planId = currentPlan.id; if (!planId) return; const decisionId = String(newPlanDecisionId || '').trim(); const description = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); const rationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); const date = getCurrentDateIso(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if (!description || !rationale) return showToast('Descrizione e rationale sono obbligatori', 'error'); isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decisionId, description, rationale, date }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after create'); currentPlan = await updatedPlanRes.json(); creatingPlanDecision = false; creatingPlanDecisionStep = 'id'; newPlanDecisionId = ''; newPlanDecisionDescription = ''; newPlanDecisionRationale = ''; renderPlanDetail(); showToast('Decision aggiunta'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
-function editPlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; editingPlanDecisionId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); }
-function cancelPlanDecisionEditFromEvent(event) { event.stopPropagation(); editingPlanDecisionId = null; renderPlanDetail(); }
-async function savePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = decodeURIComponent(encodedDecisionId); const planId = currentPlan.id; if (!planId || !decisionId) return; const description = String(document.getElementById(`plan-decision-description-${encodeURIComponent(decisionId)}`)?.value || ''); const rationale = String(document.getElementById(`plan-decision-rationale-${encodeURIComponent(decisionId)}`)?.value || ''); isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, rationale }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update'); currentPlan = await updatedPlanRes.json(); editingPlanDecisionId = null; renderPlanDetail(); showToast('Decision aggiornata'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
-function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; deletePlanDecisionModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; deletingPlanDecisionId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
-function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (isPlanDecisionUpdating) return; deletingPlanDecisionId = null; renderPlanDetail(); if (deletePlanDecisionModalReturnFocusEl && typeof deletePlanDecisionModalReturnFocusEl.focus === 'function') setTimeout(() => deletePlanDecisionModalReturnFocusEl?.focus(), 0); deletePlanDecisionModalReturnFocusEl = null; }
-async function confirmDeletePlanDecisionFromEvent(event) { event.stopPropagation(); if (!deletingPlanDecisionId || !currentPlan || currentSection !== 'plans' || isPlanDecisionUpdating) return; const decisionId = deletingPlanDecisionId; deletingPlanDecisionId = null; const planId = currentPlan.id; if (!planId) return; isPlanDecisionUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete'); currentPlan = await updatedPlanRes.json(); if (editingPlanDecisionId === decisionId) editingPlanDecisionId = null; renderPlanDetail(); showToast('Decision eliminata'); } catch (error) { showToast(error.message, 'error'); } finally { isPlanDecisionUpdating = false; renderPlanDetail(); } }
-function handleDeletePlanDecisionModalKeydown(event) { if (!deletingPlanDecisionId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeletePlanDecisionModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
+function enableCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.creating = true; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = 'DEC-'; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); setTimeout(() => { const input = document.getElementById('new-plan-decision-id'); if (!input) return; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0); }
+function cancelCreatePlanDecisionFromEvent(event) { event.stopPropagation(); uiState.planDecision.creating = false; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = ''; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); }
+function proceedCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = String(document.getElementById('new-plan-decision-id')?.value || '').trim(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if ((currentPlan.decisions || []).some(item => (item.id || item.decision) === decisionId)) return showToast('ID gia presente', 'error'); uiState.planDecision.newId = decisionId; uiState.planDecision.createStep = 'details'; renderPlanDetail(); setTimeout(() => document.getElementById('new-plan-decision-description')?.focus(), 0); }
+function backCreatePlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.newDescription = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); uiState.planDecision.newRationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); uiState.planDecision.createStep = 'id'; renderPlanDetail(); }
+async function createPlanDecisionFromEvent(event) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const planId = currentPlan.id; if (!planId) return; const decisionId = String(uiState.planDecision.newId || '').trim(); const description = String(document.getElementById('new-plan-decision-description')?.value || '').trim(); const rationale = String(document.getElementById('new-plan-decision-rationale')?.value || '').trim(); const date = getCurrentDateIso(); if (!decisionId) return showToast('Inserisci un ID', 'error'); if (!description || !rationale) return showToast('Descrizione e rationale sono obbligatori', 'error'); uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decisionId, description, rationale, date }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to add decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after create'); currentPlan = await updatedPlanRes.json(); uiState.planDecision.creating = false; uiState.planDecision.createStep = 'id'; uiState.planDecision.newId = ''; uiState.planDecision.newDescription = ''; uiState.planDecision.newRationale = ''; renderPlanDetail(); showToast('Decision aggiunta'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
+function editPlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; uiState.planDecision.editingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); }
+function cancelPlanDecisionEditFromEvent(event) { event.stopPropagation(); uiState.planDecision.editingId = null; renderPlanDetail(); }
+async function savePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = decodeURIComponent(encodedDecisionId); const planId = currentPlan.id; if (!planId || !decisionId) return; const description = String(document.getElementById(`plan-decision-description-${encodeURIComponent(decisionId)}`)?.value || ''); const rationale = String(document.getElementById(`plan-decision-rationale-${encodeURIComponent(decisionId)}`)?.value || ''); uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, rationale }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after update'); currentPlan = await updatedPlanRes.json(); uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision aggiornata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
+function requestDeletePlanDecisionByEncodedId(event, encodedDecisionId) { event.stopPropagation(); if (!currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; deletePlanDecisionModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.planDecision.deletingId = decodeURIComponent(encodedDecisionId); renderPlanDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeletePlanDecisionModalFromEvent(event) { event.stopPropagation(); if (uiState.planDecision.isUpdating) return; uiState.planDecision.deletingId = null; renderPlanDetail(); if (deletePlanDecisionModalReturnFocusEl && typeof deletePlanDecisionModalReturnFocusEl.focus === 'function') setTimeout(() => deletePlanDecisionModalReturnFocusEl?.focus(), 0); deletePlanDecisionModalReturnFocusEl = null; }
+async function confirmDeletePlanDecisionFromEvent(event) { event.stopPropagation(); if (!uiState.planDecision.deletingId || !currentPlan || currentSection !== 'plans' || uiState.planDecision.isUpdating) return; const decisionId = uiState.planDecision.deletingId; uiState.planDecision.deletingId = null; const planId = currentPlan.id; if (!planId) return; uiState.planDecision.isUpdating = true; renderPlanDetail(); try { const res = await fetch(`/api/plans/${encodeURIComponent(planId)}/decisions/${encodeURIComponent(decisionId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete decision'); } const [updatedPlanRes] = await Promise.all([fetch(`/api/plans/${encodeURIComponent(planId)}`, { cache: 'no-store' }), loadPlans()]); if (!updatedPlanRes.ok) throw new Error('Unable to refresh plan after delete'); currentPlan = await updatedPlanRes.json(); if (uiState.planDecision.editingId === decisionId) uiState.planDecision.editingId = null; renderPlanDetail(); showToast('Decision eliminata'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.planDecision.isUpdating = false; renderPlanDetail(); } }
+function handleDeletePlanDecisionModalKeydown(event) { if (!uiState.planDecision.deletingId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeletePlanDecisionModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
 function renderDeleteNonFunctionalRequirementModal() {
-  if (!deletingNonFunctionalRequirementId) return '';
+  if (!uiState.nonFunctionalRequirement.deletingId) return '';
   return `
     <div class="confirm-modal-overlay" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)">
       <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-non-functional-title" aria-describedby="delete-non-functional-text" tabindex="-1" onclick="event.stopPropagation()" onkeydown="handleDeleteNonFunctionalRequirementModalKeydown(event)">
         <button type="button" class="confirm-modal-close" aria-label="Chiudi modal" title="Chiudi" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)">×</button>
         <div class="confirm-modal-title" id="delete-non-functional-title">Conferma eliminazione</div>
-        <div class="confirm-modal-text" id="delete-non-functional-text">Vuoi eliminare il requisito non funzionale <strong>${escapeHtml(deletingNonFunctionalRequirementId)}</strong>?</div>
+        <div class="confirm-modal-text" id="delete-non-functional-text">Vuoi eliminare il requisito non funzionale <strong>${escapeHtml(uiState.nonFunctionalRequirement.deletingId)}</strong>?</div>
         <div class="plan-notes-actions confirm-modal-actions">
-          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteNonFunctionalRequirementFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Elimina</button>
-          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)" ${isNonFunctionalRequirementUpdating ? 'disabled' : ''}>Annulla</button>
+          <button type="button" class="open-question-btn is-danger" data-modal-focus="first" onclick="confirmDeleteNonFunctionalRequirementFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Elimina</button>
+          <button type="button" class="open-question-btn is-secondary" data-modal-focus="last" onclick="closeDeleteNonFunctionalRequirementModalFromEvent(event)" ${uiState.nonFunctionalRequirement.isUpdating ? 'disabled' : ''}>Annulla</button>
         </div>
       </div>
     </div>
   `;
 }
 
-function enableCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); creatingNonFunctionalRequirement = true; newNonFunctionalRequirementId = 'RNF-'; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
-function cancelCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); creatingNonFunctionalRequirement = false; newNonFunctionalRequirementId = ''; creatingNonFunctionalRequirementStep = 'id'; newNonFunctionalRequirementTitle = ''; newNonFunctionalRequirementDescription = ''; renderRequirementDetail(); }
-function proceedCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const idEl = document.getElementById('new-non-functional-requirement-id'); const nonFunctionalId = String(idEl?.value || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); newNonFunctionalRequirementId = nonFunctionalId; creatingNonFunctionalRequirementStep = 'details'; renderRequirementDetail(); setTimeout(() => document.getElementById('new-non-functional-requirement-title')?.focus(), 0); }
-function backCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const titleEl = document.getElementById('new-non-functional-requirement-title'); const descriptionEl = document.getElementById('new-non-functional-requirement-description'); newNonFunctionalRequirementTitle = String(titleEl?.value || '').trim(); newNonFunctionalRequirementDescription = String(descriptionEl?.value || '').trim(); creatingNonFunctionalRequirementStep = 'id'; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
+function enableCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.creating = true; uiState.nonFunctionalRequirement.newId = 'RNF-'; uiState.nonFunctionalRequirement.createStep = 'id'; uiState.nonFunctionalRequirement.newTitle = ''; uiState.nonFunctionalRequirement.newDescription = ''; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
+function cancelCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.creating = false; uiState.nonFunctionalRequirement.newId = ''; uiState.nonFunctionalRequirement.createStep = 'id'; uiState.nonFunctionalRequirement.newTitle = ''; uiState.nonFunctionalRequirement.newDescription = ''; renderRequirementDetail(); }
+function proceedCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; const idEl = document.getElementById('new-non-functional-requirement-id'); const nonFunctionalId = String(idEl?.value || '').trim(); if (!nonFunctionalId) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error'); uiState.nonFunctionalRequirement.newId = nonFunctionalId; uiState.nonFunctionalRequirement.createStep = 'details'; renderRequirementDetail(); setTimeout(() => document.getElementById('new-non-functional-requirement-title')?.focus(), 0); }
+function backCreateNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; const titleEl = document.getElementById('new-non-functional-requirement-title'); const descriptionEl = document.getElementById('new-non-functional-requirement-description'); uiState.nonFunctionalRequirement.newTitle = String(titleEl?.value || '').trim(); uiState.nonFunctionalRequirement.newDescription = String(descriptionEl?.value || '').trim(); uiState.nonFunctionalRequirement.createStep = 'id'; renderRequirementDetail(); setTimeout(() => { const idInput = document.getElementById('new-non-functional-requirement-id'); if (!idInput) return; idInput.focus(); const cursor = idInput.value.length; idInput.setSelectionRange(cursor, cursor); }, 0); }
 async function createNonFunctionalRequirementFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return;
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
-  const nonFunctionalId = String(newNonFunctionalRequirementId || '').trim();
+  const nonFunctionalId = String(uiState.nonFunctionalRequirement.newId || '').trim();
   if (!nonFunctionalId) return showToast('Inserisci un ID', 'error');
   if ((currentRequirement.nonFunctionalRequirements || []).some(item => item.id === nonFunctionalId)) return showToast('ID gia presente', 'error');
   const title = String(document.getElementById('new-non-functional-requirement-title')?.value || '').trim();
   const description = String(document.getElementById('new-non-functional-requirement-description')?.value || '').trim();
   if (!title || !description) return showToast('Titolo e descrizione sono obbligatori', 'error');
 
-  isNonFunctionalRequirementUpdating = true;
+  uiState.nonFunctionalRequirement.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -1900,11 +1393,11 @@ async function createNonFunctionalRequirementFromEvent(event) {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after create');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'createNonFunctionalRequirementFromEvent:refreshRequirement');
-    creatingNonFunctionalRequirement = false;
-    newNonFunctionalRequirementId = '';
-    creatingNonFunctionalRequirementStep = 'id';
-    newNonFunctionalRequirementTitle = '';
-    newNonFunctionalRequirementDescription = '';
+    uiState.nonFunctionalRequirement.creating = false;
+    uiState.nonFunctionalRequirement.newId = '';
+    uiState.nonFunctionalRequirement.createStep = 'id';
+    uiState.nonFunctionalRequirement.newTitle = '';
+    uiState.nonFunctionalRequirement.newDescription = '';
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Requisito non funzionale aggiunto');
@@ -1924,17 +1417,17 @@ async function createNonFunctionalRequirementFromEvent(event) {
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isNonFunctionalRequirementUpdating = false;
+    uiState.nonFunctionalRequirement.isUpdating = false;
     renderRequirementDetail();
   }
 }
-function editNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; editingNonFunctionalRequirementId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); }
-function cancelNonFunctionalRequirementEditFromEvent(event) { event.stopPropagation(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); }
-async function saveNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); const nonFunctionalId = decodeURIComponent(encodedNonFunctionalId); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const title = String(document.getElementById(`non-functional-title-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); const description = String(document.getElementById(`non-functional-description-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update'); currentRequirement = await updatedRequirementRes.json(); editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale aggiornato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
-function requestDeleteNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; deleteNonFunctionalModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; deletingNonFunctionalRequirementId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
-function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPropagation(); if (isNonFunctionalRequirementUpdating) return; deletingNonFunctionalRequirementId = null; renderRequirementDetail(); if (deleteNonFunctionalModalReturnFocusEl && typeof deleteNonFunctionalModalReturnFocusEl.focus === 'function') setTimeout(() => deleteNonFunctionalModalReturnFocusEl?.focus(), 0); deleteNonFunctionalModalReturnFocusEl = null; }
-async function confirmDeleteNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); const nonFunctionalId = deletingNonFunctionalRequirementId; if (!nonFunctionalId || !currentRequirement || currentSection !== 'requirements' || isNonFunctionalRequirementUpdating) return; deletingNonFunctionalRequirementId = null; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; isNonFunctionalRequirementUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete'); currentRequirement = await updatedRequirementRes.json(); if (editingNonFunctionalRequirementId === nonFunctionalId) editingNonFunctionalRequirementId = null; renderRequirementDetail(); showToast('Requisito non funzionale eliminato'); } catch (error) { showToast(error.message, 'error'); } finally { isNonFunctionalRequirementUpdating = false; renderRequirementDetail(); } }
-function handleDeleteNonFunctionalRequirementModalKeydown(event) { if (!deletingNonFunctionalRequirementId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeleteNonFunctionalRequirementModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
+function editNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.editingId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); }
+function cancelNonFunctionalRequirementEditFromEvent(event) { event.stopPropagation(); uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); }
+async function saveNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); const nonFunctionalId = decodeURIComponent(encodedNonFunctionalId); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const title = String(document.getElementById(`non-functional-title-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); const description = String(document.getElementById(`non-functional-description-${encodeURIComponent(nonFunctionalId)}`)?.value || ''); uiState.nonFunctionalRequirement.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after update'); currentRequirement = await updatedRequirementRes.json(); uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); showToast('Requisito non funzionale aggiornato'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.nonFunctionalRequirement.isUpdating = false; renderRequirementDetail(); } }
+function requestDeleteNonFunctionalRequirementByEncodedId(event, encodedNonFunctionalId) { event.stopPropagation(); if (!currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; deleteNonFunctionalModalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null; uiState.nonFunctionalRequirement.deletingId = decodeURIComponent(encodedNonFunctionalId); renderRequirementDetail(); setTimeout(() => { const cancelBtn = document.querySelector('.confirm-modal [data-modal-focus="last"]'); const dialog = document.querySelector('.confirm-modal'); if (cancelBtn instanceof HTMLElement) return cancelBtn.focus(); if (dialog instanceof HTMLElement) dialog.focus(); }, 0); }
+function closeDeleteNonFunctionalRequirementModalFromEvent(event) { event.stopPropagation(); if (uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.deletingId = null; renderRequirementDetail(); if (deleteNonFunctionalModalReturnFocusEl && typeof deleteNonFunctionalModalReturnFocusEl.focus === 'function') setTimeout(() => deleteNonFunctionalModalReturnFocusEl?.focus(), 0); deleteNonFunctionalModalReturnFocusEl = null; }
+async function confirmDeleteNonFunctionalRequirementFromEvent(event) { event.stopPropagation(); const nonFunctionalId = uiState.nonFunctionalRequirement.deletingId; if (!nonFunctionalId || !currentRequirement || currentSection !== 'requirements' || uiState.nonFunctionalRequirement.isUpdating) return; uiState.nonFunctionalRequirement.deletingId = null; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; uiState.nonFunctionalRequirement.isUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/non-functional-requirements/${encodeURIComponent(nonFunctionalId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete non-functional requirement'); } const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]); if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after delete'); currentRequirement = await updatedRequirementRes.json(); if (uiState.nonFunctionalRequirement.editingId === nonFunctionalId) uiState.nonFunctionalRequirement.editingId = null; renderRequirementDetail(); showToast('Requisito non funzionale eliminato'); } catch (error) { showToast(error.message, 'error'); } finally { uiState.nonFunctionalRequirement.isUpdating = false; renderRequirementDetail(); } }
+function handleDeleteNonFunctionalRequirementModalKeydown(event) { if (!uiState.nonFunctionalRequirement.deletingId) return; if (event.key === 'Escape') { event.preventDefault(); closeDeleteNonFunctionalRequirementModalFromEvent(event); return; } if (event.key !== 'Tab') return; const focusable = Array.from(document.querySelectorAll('.confirm-modal button:not([disabled]), .confirm-modal [href], .confirm-modal input:not([disabled]), .confirm-modal textarea:not([disabled]), .confirm-modal select:not([disabled]), .confirm-modal [tabindex]:not([tabindex="-1"])')); if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; const active = document.activeElement; if (event.shiftKey && active === first) { event.preventDefault(); last.focus(); return; } if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); } }
 
 function renderStoryEditForm(story) {
   const criteria = Array.isArray(story.acceptanceCriteria) ? story.acceptanceCriteria : [];
@@ -1976,13 +1469,13 @@ function renderStoryEditForm(story) {
 }
 
 function renderStoryCreateBox() {
-  return `<div class="section-title-row compact"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${creatingStory ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${creatingStoryStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(newStoryId)}" ${isStoryUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(newStoryId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div class="spacer-20"></div>` : ''}`;
+  return `<div class="section-title-row compact"><div class="section-title">User stories</div><button type="button" class="icon-action-btn is-add" onclick="enableStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>${ADD_ICON_SVG}</button></div>${uiState.story.creating ? `<div class="task-item"><div class="task-header"><span class="task-id">Nuova user story</span></div><div class="plan-notes-form">${uiState.story.createStep === 'id' ? `<label class="open-question-label" for="new-story-id">ID</label><input id="new-story-id" type="text" class="plan-notes-input compact-input" value="${escapeHtml(uiState.story.newId)}" ${isStoryUpdating ? 'disabled' : ''}><div class="plan-notes-actions"><button type="button" class="open-question-btn" onclick="proceedStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Avanti</button><button type="button" class="open-question-btn is-secondary" onclick="cancelStoryCreateFromEvent(event)" ${isStoryUpdating ? 'disabled' : ''}>Annulla</button></div>` : `<div class="task-header task-header-tight"><span class="task-id">ID: ${escapeHtml(uiState.story.newId)}</span></div>${renderStoryEditForm({ id: 'new', title: '', asA: '', iWant: '', soThat: '' }).replace(`saveStoryByEncodedId(event, 'new')`, 'createStoryFromEvent(event)').replace('cancelStoryEditFromEvent(event)', 'cancelStoryCreateFromEvent(event)')}</div>`}</div></div><div class="spacer-20"></div>` : ''}`;
 }
-function enableStoryCreateFromEvent(event) { event.stopPropagation(); creatingStory = true; creatingStoryStep = 'id'; newStoryId = 'US-'; renderRequirementDetail(); setTimeout(() => { const el = document.getElementById('new-story-id'); if (!el) return; el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 0); }
-function cancelStoryCreateFromEvent(event) { event.stopPropagation(); creatingStory = false; creatingStoryStep = 'id'; newStoryId = ''; renderRequirementDetail(); }
-function proceedStoryCreateFromEvent(event) { event.stopPropagation(); const id = String(document.getElementById('new-story-id')?.value || '').trim(); if (!id) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.userStories || []).some(s => s.id === id)) return showToast('ID gia presente', 'error'); newStoryId = id; creatingStoryStep = 'details'; renderRequirementDetail(); }
-function enableStoryEditByEncodedId(event, encodedStoryId) { event.stopPropagation(); editingStoryId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
-function cancelStoryEditFromEvent(event) { event.stopPropagation(); editingStoryId = null; renderRequirementDetail(); }
+function enableStoryCreateFromEvent(event) { event.stopPropagation(); uiState.story.creating = true; uiState.story.createStep = 'id'; uiState.story.newId = 'US-'; renderRequirementDetail(); setTimeout(() => { const el = document.getElementById('new-story-id'); if (!el) return; el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 0); }
+function cancelStoryCreateFromEvent(event) { event.stopPropagation(); uiState.story.creating = false; uiState.story.createStep = 'id'; uiState.story.newId = ''; renderRequirementDetail(); }
+function proceedStoryCreateFromEvent(event) { event.stopPropagation(); const id = String(document.getElementById('new-story-id')?.value || '').trim(); if (!id) return showToast('Inserisci un ID', 'error'); if ((currentRequirement.userStories || []).some(s => s.id === id)) return showToast('ID gia presente', 'error'); uiState.story.newId = id; uiState.story.createStep = 'details'; renderRequirementDetail(); }
+function enableStoryEditByEncodedId(event, encodedStoryId) { event.stopPropagation(); uiState.story.editingId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
+function cancelStoryEditFromEvent(event) { event.stopPropagation(); uiState.story.editingId = null; renderRequirementDetail(); }
 function addStoryCriterionFromEvent(event, encodedStoryId) {
   event.stopPropagation();
   const id = decodeURIComponent(encodedStoryId);
@@ -1991,14 +1484,14 @@ function addStoryCriterionFromEvent(event, encodedStoryId) {
   container.insertAdjacentHTML('beforeend', `<div class="criterion-row"><input type="text" class="plan-notes-input compact-input" data-criterion-input="${encodeURIComponent(id)}" value=""><button type="button" class="open-question-btn is-secondary" onclick="removeStoryCriterionFromEvent(event, '${encodeURIComponent(id)}')">Rimuovi</button></div>`);
 }
 function removeStoryCriterionFromEvent(event, encodedStoryId) { event.stopPropagation(); const row = event.currentTarget?.closest('div'); const container = document.getElementById(`story-criteria-${encodedStoryId}`); if (!row || !container) return; const rows = container.querySelectorAll('[data-criterion-input]'); if (rows.length <= 1) return showToast('Deve rimanere almeno un criterio', 'error'); row.remove(); }
-async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); editingStoryId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
+async function saveStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); const storyId = decodeURIComponent(encodedStoryId); const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; const payload = { title: String(document.getElementById(`story-title-${encodeURIComponent(storyId)}`)?.value || ''), asA: String(document.getElementById(`story-asa-${encodeURIComponent(storyId)}`)?.value || ''), iWant: String(document.getElementById(`story-iwant-${encodeURIComponent(storyId)}`)?.value || ''), soThat: String(document.getElementById(`story-sothat-${encodeURIComponent(storyId)}`)?.value || '') }; const criteria = Array.from(document.querySelectorAll(`#story-criteria-${encodeURIComponent(storyId)} [data-criterion-input]`)).map(el => String(el.value || '').trim()).filter(Boolean); if (!criteria.length) return showToast('Inserisci almeno un acceptance criterion', 'error'); payload.acceptanceCriteria = criteria; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to update story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); uiState.story.editingId = null; showToast('User story aggiornata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
 async function createStoryFromEvent(event) {
   event.stopPropagation();
   const requirementId = currentRequirement.document?.id || currentRequirement.id;
   if (!requirementId) return;
-  const createdStoryId = String(newStoryId || '').trim();
+  const createdStoryId = String(uiState.story.newId || '').trim();
   const payload = {
-    storyId: newStoryId,
+    storyId: uiState.story.newId,
     title: String(document.getElementById('story-title-new')?.value || ''),
     asA: String(document.getElementById('story-asa-new')?.value || ''),
     iWant: String(document.getElementById('story-iwant-new')?.value || ''),
@@ -2015,9 +1508,9 @@ async function createStoryFromEvent(event) {
     const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' });
     await loadRequirements();
     currentRequirement = await updated.json();
-    creatingStory = false;
-    creatingStoryStep = 'id';
-    newStoryId = '';
+    uiState.story.creating = false;
+    uiState.story.createStep = 'id';
+    uiState.story.newId = '';
     showToast('User story aggiunta');
     setTimeout(() => {
       const cards = Array.from(document.querySelectorAll('#userStoriesRequirementsList .task-item'));
@@ -2039,10 +1532,10 @@ async function createStoryFromEvent(event) {
     renderRequirementDetail();
   }
 }
-function requestDeleteStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); deletingStoryId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
-function renderDeleteStoryModal() { if (!deletingStoryId) return ''; return `<div class="confirm-modal-overlay" onclick="closeDeleteStoryModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteStoryModalFromEvent(event)">×</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la user story <strong>${escapeHtml(deletingStoryId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteStoryFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteStoryModalFromEvent(event)">Annulla</button></div></div></div>`; }
-function closeDeleteStoryModalFromEvent(event) { event.stopPropagation(); deletingStoryId = null; renderRequirementDetail(); }
-async function confirmDeleteStoryFromEvent(event) { event.stopPropagation(); const storyId = deletingStoryId; if (!storyId) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; deletingStoryId = null; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); showToast('User story eliminata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
+function requestDeleteStoryByEncodedId(event, encodedStoryId) { event.stopPropagation(); uiState.story.deletingId = decodeURIComponent(encodedStoryId); renderRequirementDetail(); }
+function renderDeleteStoryModal() { if (!uiState.story.deletingId) return ''; return `<div class="confirm-modal-overlay" onclick="closeDeleteStoryModalFromEvent(event)"><div class="confirm-modal" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="confirm-modal-close" onclick="closeDeleteStoryModalFromEvent(event)">×</button><div class="confirm-modal-title">Conferma eliminazione</div><div class="confirm-modal-text">Vuoi eliminare la user story <strong>${escapeHtml(uiState.story.deletingId)}</strong>?</div><div class="plan-notes-actions confirm-modal-actions"><button type="button" class="open-question-btn is-danger" onclick="confirmDeleteStoryFromEvent(event)">Elimina</button><button type="button" class="open-question-btn is-secondary" onclick="closeDeleteStoryModalFromEvent(event)">Annulla</button></div></div></div>`; }
+function closeDeleteStoryModalFromEvent(event) { event.stopPropagation(); uiState.story.deletingId = null; renderRequirementDetail(); }
+async function confirmDeleteStoryFromEvent(event) { event.stopPropagation(); const storyId = uiState.story.deletingId; if (!storyId) return; const requirementId = currentRequirement.document?.id || currentRequirement.id; if (!requirementId) return; uiState.story.deletingId = null; isStoryUpdating = true; renderRequirementDetail(); try { const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/stories/${encodeURIComponent(storyId)}`, { method: 'DELETE' }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to delete story'); } const updated = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }); await loadRequirements(); currentRequirement = await updated.json(); showToast('User story eliminata'); } catch (e) { showToast(e.message, 'error'); } finally { isStoryUpdating = false; renderRequirementDetail(); } }
 
 function configurePlanTabs(activeTab = 'overview') {
   setTabVisibility('overview', true);
@@ -2102,28 +1595,28 @@ function setSection(section) {
   currentPlan = null;
   currentRequirement = null;
   syncCoreState({ currentPlan, currentRequirement }, 'setSection:resetSelection');
-  editingTaskDodId = null;
+  uiState.taskDod.editingId = null;
   taskDodFocusTarget = null;
-  isPlanNotesEditing = false;
-  isPlanNotesUpdating = false;
-  isPlanObjectiveEditing = false;
-  isPlanObjectiveUpdating = false;
-  isPlanPhasesEditing = false;
-  isPlanPhasesUpdating = false;
-  editingPlanPhases = [];
-  editingTaskNotesId = null;
-  isTaskNotesUpdating = false;
-  editingTaskImplementationNotesId = null;
-  isTaskImplementationNotesUpdating = false;
-  openTaskNotesIds = new Set();
+  uiState.planNotes.isEditing = false;
+  uiState.planNotes.isUpdating = false;
+  uiState.planObjective.isEditing = false;
+  uiState.planObjective.isUpdating = false;
+  uiState.planPhases.isEditing = false;
+  uiState.planPhases.isUpdating = false;
+  uiState.planPhases.items = [];
+  uiState.taskNotes.editingId = null;
+  uiState.taskNotes.isUpdating = false;
+  uiState.taskImplementationNotes.editingId = null;
+  uiState.taskImplementationNotes.isUpdating = false;
+  uiState.taskNotes.openIds = new Set();
   editingTaskField = null;
-  isTaskFieldUpdating = false;
-  isRequirementOverviewEditing = false;
-  isRequirementOverviewUpdating = false;
-  isRequirementCurrentStateEditing = false;
-  isRequirementCurrentStateUpdating = false;
-  isRequirementNotesEditing = false;
-  isRequirementNotesUpdating = false;
+  uiState.taskField.isUpdating = false;
+  uiState.requirementOverview.isEditing = false;
+  uiState.requirementOverview.isUpdating = false;
+  uiState.requirementCurrentState.isEditing = false;
+  uiState.requirementCurrentState.isUpdating = false;
+  uiState.requirementNotes.isEditing = false;
+  uiState.requirementNotes.isUpdating = false;
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('welcome').style.display = 'flex';
   buildRightNav();
@@ -2278,16 +1771,16 @@ function handleTaskPhaseSelectByEncodedId(encodedTaskId, encodedPhaseTitle, opti
 }
 
 function enableTaskDodEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
-  if (editingTaskDodId === taskId) return;
-  editingTaskDodId = taskId;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
+  if (uiState.taskDod.editingId === taskId) return;
+  uiState.taskDod.editingId = taskId;
   renderPlanDetail();
 }
 
 function disableTaskDodEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
-  if (!editingTaskDodId) return;
-  editingTaskDodId = null;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
+  if (!uiState.taskDod.editingId) return;
+  uiState.taskDod.editingId = null;
   taskDodFocusTarget = null;
   renderPlanDetail();
 }
@@ -2298,16 +1791,16 @@ function disableTaskDodEditFromEvent(event) {
 }
 
 function enablePlanNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanNotesUpdating) return;
-  if (isPlanNotesEditing) return;
-  isPlanNotesEditing = true;
+  if (!currentPlan || currentSection !== 'plans' || uiState.planNotes.isUpdating) return;
+  if (uiState.planNotes.isEditing) return;
+  uiState.planNotes.isEditing = true;
   renderPlanDetail();
 }
 
 function enablePlanObjectiveEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanObjectiveUpdating) return;
-  if (isPlanObjectiveEditing) return;
-  isPlanObjectiveEditing = true;
+  if (!currentPlan || currentSection !== 'plans' || uiState.planObjective.isUpdating) return;
+  if (uiState.planObjective.isEditing) return;
+  uiState.planObjective.isEditing = true;
   renderPlanDetail();
 }
 
@@ -2317,9 +1810,9 @@ function enablePlanObjectiveEditFromEvent(event) {
 }
 
 function cancelPlanObjectiveEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanObjectiveUpdating) return;
-  if (!isPlanObjectiveEditing) return;
-  isPlanObjectiveEditing = false;
+  if (!currentPlan || currentSection !== 'plans' || uiState.planObjective.isUpdating) return;
+  if (!uiState.planObjective.isEditing) return;
+  uiState.planObjective.isEditing = false;
   renderPlanDetail();
 }
 
@@ -2329,7 +1822,7 @@ function cancelPlanObjectiveEditFromEvent(event) {
 }
 
 async function savePlanObjective() {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanObjectiveEditing || isPlanObjectiveUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planObjective.isEditing || uiState.planObjective.isUpdating) return;
   const objectiveEl = document.getElementById('plan-objective-input');
   if (!objectiveEl) return;
 
@@ -2337,7 +1830,7 @@ async function savePlanObjective() {
   const previousObjective = currentPlan.objective || '';
 
   currentPlan.objective = objective;
-  isPlanObjectiveUpdating = true;
+  uiState.planObjective.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2363,7 +1856,7 @@ async function savePlanObjective() {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'savePlanObjectiveFromEvent:refreshPlan');
-    isPlanObjectiveEditing = false;
+    uiState.planObjective.isEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Objective piano salvato');
@@ -2372,7 +1865,7 @@ async function savePlanObjective() {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isPlanObjectiveUpdating = false;
+    uiState.planObjective.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2383,19 +1876,19 @@ function savePlanObjectiveFromEvent(event) {
 }
 
 function enablePlanPhasesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanPhasesUpdating) return;
-  if (isPlanPhasesEditing) return;
-  editingPlanPhases = buildPhasesForEditor(currentPlan);
-  if (!editingPlanPhases.length) {
-    editingPlanPhases = [{ title: '', tasks: [] }];
+  if (!currentPlan || currentSection !== 'plans' || uiState.planPhases.isUpdating) return;
+  if (uiState.planPhases.isEditing) return;
+  uiState.planPhases.items = buildPhasesForEditor(currentPlan);
+  if (!uiState.planPhases.items.length) {
+    uiState.planPhases.items = [{ title: '', tasks: [] }];
   }
-  isPlanPhasesEditing = true;
+  uiState.planPhases.isEditing = true;
   renderPlanDetail();
 }
 
 function addPlanPhase() {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
-  editingPlanPhases = [...editingPlanPhases, { title: '', tasks: [] }];
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
+  uiState.planPhases.items = [...uiState.planPhases.items, { title: '', tasks: [] }];
   renderPlanDetail();
 }
 
@@ -2405,9 +1898,9 @@ function addPlanPhaseFromEvent(event) {
 }
 
 function removePlanPhase(index) {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
-  editingPlanPhases = editingPlanPhases.filter((_, currentIndex) => currentIndex !== index);
-  if (!editingPlanPhases.length) editingPlanPhases = [{ title: '', tasks: [] }];
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
+  uiState.planPhases.items = uiState.planPhases.items.filter((_, currentIndex) => currentIndex !== index);
+  if (!uiState.planPhases.items.length) uiState.planPhases.items = [{ title: '', tasks: [] }];
   renderPlanDetail();
 }
 
@@ -2417,9 +1910,9 @@ function removePlanPhaseFromEvent(event, index) {
 }
 
 function updatePlanPhaseTitle(index, value) {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
-  if (!editingPlanPhases[index]) return;
-  editingPlanPhases[index].title = String(value || '');
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
+  if (!uiState.planPhases.items[index]) return;
+  uiState.planPhases.items[index].title = String(value || '');
 }
 
 function updatePlanPhaseTitleFromEvent(event, index) {
@@ -2428,8 +1921,8 @@ function updatePlanPhaseTitleFromEvent(event, index) {
 }
 
 function togglePlanPhaseTask(index, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
-  const phase = editingPlanPhases[index];
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
+  const phase = uiState.planPhases.items[index];
   if (!phase) return;
   const selectedTaskIds = Array.isArray(phase.tasks) ? phase.tasks : [];
   if (selectedTaskIds.includes(taskId)) {
@@ -2450,10 +1943,10 @@ function enablePlanPhasesEditFromEvent(event) {
 }
 
 function cancelPlanPhasesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanPhasesUpdating) return;
-  if (!isPlanPhasesEditing) return;
-  isPlanPhasesEditing = false;
-  editingPlanPhases = [];
+  if (!currentPlan || currentSection !== 'plans' || uiState.planPhases.isUpdating) return;
+  if (!uiState.planPhases.isEditing) return;
+  uiState.planPhases.isEditing = false;
+  uiState.planPhases.items = [];
   renderPlanDetail();
 }
 
@@ -2463,9 +1956,9 @@ function cancelPlanPhasesEditFromEvent(event) {
 }
 
 async function savePlanPhases() {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanPhasesEditing || isPlanPhasesUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planPhases.isEditing || uiState.planPhases.isUpdating) return;
   const previousPhases = Array.isArray(currentPlan.phases) ? currentPlan.phases : [];
-  const phases = editingPlanPhases
+  const phases = uiState.planPhases.items
     .map(phase => ({
       title: String(phase?.title || '').trim(),
       tasks: Array.isArray(phase?.tasks) ? phase.tasks.map(taskId => String(taskId).trim()).filter(Boolean) : []
@@ -2478,7 +1971,7 @@ async function savePlanPhases() {
   }
 
   currentPlan.phases = phases;
-  isPlanPhasesUpdating = true;
+  uiState.planPhases.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2504,8 +1997,8 @@ async function savePlanPhases() {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'savePlanPhasesFromEvent:refreshPlan');
-    isPlanPhasesEditing = false;
-    editingPlanPhases = [];
+    uiState.planPhases.isEditing = false;
+    uiState.planPhases.items = [];
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Phases piano salvate');
@@ -2514,7 +2007,7 @@ async function savePlanPhases() {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isPlanPhasesUpdating = false;
+    uiState.planPhases.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2530,9 +2023,9 @@ function enablePlanNotesEditFromEvent(event) {
 }
 
 function cancelPlanNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isPlanNotesUpdating) return;
-  if (!isPlanNotesEditing) return;
-  isPlanNotesEditing = false;
+  if (!currentPlan || currentSection !== 'plans' || uiState.planNotes.isUpdating) return;
+  if (!uiState.planNotes.isEditing) return;
+  uiState.planNotes.isEditing = false;
   renderPlanDetail();
 }
 
@@ -2542,7 +2035,7 @@ function cancelPlanNotesEditFromEvent(event) {
 }
 
 async function savePlanNotes() {
-  if (!currentPlan || currentSection !== 'plans' || !isPlanNotesEditing || isPlanNotesUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || !uiState.planNotes.isEditing || uiState.planNotes.isUpdating) return;
   const notesEl = document.getElementById('plan-notes-input');
   if (!notesEl) return;
 
@@ -2550,7 +2043,7 @@ async function savePlanNotes() {
   const previousNotes = currentPlan.notes || '';
 
   currentPlan.notes = notes;
-  isPlanNotesUpdating = true;
+  uiState.planNotes.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2576,7 +2069,7 @@ async function savePlanNotes() {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'savePlanNotesFromEvent:refreshPlan');
-    isPlanNotesEditing = false;
+    uiState.planNotes.isEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(currentPlan.id)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Note piano salvate');
@@ -2585,7 +2078,7 @@ async function savePlanNotes() {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isPlanNotesUpdating = false;
+    uiState.planNotes.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2596,7 +2089,7 @@ function savePlanNotesFromEvent(event) {
 }
 
 function enableTaskFieldEdit(taskId, field) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskFieldUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskField.isUpdating) return;
   if (!taskId || !field) return;
   if (field === 'phase' && !(Array.isArray(currentPlan.phases) && currentPlan.phases.some(phase => String(phase?.title || '').trim()))) {
     showToast('Nessuna phase disponibile nel piano', 'error');
@@ -2612,7 +2105,7 @@ function enableTaskFieldEditByEncodedId(event, encodedTaskId, field) {
 }
 
 function cancelTaskFieldEdit() {
-  if (!editingTaskField || isTaskFieldUpdating) return;
+  if (!editingTaskField || uiState.taskField.isUpdating) return;
   editingTaskField = null;
   renderPlanDetail();
 }
@@ -2623,7 +2116,7 @@ function cancelTaskFieldEditFromEvent(event) {
 }
 
 async function saveTaskField(planId, taskId, field) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskFieldUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskField.isUpdating) return;
   const task = (currentPlan.tasks || []).find(item => item.id === taskId);
   if (!task) return;
 
@@ -2644,7 +2137,7 @@ async function saveTaskField(planId, taskId, field) {
     task.title = title;
     task.whatToDo = whatToDo;
 
-    isTaskFieldUpdating = true;
+    uiState.taskField.isUpdating = true;
     renderPlanDetail();
 
     try {
@@ -2688,7 +2181,7 @@ async function saveTaskField(planId, taskId, field) {
       renderPlanDetail();
       showToast(error.message, 'error');
     } finally {
-      isTaskFieldUpdating = false;
+      uiState.taskField.isUpdating = false;
       renderPlanDetail();
     }
     return;
@@ -2726,7 +2219,7 @@ async function saveTaskField(planId, taskId, field) {
     return;
   }
 
-  isTaskFieldUpdating = true;
+  uiState.taskField.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2761,7 +2254,7 @@ async function saveTaskField(planId, taskId, field) {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isTaskFieldUpdating = false;
+    uiState.taskField.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2774,18 +2267,18 @@ function saveTaskFieldByEncodedIds(event, encodedPlanId, encodedTaskId, field) {
 }
 
 function enableTaskNotesEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
-  if (!taskId || editingTaskNotesId === taskId) return;
-  editingTaskNotesId = taskId;
-  openTaskNotesIds.add(taskId);
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
+  if (!taskId || uiState.taskNotes.editingId === taskId) return;
+  uiState.taskNotes.editingId = taskId;
+  uiState.taskNotes.openIds.add(taskId);
   renderPlanDetail();
 }
 
 function enableTaskImplementationNotesEdit(taskId) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
-  if (!taskId || editingTaskImplementationNotesId === taskId) return;
-  editingTaskImplementationNotesId = taskId;
-  openTaskNotesIds.add(taskId);
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
+  if (!taskId || uiState.taskImplementationNotes.editingId === taskId) return;
+  uiState.taskImplementationNotes.editingId = taskId;
+  uiState.taskNotes.openIds.add(taskId);
   renderPlanDetail();
 }
 
@@ -2800,9 +2293,9 @@ function enableTaskNotesEditByEncodedId(event, encodedTaskId) {
 }
 
 function cancelTaskNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
-  if (!editingTaskNotesId) return;
-  editingTaskNotesId = null;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
+  if (!uiState.taskNotes.editingId) return;
+  uiState.taskNotes.editingId = null;
   renderPlanDetail();
 }
 
@@ -2812,9 +2305,9 @@ function cancelTaskNotesEditFromEvent(event) {
 }
 
 function cancelTaskImplementationNotesEdit() {
-  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
-  if (!editingTaskImplementationNotesId) return;
-  editingTaskImplementationNotesId = null;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
+  if (!uiState.taskImplementationNotes.editingId) return;
+  uiState.taskImplementationNotes.editingId = null;
   renderPlanDetail();
 }
 
@@ -2824,7 +2317,7 @@ function cancelTaskImplementationNotesEditFromEvent(event) {
 }
 
 async function saveTaskNotes(planId, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskNotesUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskNotes.isUpdating) return;
   const task = (currentPlan.tasks || []).find(item => item.id === taskId);
   if (!task) return;
 
@@ -2835,7 +2328,7 @@ async function saveTaskNotes(planId, taskId) {
   const previousNotes = task.notes || '';
 
   task.notes = notes;
-  isTaskNotesUpdating = true;
+  uiState.taskNotes.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2861,8 +2354,8 @@ async function saveTaskNotes(planId, taskId) {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'saveTaskNotesByEncodedIds:refreshPlan');
-    openTaskNotesIds.add(taskId);
-    editingTaskNotesId = null;
+    uiState.taskNotes.openIds.add(taskId);
+    uiState.taskNotes.editingId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Note task salvate');
@@ -2871,7 +2364,7 @@ async function saveTaskNotes(planId, taskId) {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isTaskNotesUpdating = false;
+    uiState.taskNotes.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2884,7 +2377,7 @@ function saveTaskNotesByEncodedIds(event, encodedPlanId, encodedTaskId) {
 }
 
 async function saveTaskImplementationNotes(planId, taskId) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskImplementationNotesUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskImplementationNotes.isUpdating) return;
   const task = (currentPlan.tasks || []).find(item => item.id === taskId);
   if (!task) return;
 
@@ -2895,7 +2388,7 @@ async function saveTaskImplementationNotes(planId, taskId) {
   const previousImplementationNotes = task.implementationNotes || '';
 
   task.implementationNotes = implementationNotes;
-  isTaskImplementationNotesUpdating = true;
+  uiState.taskImplementationNotes.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -2921,8 +2414,8 @@ async function saveTaskImplementationNotes(planId, taskId) {
 
     currentPlan = await updatedPlanRes.json();
     syncCoreState({ currentPlan }, 'saveTaskImplementationNotesByEncodedIds:refreshPlan');
-    openTaskNotesIds.add(taskId);
-    editingTaskImplementationNotesId = null;
+    uiState.taskNotes.openIds.add(taskId);
+    uiState.taskImplementationNotes.editingId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(planId)}"]`)?.classList.add('active');
     renderPlanDetail();
     showToast('Implementation notes task salvate');
@@ -2931,7 +2424,7 @@ async function saveTaskImplementationNotes(planId, taskId) {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isTaskImplementationNotesUpdating = false;
+    uiState.taskImplementationNotes.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -2946,9 +2439,9 @@ function saveTaskImplementationNotesByEncodedIds(event, encodedPlanId, encodedTa
 function handleTaskNotesDetailsToggle(taskId, detailsEl) {
   if (!taskId || !detailsEl) return;
   if (detailsEl.open) {
-    openTaskNotesIds.add(taskId);
+    uiState.taskNotes.openIds.add(taskId);
   } else {
-    openTaskNotesIds.delete(taskId);
+    uiState.taskNotes.openIds.delete(taskId);
   }
 }
 
@@ -2969,7 +2462,7 @@ function handleTaskDodRegionKeydown(event, encodedTaskId) {
 }
 
 async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
-  if (!currentPlan || currentSection !== 'plans' || isTaskDodUpdating) return;
+  if (!currentPlan || currentSection !== 'plans' || uiState.taskDod.isUpdating) return;
 
   const task = (currentPlan.tasks || []).find(item => item.id === taskId);
   const criterion = task?.definitionOfDone?.[criterionIndex];
@@ -2978,7 +2471,7 @@ async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
   const previousCompleted = Boolean(criterion.completed);
   taskDodFocusTarget = { taskId, criterionIndex };
   criterion.completed = completed;
-  isTaskDodUpdating = true;
+  uiState.taskDod.isUpdating = true;
   renderPlanDetail();
 
   try {
@@ -3012,7 +2505,7 @@ async function toggleTaskDodItem(planId, taskId, criterionIndex, completed) {
     renderPlanDetail();
     showToast(error.message, 'error');
   } finally {
-    isTaskDodUpdating = false;
+    uiState.taskDod.isUpdating = false;
     renderPlanDetail();
   }
 }
@@ -3137,9 +2630,9 @@ function handleAcceptanceItemKeydown(event) {
 }
 
 function enableRequirementOverviewEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementOverviewUpdating) return;
-  if (isRequirementOverviewEditing) return;
-  isRequirementOverviewEditing = true;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementOverview.isUpdating) return;
+  if (uiState.requirementOverview.isEditing) return;
+  uiState.requirementOverview.isEditing = true;
   renderRequirementDetail();
 }
 
@@ -3149,9 +2642,9 @@ function enableRequirementOverviewEditFromEvent(event) {
 }
 
 function cancelRequirementOverviewEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementOverviewUpdating) return;
-  if (!isRequirementOverviewEditing) return;
-  isRequirementOverviewEditing = false;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementOverview.isUpdating) return;
+  if (!uiState.requirementOverview.isEditing) return;
+  uiState.requirementOverview.isEditing = false;
   renderRequirementDetail();
 }
 
@@ -3161,7 +2654,7 @@ function cancelRequirementOverviewEditFromEvent(event) {
 }
 
 async function saveRequirementOverview() {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementOverviewEditing || isRequirementOverviewUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !uiState.requirementOverview.isEditing || uiState.requirementOverview.isUpdating) return;
   const overviewEl = document.getElementById('requirement-overview-input');
   if (!overviewEl) return;
 
@@ -3169,7 +2662,7 @@ async function saveRequirementOverview() {
   const previousOverview = typeof currentRequirement.overview === 'string' ? currentRequirement.overview : '';
 
   currentRequirement.overview = overview;
-  isRequirementOverviewUpdating = true;
+  uiState.requirementOverview.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -3198,7 +2691,7 @@ async function saveRequirementOverview() {
 
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'saveRequirementOverviewFromEvent:refreshRequirement');
-    isRequirementOverviewEditing = false;
+    uiState.requirementOverview.isEditing = false;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Overview requirement salvata');
@@ -3207,7 +2700,7 @@ async function saveRequirementOverview() {
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isRequirementOverviewUpdating = false;
+    uiState.requirementOverview.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -3218,9 +2711,9 @@ function saveRequirementOverviewFromEvent(event) {
 }
 
 function enableRequirementCurrentStateEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementCurrentStateUpdating) return;
-  if (isRequirementCurrentStateEditing) return;
-  isRequirementCurrentStateEditing = true;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementCurrentState.isUpdating) return;
+  if (uiState.requirementCurrentState.isEditing) return;
+  uiState.requirementCurrentState.isEditing = true;
   renderRequirementDetail();
 }
 
@@ -3230,9 +2723,9 @@ function enableRequirementCurrentStateEditFromEvent(event) {
 }
 
 function cancelRequirementCurrentStateEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementCurrentStateUpdating) return;
-  if (!isRequirementCurrentStateEditing) return;
-  isRequirementCurrentStateEditing = false;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementCurrentState.isUpdating) return;
+  if (!uiState.requirementCurrentState.isEditing) return;
+  uiState.requirementCurrentState.isEditing = false;
   renderRequirementDetail();
 }
 
@@ -3242,7 +2735,7 @@ function cancelRequirementCurrentStateEditFromEvent(event) {
 }
 
 async function saveRequirementCurrentState() {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !uiState.requirementCurrentState.isEditing || uiState.requirementCurrentState.isUpdating) return;
   const rows = Array.from(document.querySelectorAll('#requirement-current-state-body tr'));
   if (!rows.length) {
     showToast('Aggiungi almeno una riga per il current state', 'error');
@@ -3265,7 +2758,7 @@ async function saveRequirementCurrentState() {
 
   const previousCurrentState = Array.isArray(currentRequirement.currentState) ? currentRequirement.currentState : [];
   currentRequirement.currentState = parsed;
-  isRequirementCurrentStateUpdating = true;
+  uiState.requirementCurrentState.isUpdating = true;
   renderRequirementDetail();
   try {
     const requirementId = currentRequirement.document?.id || currentRequirement.id;
@@ -3278,7 +2771,7 @@ async function saveRequirementCurrentState() {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after current state update');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'saveRequirementCurrentStateFromEvent:refreshRequirement');
-    isRequirementCurrentStateEditing = false;
+    uiState.requirementCurrentState.isEditing = false;
     renderRequirementDetail();
     showToast('Current state requirement salvato');
   } catch (error) {
@@ -3286,13 +2779,13 @@ async function saveRequirementCurrentState() {
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isRequirementCurrentStateUpdating = false;
+    uiState.requirementCurrentState.isUpdating = false;
     renderRequirementDetail();
   }
 }
 
 function addRequirementCurrentStateRow() {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !uiState.requirementCurrentState.isEditing || uiState.requirementCurrentState.isUpdating) return;
   const body = document.getElementById('requirement-current-state-body');
   if (!body) return;
   body.insertAdjacentHTML('beforeend', `
@@ -3313,7 +2806,7 @@ function addRequirementCurrentStateRowFromEvent(event) {
 }
 
 function removeRequirementCurrentStateRow(targetRow) {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementCurrentStateEditing || isRequirementCurrentStateUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !uiState.requirementCurrentState.isEditing || uiState.requirementCurrentState.isUpdating) return;
   const rows = Array.from(document.querySelectorAll('#requirement-current-state-body tr'));
   if (rows.length <= 1) {
     showToast('Deve rimanere almeno una riga', 'error');
@@ -3334,9 +2827,9 @@ function saveRequirementCurrentStateFromEvent(event) {
 }
 
 function enableRequirementNotesEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementNotesUpdating) return;
-  if (isRequirementNotesEditing) return;
-  isRequirementNotesEditing = true;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementNotes.isUpdating) return;
+  if (uiState.requirementNotes.isEditing) return;
+  uiState.requirementNotes.isEditing = true;
   renderRequirementDetail();
 }
 
@@ -3346,9 +2839,9 @@ function enableRequirementNotesEditFromEvent(event) {
 }
 
 function cancelRequirementNotesEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isRequirementNotesUpdating) return;
-  if (!isRequirementNotesEditing) return;
-  isRequirementNotesEditing = false;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.requirementNotes.isUpdating) return;
+  if (!uiState.requirementNotes.isEditing) return;
+  uiState.requirementNotes.isEditing = false;
   renderRequirementDetail();
 }
 
@@ -3358,7 +2851,7 @@ function cancelRequirementNotesEditFromEvent(event) {
 }
 
 async function saveRequirementNotes() {
-  if (!currentRequirement || currentSection !== 'requirements' || !isRequirementNotesEditing || isRequirementNotesUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || !uiState.requirementNotes.isEditing || uiState.requirementNotes.isUpdating) return;
   const notesEl = document.getElementById('requirement-notes-input');
   if (!notesEl) return;
   const value = String(notesEl.value || '').trim();
@@ -3366,7 +2859,7 @@ async function saveRequirementNotes() {
 
   const previousNotes = typeof currentRequirement.notes === 'string' ? currentRequirement.notes : null;
   currentRequirement.notes = parsed;
-  isRequirementNotesUpdating = true;
+  uiState.requirementNotes.isUpdating = true;
   renderRequirementDetail();
   try {
     const requirementId = currentRequirement.document?.id || currentRequirement.id;
@@ -3379,7 +2872,7 @@ async function saveRequirementNotes() {
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after notes update');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'saveRequirementNotesFromEvent:refreshRequirement');
-    isRequirementNotesEditing = false;
+    uiState.requirementNotes.isEditing = false;
     renderRequirementDetail();
     showToast('Notes requirement salvate');
   } catch (error) {
@@ -3387,7 +2880,7 @@ async function saveRequirementNotes() {
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isRequirementNotesUpdating = false;
+    uiState.requirementNotes.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -3398,10 +2891,10 @@ function saveRequirementNotesFromEvent(event) {
 }
 
 function enableOpenQuestionEdit(questionId) {
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
   if (!questionId) return;
-  if (editingOpenQuestionId === questionId) return;
-  editingOpenQuestionId = questionId;
+  if (uiState.openQuestion.editingId === questionId) return;
+  uiState.openQuestion.editingId = questionId;
   renderRequirementDetail();
 }
 
@@ -3410,9 +2903,9 @@ function enableOpenQuestionEditByEncodedId(encodedQuestionId) {
 }
 
 function cancelOpenQuestionEdit() {
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
-  if (!editingOpenQuestionId) return;
-  editingOpenQuestionId = null;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
+  if (!uiState.openQuestion.editingId) return;
+  uiState.openQuestion.editingId = null;
   renderRequirementDetail();
 }
 
@@ -3429,7 +2922,7 @@ function handleOpenQuestionCardKeydown(event, encodedQuestionId) {
 }
 
 async function saveOpenQuestion(requirementId, questionId) {
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
   const question = (currentRequirement.openQuestions || []).find(item => item.id === questionId);
   if (!question) return;
 
@@ -3450,7 +2943,7 @@ async function saveOpenQuestion(requirementId, questionId) {
 
   question.answer = answer;
   question.status = status;
-  isOpenQuestionUpdating = true;
+  uiState.openQuestion.isUpdating = true;
   renderRequirementDetail();
 
   try {
@@ -3476,7 +2969,7 @@ async function saveOpenQuestion(requirementId, questionId) {
 
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'saveOpenQuestionByEncodedIds:refreshRequirement');
-    editingOpenQuestionId = null;
+    uiState.openQuestion.editingId = null;
     document.querySelector(`.plan-item[data-id="${CSS.escape(requirementId)}"]`)?.classList.add('active');
     renderRequirementDetail();
     showToast('Open question salvata');
@@ -3486,7 +2979,7 @@ async function saveOpenQuestion(requirementId, questionId) {
     renderRequirementDetail();
     showToast(error.message, 'error');
   } finally {
-    isOpenQuestionUpdating = false;
+    uiState.openQuestion.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -3500,14 +2993,14 @@ function saveOpenQuestionByEncodedIds(event, encodedRequirementId, encodedQuesti
 
 function enableOpenQuestionCreateFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
-  creatingOpenQuestion = true;
-  creatingOpenQuestionStep = 'id';
-  newOpenQuestionId = 'OQ-';
-  newOpenQuestionQuestion = '';
-  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
+  uiState.openQuestion.creating = true;
+  uiState.openQuestion.createStep = 'id';
+  uiState.openQuestion.newId = 'OQ-';
+  uiState.openQuestion.newQuestion = '';
+  uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
   newOpenQuestionStatus = 'open';
-  editingOpenQuestionId = null;
+  uiState.openQuestion.editingId = null;
   renderRequirementDetail();
   requestAnimationFrame(() => {
     const input = document.getElementById('new-open-question-id');
@@ -3520,67 +3013,67 @@ function enableOpenQuestionCreateFromEvent(event) {
 
 function proceedCreateOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (!creatingOpenQuestion || isOpenQuestionUpdating) return;
+  if (!uiState.openQuestion.creating || uiState.openQuestion.isUpdating) return;
   const input = document.getElementById('new-open-question-id');
   const id = String(input?.value || '').trim();
   if (!id) return showToast('ID open question obbligatorio', 'error');
   if ((currentRequirement?.openQuestions || []).some(item => String(item?.id || '') === id)) return showToast('ID open question gia presente', 'error');
-  newOpenQuestionId = id;
-  creatingOpenQuestionStep = 'details';
+  uiState.openQuestion.newId = id;
+  uiState.openQuestion.createStep = 'details';
   renderRequirementDetail();
 }
 
 function backCreateOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (!creatingOpenQuestion || isOpenQuestionUpdating) return;
+  if (!uiState.openQuestion.creating || uiState.openQuestion.isUpdating) return;
   const questionEl = document.getElementById('new-open-question-question');
-  newOpenQuestionQuestion = String(questionEl?.value || '').trim();
-  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  uiState.openQuestion.newQuestion = String(questionEl?.value || '').trim();
+  uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
   newOpenQuestionStatus = 'open';
-  creatingOpenQuestionStep = 'id';
+  uiState.openQuestion.createStep = 'id';
   renderRequirementDetail();
 }
 
 function cancelCreateOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (isOpenQuestionUpdating) return;
-  creatingOpenQuestion = false;
-  creatingOpenQuestionStep = 'id';
-  newOpenQuestionId = '';
-  newOpenQuestionQuestion = '';
-  newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+  if (uiState.openQuestion.isUpdating) return;
+  uiState.openQuestion.creating = false;
+  uiState.openQuestion.createStep = 'id';
+  uiState.openQuestion.newId = '';
+  uiState.openQuestion.newQuestion = '';
+  uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
   newOpenQuestionStatus = 'open';
   renderRequirementDetail();
 }
 
 async function createOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
   const requirementId = currentRequirement.document?.id;
   if (!requirementId) return;
-  const createdOpenQuestionId = String(newOpenQuestionId || '').trim();
+  const createdOpenQuestionId = String(uiState.openQuestion.newId || '').trim();
   const question = String(document.getElementById('new-open-question-question')?.value || '').trim();
   const answer = 'Non definito nel documento; richiesta conferma.';
   const status = 'open';
-  if (!newOpenQuestionId) return showToast('ID open question obbligatorio', 'error');
-  if ((currentRequirement?.openQuestions || []).some(item => String(item?.id || '') === newOpenQuestionId)) return showToast('ID open question gia presente', 'error');
+  if (!uiState.openQuestion.newId) return showToast('ID open question obbligatorio', 'error');
+  if ((currentRequirement?.openQuestions || []).some(item => String(item?.id || '') === uiState.openQuestion.newId)) return showToast('ID open question gia presente', 'error');
   if (!question) return showToast('Question obbligatoria', 'error');
-  isOpenQuestionUpdating = true;
+  uiState.openQuestion.isUpdating = true;
   renderRequirementDetail();
   try {
     const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/open-questions`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: newOpenQuestionId, question, answer, status })
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: uiState.openQuestion.newId, question, answer, status })
     });
     if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Unable to create open question'); }
     const [updatedRequirementRes] = await Promise.all([fetch(`/api/requirements/${encodeURIComponent(requirementId)}`, { cache: 'no-store' }), loadRequirements()]);
     if (!updatedRequirementRes.ok) throw new Error('Unable to refresh requirement after open question create');
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'createOpenQuestionFromEvent:refreshRequirement');
-    creatingOpenQuestion = false;
-    creatingOpenQuestionStep = 'id';
-    newOpenQuestionId = '';
-    newOpenQuestionQuestion = '';
-    newOpenQuestionAnswer = 'Non definito nel documento; richiesta conferma.';
+    uiState.openQuestion.creating = false;
+    uiState.openQuestion.createStep = 'id';
+    uiState.openQuestion.newId = '';
+    uiState.openQuestion.newQuestion = '';
+    uiState.openQuestion.newAnswer = 'Non definito nel documento; richiesta conferma.';
     newOpenQuestionStatus = 'open';
     renderRequirementDetail();
     showToast('Open question creata');
@@ -3600,14 +3093,14 @@ async function createOpenQuestionFromEvent(event) {
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isOpenQuestionUpdating = false;
+    uiState.openQuestion.isUpdating = false;
     renderRequirementDetail();
   }
 }
 
 function requestDeleteOpenQuestionByEncodedIds(event, encodedRequirementId, encodedQuestionId) {
   event.stopPropagation();
-  if (!currentRequirement || currentSection !== 'requirements' || isOpenQuestionUpdating) return;
+  if (!currentRequirement || currentSection !== 'requirements' || uiState.openQuestion.isUpdating) return;
   const requirementId = decodeURIComponent(encodedRequirementId);
   const questionId = decodeURIComponent(encodedQuestionId);
   if (!requirementId || !questionId) return;
@@ -3625,11 +3118,11 @@ function closeDeleteOpenQuestionModalFromEvent(event) {
 
 async function confirmDeleteOpenQuestionFromEvent(event) {
   event.stopPropagation();
-  if (!currentRequirement || !deletingOpenQuestionId || isOpenQuestionUpdating) return;
+  if (!currentRequirement || !deletingOpenQuestionId || uiState.openQuestion.isUpdating) return;
   const requirementId = currentRequirement.document?.id;
   const questionId = deletingOpenQuestionId;
   if (!requirementId) return;
-  isOpenQuestionUpdating = true;
+  uiState.openQuestion.isUpdating = true;
   renderRequirementDetail();
   try {
     const res = await fetch(`/api/requirements/${encodeURIComponent(requirementId)}/open-questions/${encodeURIComponent(questionId)}`, { method: 'DELETE' });
@@ -3639,13 +3132,13 @@ async function confirmDeleteOpenQuestionFromEvent(event) {
     currentRequirement = await updatedRequirementRes.json();
     syncCoreState({ currentRequirement }, 'confirmDeleteOpenQuestionFromEvent:refreshRequirement');
     deletingOpenQuestionId = null;
-    editingOpenQuestionId = null;
+    uiState.openQuestion.editingId = null;
     renderRequirementDetail();
     showToast('Open question eliminata');
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    isOpenQuestionUpdating = false;
+    uiState.openQuestion.isUpdating = false;
     renderRequirementDetail();
   }
 }
@@ -3704,8 +3197,8 @@ function restoreAcceptanceFocusIfNeeded() {
 }
 
 function restoreTaskDodFocusIfNeeded() {
-  if (!taskDodFocusTarget || !editingTaskDodId) return;
-  if (editingTaskDodId !== taskDodFocusTarget.taskId) return;
+  if (!taskDodFocusTarget || !uiState.taskDod.editingId) return;
+  if (uiState.taskDod.editingId !== taskDodFocusTarget.taskId) return;
 
   const { taskId, criterionIndex } = taskDodFocusTarget;
   requestAnimationFrame(() => {
